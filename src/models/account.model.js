@@ -28,7 +28,7 @@ const userSignUp = new Schema(
         watchHistory:[
             {
                 type : Schema.Types.ObjectId,
-                ref: "video"
+                ref: "Video"
             }
         ],
         refreshToken:{
