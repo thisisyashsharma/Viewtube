@@ -4,35 +4,70 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+/*
+Convert an absolute path like "C:\.../public/temp/FILE.mp4" or "./public/temp/FILE.mp4"
+into a public URL like "http://localhost:8000/temp/FILE.mp4"
+*/
+const localUrlFromAbsPath = (req, absPath) => {                                     // EU4u2.p0.10l- added this function    
+  if (!absPath) return null;
+  // normalize windows backslashes to forward slashes
+  const normalized = absPath.replace(/\\/g, '/');
+  // find "/public" segment
+  const idx = normalized.indexOf('/public');
+  const relative = idx >= 0 ? normalized.slice(idx + '/public'.length) : normalized;
+  const path = relative.startsWith('/') ? relative : `/${relative}`;
+  return `${req.protocol}://${req.get('host')}${path}`;
+};
+// --- END HELPER ---
 
 // ********------------------video upload-------------------********
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
+  const storage = (
+    req.body?.storage ||
+    process.env.DEFAULT_STORAGE ||
+    "cloud"
+  ).toLowerCase();
+
   const thumbnailFile = req.files?.thumbnail?.[0];
   const videoFile = req.files?.videoFile?.[0];
 
   if (!title || !description || !thumbnailFile || !videoFile) {
-    throw new ApiError(400, "All fields are required, including thumbnail and video files");
+    throw new ApiError(
+      400,
+      "All fields are required, including thumbnail and video files"
+    );
   }
 
-  const thumbnailFilePath = await uploadOnCloudinary(thumbnailFile.path);
-  const videoFilePath = await uploadOnCloudinary(videoFile.path);
-
-  if (!thumbnailFilePath || !videoFilePath) {
-    throw new ApiError(400, "File upload problem");
+  let thumbnailUrl, videoUrl;
+  if (storage === "local") {
+    // Use local files as-is (Multer already wrote to public/temp)
+    thumbnailUrl = localUrlFromAbsPath(req, thumbnailFile.path);
+    videoUrl = localUrlFromAbsPath(req, videoFile.path);
+  } else {
+    // Default: Cloudinary
+    const thumbUpload = await uploadOnCloudinary(thumbnailFile.path);
+    const videoUpload = await uploadOnCloudinary(videoFile.path);
+    if (!thumbUpload?.url || !videoUpload?.url) {
+      throw new ApiError(400, "File upload problem");
+    }
+    thumbnailUrl = thumbUpload.url;
+    videoUrl = videoUpload.url;
   }
 
   const video = await Video.create({
     title,
     description,
-    thumbnail: thumbnailFilePath.url,
-    videoFile: videoFilePath.url,
+    thumbnail: thumbnailUrl,
+    videoFile: videoUrl,
     owner: req.user._id,
-    views: 0 // Initialize views to 0
+    views: 0, // Initialize views to 0
   });
 
-  return res.status(201).json(new ApiResponse(201, video, "Video published successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, video, "Video published successfully"));
 });
 
 // ********------------------all video find-------------------********
@@ -40,7 +75,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getAllVideos = asyncHandler(async (req, res) => {
   const videos = await Video.find(); // Fetch all videos from the Video collection
 
-  return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, videos, "Videos fetched successfully"));
 });
 
 // ********------------------all User video find-------------------********
@@ -55,10 +92,14 @@ const getAllUserVideos = asyncHandler(async (req, res) => {
   const userVideos = await Video.find({ owner }); // Fetch all videos that match the owner's ID
 
   if (!userVideos.length) {
-    return res.status(404).json(new ApiResponse(404, null, "No videos found for this user"));
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "No videos found for this user"));
   }
 
-  return res.status(200).json(new ApiResponse(200, userVideos, "User videos fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, userVideos, "User videos fetched successfully"));
 });
 
 // ********------------------delete video by id-------------------********
@@ -80,7 +121,9 @@ const deleteVideoById = asyncHandler(async (req, res) => {
 
   await Video.findByIdAndDelete(id); // Delete the video from the database
 
-  return res.status(200).json(new ApiResponse(200, null, "Video deleted successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
 // ********------------------video data by id-------------------********
@@ -94,27 +137,85 @@ const VideoDataById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-//   await video.incrementViews();
-  return res.status(200).json(new ApiResponse(200, video, "Video fetched successfully"));
+  //   await video.incrementViews();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video fetched successfully"));
 });
 
 // -------------------------views increment---------------------------
 
-const viewsIncrement = asyncHandler(async(req , res)=>{
+const viewsIncrement = asyncHandler(async (req, res) => {
+  const { id } = req.params; // Extract the video ID from the request parameters
 
-    const { id } = req.params; // Extract the video ID from the request parameters
+  const video = await Video.findById(id); // Find the video by ID
 
-    const video = await Video.findById(id); // Find the video by ID
-  
-    if (!video) {
-      throw new ApiError(404, "Video not found");
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  await video.incrementViews();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video Views Updated"));
+});
+
+
+//EU5u1.p2.55l - added streamVideo controller
+import fs from "fs";
+import path from "path";
+
+export const streamVideo = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(process.cwd(), "public", "temp", filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("File not found");
     }
 
-    await video.incrementViews();
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
 
-    return res.status(200).json(new ApiResponse(200, video, "Video Views Updated"));
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
 
-})
+      if (start >= fileSize || end >= fileSize) {
+        res.status(416).set({
+          "Content-Range": `bytes */${fileSize}`
+        });
+        return res.end();
+      }
+
+      const chunkSize = (end - start) + 1;
+      const file = fs.createReadStream(filePath, { start, end });
+      const head = {
+        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": chunkSize,
+        "Content-Type": "video/mp4",
+      };
+      res.writeHead(206, head);
+      file.pipe(res);
+    } else {
+      const head = {
+        "Content-Length": fileSize,
+        "Content-Type": "video/mp4",
+        "Accept-Ranges": "bytes",
+      };
+      res.writeHead(200, head);
+      fs.createReadStream(filePath).pipe(res);
+    }
+  } catch (err) {
+    console.error("Stream error:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
 
 export {
   publishAVideo,
@@ -122,5 +223,5 @@ export {
   getAllUserVideos,
   deleteVideoById,
   VideoDataById,
-  viewsIncrement
+  viewsIncrement,
 };

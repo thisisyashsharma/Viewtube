@@ -1,5 +1,6 @@
 import mongoose, {Schema} from "mongoose";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 
 const userSignUp = new Schema(
@@ -28,7 +29,7 @@ const userSignUp = new Schema(
         watchHistory:[
             {
                 type : Schema.Types.ObjectId,
-                ref: "video"
+                ref: "Video"         //3. Error - Token error -Step1 - fixed from "video" to "Video"
             }
         ],
         refreshToken:{
@@ -41,10 +42,19 @@ const userSignUp = new Schema(
 )
 
 
-// Method to compare the entered password with the stored password
+// hash if changed
+userSignUp.pre("save", async function(next){
+  if(!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
 userSignUp.methods.isPasswordCorrect = async function (password) {
-    // In a real application, you should hash the input password and compare it to the stored hashed password
-    return this.password === password;
+
+    /*
+       3.ERROR - Token Error - step2 - return this.password === password;
+    */
+    return bcrypt.compare(password, this.password);     
 };
 
 userSignUp.methods.generateAccessToken = function(){
@@ -56,7 +66,7 @@ userSignUp.methods.generateAccessToken = function(){
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "7d"
         }
     )
 }
@@ -68,7 +78,7 @@ userSignUp.methods.generateRefreshToken = function(){
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY ||"30d"
         }
     )
 }
