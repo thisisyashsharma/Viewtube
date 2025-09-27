@@ -3,12 +3,15 @@ import axios from "axios";
 // import image from "../assets/profile-picture-5.jpg";
 import { Link, useParams } from "react-router-dom";
 
+import { useRef } from "react";                                             //EU6u1.p2.a1.1l - Views Increment - updated one lines to target exact video elements
+
 function Video() {
   const { id } = useParams();
-  const [videoData, setVideoData] = useState(id);
+  const [videoData, setVideoData] = useState(null);                         //EU6u1.p2.a3.1l - Views Increment - id -> null, we'll fetch real object below
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [error, setError] = useState(null);
+  const videoRef = useRef(null);                                            //EU6u1.p2.a2.1l - Views Increment -to target exact video elements
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long" };
@@ -31,6 +34,8 @@ function Video() {
     fetchVideoData();
   }, [id]);
 
+  //EU6u1.p1.27L - Views Increment - only if user plays video for few second - replaced 10L - 27L
+  /*
   useEffect(() => {
     const incrementViewCount = async () => {
       try {
@@ -42,9 +47,44 @@ function Video() {
     };
     incrementViewCount();
   }, [id]);
+  */
 
   useEffect(() => {
-    const addToWatchHistory = async () => {
+    if (loading) return;                 // wait until video is rendered
+
+    let viewSent = false;
+    const el = videoRef.current;
+    if (!el) return;
+
+    const handler = async () => {
+      if (viewSent) return;
+      const dur = el.duration || 0;
+      const watchedEnough =
+        el.currentTime >= 3 || (dur && el.currentTime / dur >= 0.1);
+      if (!watchedEnough) return;
+      viewSent = true;
+      try {
+        await axios.put(`/api/v1/videos/incrementView/${id}`);
+        // Optimistically update local UI so the eye badge bumps immediately
+        setVideoData((prev) =>
+          prev ? { ...prev, views: (prev.views || 0) + 1 } : prev
+        );
+        // (optional) mark watch-history at the same moment
+        await axios.put(`/api/v1/account/addToHistory/${id}`);
+      } catch (err) {
+        console.error("View/watch update failed:", err);
+      }
+    };
+
+    el.addEventListener("timeupdate", handler);
+    return () => el.removeEventListener("timeupdate", handler);
+  }, [id, loading]);
+
+/*
+//EU6u1.p2.a4.0l - Views Increment - commenting next 11 lines - as the reason i found - removed the separate addToWatchHistory effect to prevent double inserts,  (Your old effect here was causing duplicates.)
+
+useEffect(() => {
+  const addToWatchHistory = async () => {
       try {
         await axios.put(`/api/v1/account/addToHistory/${id}`);
         console.log("addToWatchHistory");
@@ -54,6 +94,7 @@ function Video() {
     };
     addToWatchHistory();
   }, [id]);
+*/
 
   useEffect(() => {
     if (videoData && videoData.owner) {
@@ -101,7 +142,7 @@ function Video() {
                         className="relative video-wrap"
                         style={{ height: "465px" }}
                       >
-                        <video className=" w-full h-full" controls>
+                        <video  ref={videoRef}  className=" w-full h-full" controls>   {/* EU6u1.p2.a5.2words - Views Increment - added ref={videoref} */}
                           {/* EU5u1.p1.10l+ */}
                           {/* <source src={videoData.videoFile} type="video/mp4"/> */}
                           {(() => {
