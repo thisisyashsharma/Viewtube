@@ -16,7 +16,7 @@ import UploadVideo from "./UploadVideo";
 import AllVideo from "./AllVideo";
 import AuthLayout from "./AuthLayout";
 import Main from "./Main";
-
+import Subscriptions from "./Subscriptions";
 
 export {
 
@@ -37,7 +37,9 @@ export {
     UploadVideo,
     AllVideo,
     AuthLayout,
-    Main
+    Main,
+    Subscriptions,
+
 
 
 };

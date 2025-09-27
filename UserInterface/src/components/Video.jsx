@@ -239,7 +239,7 @@ useEffect(() => {
                           <button
                             onClick={onToggleLike}
                             className={[
-                              "inline-flex items-center gap-2 px-2 py-2 rounded-md transition",
+                              "inline-flex items-center gap-2 px-2 py-2 rounded-xl transition",
                               liked
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-gray-100 text-gray-700 hover:text-black",
@@ -262,18 +262,12 @@ useEffect(() => {
                               />
                             </svg>
                             {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
-                            {/* <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                              {" "}
-                              30k{" "}
-                            </span>
-                          </Link> */}
                             <span className="px-2 py-0.5 text-xs font-semibold">
                               {likesCount}
                             </span>{" "}
                           </button>
                         </li>
-                        {/* EU6u3.p4.a3.45ln - Subscribe feature: replaced older button for subscribe and its logic 25ln -> 45ln */}
-                        {/* <li>
+                        <li>
                           <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -296,10 +290,11 @@ useEffect(() => {
                             </svg>
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
                               {" "}
-                              {videoData.views}{" "}
+                              {videoData.views}{" Views "}
                             </span>
                           </Link>
-                        </li> */}
+                        </li>
+                        {/* EU6u3.p4.a3.45ln - Subscribe feature: replaced older button for subscribe and its logic 25ln -> 45ln */}
 
                         <li>
                           <button
@@ -314,7 +309,7 @@ useEffect(() => {
                                 console.error("Subscribe toggle failed:", e);
                               }
                             }}
-                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-md overflow-hidden border border-gray-200"
+                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl overflow-hidden border border-gray-200"
                             aria-pressed={subscribed}
                           >
                             {/* animated left→right fill */}

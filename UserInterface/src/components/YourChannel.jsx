@@ -68,7 +68,7 @@ function YourChannel() {
                     Joined in {formatDate(userdata.createdAt)}
                   </div>
                   <div className="text-sm mb-3 text-gray-900 font-medium">
-                    {subsCount.toLocaleString()} subscribers
+                    {(subsCount??0).toLocaleString()} subscribers
                   </div>
 
                   <Link to={"/customize_channel"}>

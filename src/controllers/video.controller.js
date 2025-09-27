@@ -2,8 +2,8 @@ import { Video } from "../models/video.model.js";
 import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
-import { Like } from "../models/like.model.js";                                     // EU6u1.p2.a1 - Like feature 
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { Like } from "../models/like.model.js";                                     // EU6u1.p2.a1.1ln - Like feature 
 
 /*
 Convert an absolute path like "C:\.../public/temp/FILE.mp4" or "./public/temp/FILE.mp4"
@@ -163,7 +163,7 @@ const viewsIncrement = asyncHandler(async (req, res) => {
 });
 
 
-//EU5u1.p2.55l - added streamVideo controller
+//EU5u1.p2.55ln - added streamVideo controller
 import fs from "fs";
 import path from "path";
 
@@ -218,7 +218,7 @@ const streamVideo = async (req, res) => {
 };
 
 
-//EU6u2.p2.a2.30l - Like feature : +2 functions that're toggleVideoLike and getVideoLikeStatus
+//EU6u2.p2.a2.30ln - Like feature : +2 functions that're toggleVideoLike and getVideoLikeStatus
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { id } = req.params;              // video id
   const userId = req.user._id;
