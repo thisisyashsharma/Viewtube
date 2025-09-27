@@ -1,9 +1,9 @@
 import { newUser } from "../models/account.model.js";
 import { Video } from "../models/video.model.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { asyncHandler } from "../utils/asyncHandler.utils.js";
+import { ApiResponse } from "../utils/ApiResponse.utils.js";
+import { ApiError } from "../utils/ApiError.utils.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
