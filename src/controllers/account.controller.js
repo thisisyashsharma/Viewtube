@@ -3,7 +3,7 @@ import { Video } from "../models/video.model.js";
 import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -347,6 +347,75 @@ const addToWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+//EU6u3.p2.a1.42ln - Subscribe feature: +2 function toggleSubscribe & getSubscribeStatus
+
+const toggleSubscribe = asyncHandler(async (req, res) => {
+  const viewerId = req.user._id;            // signed-in user
+  const { channelId } = req.params;         // channel owner userId
+
+  if (viewerId.toString() === channelId) {
+    throw new ApiError(400, "You cannot subscribe to your own channel");
+  }
+
+  const channel = await newUser.findById(channelId);
+  if (!channel) throw new ApiError(404, "Channel not found");
+
+  const already = await newUser.exists({ _id: channelId, subscribers: viewerId });
+
+  if (already) {
+    await newUser.findByIdAndUpdate(channelId, { $pull: { subscribers: viewerId }});
+    await newUser.findByIdAndUpdate(viewerId,  { $pull: { subscribedTo: channelId }});
+  } else {
+    await newUser.findByIdAndUpdate(channelId, { $addToSet: { subscribers: viewerId }});
+    await newUser.findByIdAndUpdate(viewerId,  { $addToSet: { subscribedTo: channelId }});
+  }
+
+  const updated = await newUser.findById(channelId).select("subscribers");
+  const count = updated?.subscribers?.length || 0;
+
+  return res.status(200).json(
+    new ApiResponse(200, { subscribed: !already, count }, "Subscription toggled")
+  );
+});
+
+const getSubscribeStatus = asyncHandler(async (req, res) => {
+  const viewerId = req.user._id;
+  const { channelId } = req.params;
+
+  const channel = await newUser.findById(channelId).select("subscribers");
+  if (!channel) throw new ApiError(404, "Channel not found");
+
+  const subscribed = channel.subscribers?.some(id => id.toString() === viewerId.toString()) || false;
+  const count = channel.subscribers?.length || 0;
+
+  return res.status(200).json(
+    new ApiResponse(200, { subscribed, count }, "Subscription status")
+  );
+});
+
+
+
+//EU6u4.p1.a1.17ln - Subscribed Channels : +function getMySubscriptions
+const getMySubscriptions = asyncHandler(async (req, res) => {
+  const me = await newUser
+    .findById(req.user._id)
+    .select("subscribedTo")
+    .populate({
+      path: "subscribedTo",
+      select: "name avatar subscribers", // we’ll derive count from array length
+    });
+
+  const channels = (me?.subscribedTo || []).map(ch => ({
+    _id: ch._id,
+    name: ch.name,
+    avatar: ch.avatar,
+    subscribersCount: Array.isArray(ch.subscribers) ? ch.subscribers.length : 0,
+  }));
+
+  return res.status(200).json(new ApiResponse(200, { channels }, "My subscriptions"));
+});
+
+
 export {
   registerUser,
   login,
@@ -357,4 +426,7 @@ export {
   getUserById,
   GetWatchHistory,
   addToWatchHistory,
+  toggleSubscribe,
+  getSubscribeStatus,
+  getMySubscriptions,
 };
