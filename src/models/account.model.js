@@ -34,7 +34,9 @@ const userSignUp = new Schema(
         ],
         refreshToken:{
             type: String
-        }
+        },
+
+
     },
     {
         timestamps:true

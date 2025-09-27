@@ -3,15 +3,17 @@ import axios from "axios";
 // import image from "../assets/profile-picture-5.jpg";
 import { Link, useParams } from "react-router-dom";
 
-import { useRef } from "react";                                             //EU6u1.p2.a1.1l - Views Increment - updated one lines to target exact video elements
+import { useRef } from "react"; //EU6u1.p2.a1.1ln - Views Increment - updated one lines to target exact video elements
 
 function Video() {
   const { id } = useParams();
-  const [videoData, setVideoData] = useState(null);                         //EU6u1.p2.a3.1l - Views Increment - id -> null, we'll fetch real object below
+  const [videoData, setVideoData] = useState(null); //EU6u1.p2.a3.1ln - Views Increment - id -> null, we'll fetch real object below
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [error, setError] = useState(null);
-  const videoRef = useRef(null);                                            //EU6u1.p2.a2.1l - Views Increment -to target exact video elements
+  const videoRef = useRef(null); //EU6u1.p2.a2.1ln - Views Increment -to target exact video elements
+  const [liked, setLiked] = useState(false); //EU6u2.p3.a1.2ln - Like feature - +2 states - liked and likesCount
+  const [likesCount, setLikesCount] = useState(0);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long" };
@@ -24,6 +26,10 @@ function Video() {
       try {
         const response = await axios.get(`/api/v1/videos/videoData/${id}`);
         setVideoData(response.data.data);
+        //EU6u2.p3.a2.3ln - Like feature - it fetches initial like status;
+        const st = await axios.get(`/api/v1/videos/${id}/like/status`);
+        setLiked(st.data.data.liked);
+        setLikesCount(st.data.data.count);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -34,7 +40,19 @@ function Video() {
     fetchVideoData();
   }, [id]);
 
-  //EU6u1.p1.27L - Views Increment - only if user plays video for few second - replaced 10L - 27L
+  //EU6u2.p3.a3.10ln - Like feature : + toggle handler function
+  const onToggleLike = async () => {
+    try {
+      const res = await axios.put(`/api/v1/videos/${id}/like`);
+      const { liked, count } = res.data.data;
+      setLiked(liked);
+      setLikesCount(count);
+    } catch (e) {
+      console.error("Toggle like failed:", e);
+    }
+  };
+
+  //EU6u1.p1.27ln - Views Increment - only if user plays video for few second - replaced 10L - 27L
   /*
   useEffect(() => {
     const incrementViewCount = async () => {
@@ -50,7 +68,7 @@ function Video() {
   */
 
   useEffect(() => {
-    if (loading) return;                 // wait until video is rendered
+    if (loading) return; // wait until video is rendered
 
     let viewSent = false;
     const el = videoRef.current;
@@ -80,8 +98,8 @@ function Video() {
     return () => el.removeEventListener("timeupdate", handler);
   }, [id, loading]);
 
-/*
-//EU6u1.p2.a4.0l - Views Increment - commenting next 11 lines - as the reason i found - removed the separate addToWatchHistory effect to prevent double inserts,  (Your old effect here was causing duplicates.)
+  /*
+//EU6u1.p2.a4.0ln - Views Increment - commenting next 11 lines - as the reason i found - removed the separate addToWatchHistory effect to prevent double inserts,  (Your old effect here was causing duplicates.)
 
 useEffect(() => {
   const addToWatchHistory = async () => {
@@ -142,8 +160,14 @@ useEffect(() => {
                         className="relative video-wrap"
                         style={{ height: "465px" }}
                       >
-                        <video  ref={videoRef}  className=" w-full h-full" controls>   {/* EU6u1.p2.a5.2words - Views Increment - added ref={videoref} */}
-                          {/* EU5u1.p1.10l+ */}
+                        <video
+                          ref={videoRef}
+                          className=" w-full h-full"
+                          controls
+                        >
+                          {" "}
+                          {/* EU6u1.p2.a5.2words - Views Increment - added ref={videoref} */}
+                          {/* EU5u1.p1.10ln */}
                           {/* <source src={videoData.videoFile} type="video/mp4"/> */}
                           {(() => {
                             // If videoData.videoFile is a local URL that contains "/temp/", use the stream route
@@ -220,7 +244,19 @@ useEffect(() => {
                           </Link>
                         </li>
                         <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
+                          {/* EU6u2.p3.a4.11ln - Like feature - added a button for liking the video  */}
+                          {/* <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black"> */}
+                          <button
+                            onClick={onToggleLike}
+                            className=
+                            {[
+                              "inline-flex items-center gap-2 px-2 py-2 rounded-md transition",
+                              liked
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700 hover:text-black",
+                            ].join(" ")}
+                            aria-pressed={liked}
+                            aria-label={liked ? "Unlike" : "Like"}>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -235,11 +271,16 @@ useEffect(() => {
                                 d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
                               />
                             </svg>
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                            {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
+                            {/* <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
                               {" "}
                               30k{" "}
                             </span>
-                          </Link>
+                          </Link> */}
+                            <span className="px-2 py-0.5 text-xs font-semibold">
+                              {likesCount}
+                            </span>{" "}
+                          </button>
                         </li>
                         <li>
                           <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">

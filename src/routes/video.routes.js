@@ -2,6 +2,7 @@ import { Router } from "express";
 import { publishAVideo , getAllVideos , getAllUserVideos , deleteVideoById , VideoDataById , viewsIncrement, streamVideo  } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import {verifyJWT} from "../middlewares/auth.middleware.js"
+import { toggleVideoLike, getVideoLikeStatus } from "../controllers/video.controller.js";                 //EU6u2.p1.a1.1l - Like feature 
 
 //EU5u1.p1.2l - updated file - added two imports 
 import fs from "fs";
@@ -29,6 +30,11 @@ router.route("/incrementView/:id").put(viewsIncrement)
 
 //EU5u1.p1.1l - added Stream route for local video playback
 router.get("/stream/:filename", streamVideo);
+
+//EU6u2.p1.a1.2l - Like feature 
+router.put("/:id/like", verifyJWT, toggleVideoLike);
+router.get("/:id/like/status", verifyJWT, getVideoLikeStatus);
+
 
 
 export default router
