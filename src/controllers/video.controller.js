@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.utils.js";
+import { Like } from "../models/like.model.js";                                     // EU6u1.p2.a1 - Like feature 
 
 /*
 Convert an absolute path like "C:\.../public/temp/FILE.mp4" or "./public/temp/FILE.mp4"
@@ -166,7 +167,7 @@ const viewsIncrement = asyncHandler(async (req, res) => {
 import fs from "fs";
 import path from "path";
 
-export const streamVideo = async (req, res) => {
+const streamVideo = async (req, res) => {
   try {
     const { filename } = req.params;
     const filePath = path.join(process.cwd(), "public", "temp", filename);
@@ -217,6 +218,40 @@ export const streamVideo = async (req, res) => {
 };
 
 
+//EU6u2.p2.a2.30l - Like feature : +2 functions that're toggleVideoLike and getVideoLikeStatus
+const toggleVideoLike = asyncHandler(async (req, res) => {
+  const { id } = req.params;              // video id
+  const userId = req.user._id;
+
+  const existing = await Like.findOne({ video: id, likedBy: userId });
+  let liked;
+  if (existing) {
+    await existing.deleteOne();
+    liked = false;
+  } else {
+    await Like.create({ video: id, likedBy: userId });
+    liked = true;
+  }
+
+  const count = await Like.countDocuments({ video: id });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { liked, count }, "Like toggled"));
+});
+
+export const getVideoLikeStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;            // video id
+  const userId = req.user._id;
+  const existing = await Like.findOne({ video: id, likedBy: userId });
+  const count = await Like.countDocuments({ video: id });
+  const liked = !!existing;
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { liked, count }, "Like status"));
+});
+
+
 export {
   publishAVideo,
   getAllVideos,
@@ -224,4 +259,6 @@ export {
   deleteVideoById,
   VideoDataById,
   viewsIncrement,
+  streamVideo,
+  toggleVideoLike,
 };
