@@ -15,6 +15,10 @@ function Video() {
   const [liked, setLiked] = useState(false); //EU6u2.p3.a1.2ln - Like feature - +2 states - liked and likesCount
   const [likesCount, setLikesCount] = useState(0);
 
+  //EU6u3.p4.a1.2l - Subscribe feature: +2 states that are subscribe & subsCount
+  const [subscribed, setSubscribed] = useState(false);
+  const [subsCount, setSubsCount] = useState(0);
+
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long" };
     const date = new Date(dateString);
@@ -122,6 +126,12 @@ useEffect(() => {
             `/api/v1/account/userData/${videoData.owner}`
           );
           setUserData(response.data.data);
+          //EU6u3.p4.a2.3l - Subscribe feature: fetches initial status
+          const st = await axios.get(
+            `/api/v1/account/subscribe/status/${videoData.owner}`
+          );
+          setSubscribed(st.data.data.subscribed);
+          setSubsCount(st.data.data.count);
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
@@ -166,7 +176,7 @@ useEffect(() => {
                           controls
                         >
                           {" "}
-                          {/* EU6u1.p2.a5.2words - Views Increment - added ref={videoref} */}
+                          {/* EU6u1.p2.a5.2wd - Views Increment - added ref={videoref} */}
                           {/* EU5u1.p1.10ln */}
                           {/* <source src={videoData.videoFile} type="video/mp4"/> */}
                           {(() => {
@@ -222,41 +232,21 @@ useEffect(() => {
                             <div>Loading user data...</div>
                           )}
                         </li>
-                        <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              className="h-5 w-5"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 2a6 6 0 00-6 6c0 1.887-.454 3.665-1.257 5.234a.75.75 0 00.515 1.076 32.91 32.91 0 003.256.508 3.5 3.5 0 006.972 0 32.903 32.903 0 003.256-.508.75.75 0 00.515-1.076A11.448 11.448 0 0116 8a6 6 0 00-6-6zM8.05 14.943a33.54 33.54 0 003.9 0 2 2 0 01-3.9 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            Subscribe
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                              {" "}
-                              303k{" "}
-                            </span>
-                          </Link>
-                        </li>
+
                         <li>
                           {/* EU6u2.p3.a4.11ln - Like feature - added a button for liking the video  */}
                           {/* <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black"> */}
                           <button
                             onClick={onToggleLike}
-                            className=
-                            {[
+                            className={[
                               "inline-flex items-center gap-2 px-2 py-2 rounded-md transition",
                               liked
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-gray-100 text-gray-700 hover:text-black",
                             ].join(" ")}
                             aria-pressed={liked}
-                            aria-label={liked ? "Unlike" : "Like"}>
+                            aria-label={liked ? "Unlike" : "Like"}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -282,7 +272,8 @@ useEffect(() => {
                             </span>{" "}
                           </button>
                         </li>
-                        <li>
+                        {/* EU6u3.p4.a3.45ln - Subscribe feature: replaced older button for subscribe and its logic 25ln -> 45ln */}
+                        {/* <li>
                           <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -308,7 +299,65 @@ useEffect(() => {
                               {videoData.views}{" "}
                             </span>
                           </Link>
+                        </li> */}
+
+                        <li>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await axios.put(
+                                  `/api/v1/account/subscribe/${videoData.owner}`
+                                );
+                                setSubscribed(res.data.data.subscribed);
+                                setSubsCount(res.data.data.count);
+                              } catch (e) {
+                                console.error("Subscribe toggle failed:", e);
+                              }
+                            }}
+                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-md overflow-hidden border border-gray-200"
+                            aria-pressed={subscribed}
+                          >
+                            {/* animated left→right fill */}
+                            <span
+                              className={`absolute top-0 bottom-0 left-0 z-0 transition-[width] duration-500 ${
+                                subscribed
+                                  ? "w-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  : "w-0 bg-gradient-to-r from-blue-500 to-indigo-500"
+                              }`}
+                            />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className={`relative z-10 h-5 w-5 ${
+                                subscribed ? "text-white" : "text-gray-600"
+                              }`}
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 2a6 6 0 00-6 6c0 1.887-.454 3.665-1.257 5.234a.75.75 0 00.515 1.076 32.91 32.91 0 003.256.508 3.5 3.5 0 006.972 0 32.903 32.903 0 003.256-.508.75.75 0 00.515-1.076A11.448 11.448 0 0116 8a6 6 0 00-6-6zM8.05 14.943a33.54 33.54 0 003.9 0 2 2 0 01-3.9 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span
+                              className={`relative z-10 text-sm font-medium ${
+                                subscribed ? "text-white" : "text-gray-700"
+                              }`}
+                            >
+                              {subscribed ? "Subscribed" : "Subscribe"}
+                            </span>
+                            <span
+                              className={`relative z-10 ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                subscribed
+                                  ? "text-white bg-white/0"
+                                  : "text-gray-600 bg-gray-100"
+                              }`}
+                            >
+                              {subsCount}
+                            </span>
+                          </button>
                         </li>
+
                         <li>
                           <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
                             <svg
