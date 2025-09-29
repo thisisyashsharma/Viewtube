@@ -1,89 +1,108 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+import api from "../../api/axios.api";
 
 const initialState = {
-    user: null,
-    loading: false,
-    error: null,
-    accessToken: null,
-    refreshToken: null,
-    status: false,
+  user: null,
+  loading: false,
+  error: null,
+  accessToken: null,
+  refreshToken: null,
+  status: false,
 };
 
-export const register = createAsyncThunk('/api/v1/account/signup', async (userData, { rejectWithValue }) => {
+export const register = createAsyncThunk(
+  "/api/v1/account/signup",
+  async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post('/api/v1/account/signup', userData);
-        return response.data.data;
+      const response = await api.post("/account/signup", userData);
+      return response.data.data;
     } catch (error) {
-        return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response.data.message);
     }
-});
+  }
+);
 
-export const login = createAsyncThunk('/api/v1/account/login', async (userData, { rejectWithValue }) => {
+export const login = createAsyncThunk(
+  "/api/v1/account/login",
+  async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post('/api/v1/account/login', userData);
-        return response.data.data;
+      const response = await api.post("/account/login", userData);
+      return response.data.data;
     } catch (error) {
-        return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response.data.message);
     }
-});
+  }
+);
 
-export const logout = createAsyncThunk('/api/v1/account/logout', async (_, { rejectWithValue }) => {
+export const logout = createAsyncThunk(
+  "/api/v1/account/logout",
+  async (_, { rejectWithValue }) => {
     try {
-        await axios.post('/api/v1/account/logout');
-        return true;
+        //EU7u1.p11.a1.5ln  - Auth toggle firebase/mongo - branch the logout thunk by auth mode
+        if (window?.__AUTH_PROVIDER__ === "firebase") {
+            const { getAuth, signOut } = await import("firebase/auth");
+            await signOut(getAuth());
+            return true; 
+        }
+
+        // await axios.post('/api/v1/account/logout');
+        await api.post("/account/logout"); 
+
+      return true;
     } catch (error) {
-        return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response.data.message);
     }
-});
+  }
+);
 
 const authSlice = createSlice({
-    name: 'auth',
-    initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-            .addCase(register.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(register.fulfilled, (state, action) => {
-                state.loading = false;
-                state.user = action.payload.user;
-                state.accessToken = action.payload.accessToken;
-                state.refreshToken = action.payload.refreshToken;
-            })
-            .addCase(register.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-            .addCase(login.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(login.fulfilled, (state, action) => {
-                state.loading = false;
-                state.status = true;
-                state.user = action.payload.user;
-                state.accessToken = action.payload.accessToken;
-                state.refreshToken = action.payload.refreshToken;
-            })
-            .addCase(login.rejected, (state, action) => {
-                state.loading = false;
-                state.status =  false;
-                state.error = action.payload;
-            })
-            .addCase(logout.fulfilled, (state) => {
-                return {
-                    ...state,
-                    status: false
-                };
-            })
-            
-            .addCase(logout.rejected, (state, action) => {
-                state.error = action.payload;
-            });
-    },
+  name: "auth",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(register.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(login.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
+        state.status = true;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.status = false;
+        state.error = action.payload;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        return {
+          ...state,
+          status: false,
+        };
+      })
+
+      .addCase(logout.rejected, (state, action) => {
+        state.error = action.payload;
+      });
+  },
 });
 
 export default authSlice.reducer;

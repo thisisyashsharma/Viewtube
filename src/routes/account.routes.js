@@ -26,4 +26,10 @@ router.get("/subscribe/status/:channelId", verifyJWT, getSubscribeStatus)
 //EU6u4.p2.a2.1l -  Subscribed Channels - routed for subscribed page
 router.get("/subscriptions", verifyJWT, getMySubscriptions);
 
+//EU7u1.p11.a1.3ln - Auth toggle firebase/mongo
+router.get("/whoami", verifyJWT, (req,res)=>{
+  res.json({ provider: res.getHeader("x-auth-provider"), user: req.user });
+});
+
+
 export default router

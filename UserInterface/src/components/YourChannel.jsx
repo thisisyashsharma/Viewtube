@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import api from "../api/axios.api";
 
 function YourChannel() {
   const data = useSelector((state) => state.auth.user);
@@ -15,13 +15,13 @@ function YourChannel() {
     if (data._id) {
       const fetchUser = async () => {
         try {
-          const response = await axios.get(
-            `/api/v1/account/userData/${data._id}`
+          const response = await api.get(
+            `/account/userData/${data._id}`
           );
           setUserData(response.data.data);
            //EU6u3.p4.a2.4ln - Subscribe feature : fetch subscriber count and yes, called [data._id] as dependency , 
-          const st = await axios.get(
-            `/api/v1/account/subscribe/status/${data._id}`
+          const st = await api.get(
+            `/account/subscribe/status/${data._id}`
           );
           setSubsCount(st.data.data.count || 0);
         } catch (error) {

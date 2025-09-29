@@ -17,6 +17,7 @@ import AllVideo from "./AllVideo";
 import AuthLayout from "./AuthLayout";
 import Main from "./Main";
 import Subscriptions from "./Subscriptions";
+import LoginFirebase from "./LoginFirebase";
 
 export {
 
@@ -39,7 +40,5 @@ export {
     AuthLayout,
     Main,
     Subscriptions,
-
-
-
+    LoginFirebase,
 };

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/slice/authSlice';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import api from '../api/axios.api';
 
 function Navbar({ openChange }) {
   const [userdata, setUserData] = useState(null);
@@ -35,7 +35,7 @@ function Navbar({ openChange }) {
       const fetchUser = async () => {
         try {
           // setLoader(true);
-          const response = await axios.get(`/api/v1/account/userData/${data._id}`);
+          const response = await api.get(`/account/userData/${data._id}`);
           const userData = response.data.data;
           setUserData(userData);
           // setLoader(false);

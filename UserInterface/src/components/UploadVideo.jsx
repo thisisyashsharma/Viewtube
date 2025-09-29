@@ -1,6 +1,6 @@
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
+import api from "../api/axios.api";
 
 function UploadVideo() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +42,7 @@ function UploadVideo() {
 
     try {
       setLoader(true);
-      const res = await axios.post("/api/v1/videos/publish", formData, {
+      const res = await api.post("/videos/publish", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

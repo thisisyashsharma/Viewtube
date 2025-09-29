@@ -1,7 +1,7 @@
-import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../api/axios.api';
 
 function CustomizeChannel() {
   const data = useSelector((state) => state.auth.user);
@@ -20,7 +20,7 @@ function CustomizeChannel() {
       const fetchUser = async () => {
         try {
           setLoader(true);
-          const response = await axios.get(`/api/v1/account/userData/${data._id}`);
+          const response = await api.get(`/account/userData/${data._id}`);
           const userData = response.data.data;
           setUserData(userData);
           setName(userData.name);
@@ -54,7 +54,7 @@ function CustomizeChannel() {
 
     try {
       setLoader(true);
-      const res = await axios.put(`/api/v1/account/update/${userdata._id}`, formData, {
+      const res = await api.put(`/account/update/${userdata._id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

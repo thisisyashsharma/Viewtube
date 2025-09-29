@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../api/axios.api';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -14,7 +14,7 @@ function AllVideo() {
     const fetchVideos = async () => {
       try {
         setLoader(true)
-        const response = await axios.get(`/api/v1/videos/allUserVideo/${userdata._id}`);
+        const response = await api.get(`/videos/allUserVideo/${userdata._id}`);
         setVideos(response.data.data);
         setLoader(false)
       } catch (error) {
@@ -31,7 +31,7 @@ function AllVideo() {
         // console.log(videoId);
       try {
         setLoader(true)
-        await axios.delete(`/api/v1/videos/delete/${videoId}`);
+        await api.delete(`/videos/delete/${videoId}`);
         setVideos(videos.filter(video => video._id !== videoId));
         setLoader(false)
         alert(" Video deleted Successfully ! ")

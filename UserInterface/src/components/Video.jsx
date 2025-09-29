@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-// import image from "../assets/profile-picture-5.jpg";
 import { Link, useParams } from "react-router-dom";
 
 import { useRef } from "react"; //EU6u1.p2.a1.1ln - Views Increment - updated one lines to target exact video elements
+import api from "../api/axios.api";
 
 function Video() {
   const { id } = useParams();
@@ -28,10 +27,10 @@ function Video() {
   useEffect(() => {
     const fetchVideoData = async () => {
       try {
-        const response = await axios.get(`/api/v1/videos/videoData/${id}`);
+        const response = await api.get(`/videos/videoData/${id}`);
         setVideoData(response.data.data);
         //EU6u2.p3.a2.3ln - Like feature - it fetches initial like status;
-        const st = await axios.get(`/api/v1/videos/${id}/like/status`);
+        const st = await api.get(`/videos/${id}/like/status`);
         setLiked(st.data.data.liked);
         setLikesCount(st.data.data.count);
       } catch (error) {
@@ -47,7 +46,7 @@ function Video() {
   //EU6u2.p3.a3.10ln - Like feature : + toggle handler function
   const onToggleLike = async () => {
     try {
-      const res = await axios.put(`/api/v1/videos/${id}/like`);
+      const res = await api.put(`/videos/${id}/like`);
       const { liked, count } = res.data.data;
       setLiked(liked);
       setLikesCount(count);
@@ -86,13 +85,13 @@ function Video() {
       if (!watchedEnough) return;
       viewSent = true;
       try {
-        await axios.put(`/api/v1/videos/incrementView/${id}`);
+        await api.put(`/videos/incrementView/${id}`);
         // Optimistically update local UI so the eye badge bumps immediately
         setVideoData((prev) =>
           prev ? { ...prev, views: (prev.views || 0) + 1 } : prev
         );
         // (optional) mark watch-history at the same moment
-        await axios.put(`/api/v1/account/addToHistory/${id}`);
+        await api.put(`/account/addToHistory/${id}`);
       } catch (err) {
         console.error("View/watch update failed:", err);
       }
@@ -122,13 +121,13 @@ useEffect(() => {
     if (videoData && videoData.owner) {
       const fetchUser = async () => {
         try {
-          const response = await axios.get(
-            `/api/v1/account/userData/${videoData.owner}`
+          const response = await api.get(
+            `/account/userData/${videoData.owner}`
           );
           setUserData(response.data.data);
           //EU6u3.p4.a2.3l - Subscribe feature: fetches initial status
-          const st = await axios.get(
-            `/api/v1/account/subscribe/status/${videoData.owner}`
+          const st = await api.get(
+            `/account/subscribe/status/${videoData.owner}`
           );
           setSubscribed(st.data.data.subscribed);
           setSubsCount(st.data.data.count);
@@ -239,9 +238,9 @@ useEffect(() => {
                           <button
                             onClick={onToggleLike}
                             className={[
-                              "inline-flex items-center gap-2 px-2 py-2 rounded-xl transition",
+                              "inline-flex items-center gap-2 px-4 py-3 rounded-2xl transition",
                               liked
-                                ? "bg-blue-100 text-blue-700"
+                                ? "bg-blue-500 text-white"
                                 : "bg-gray-100 text-gray-700 hover:text-black",
                             ].join(" ")}
                             aria-pressed={liked}
@@ -253,7 +252,7 @@ useEffect(() => {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6"
+                              className="size-7"
                             >
                               <path
                                 strokeLinecap="round"
@@ -268,14 +267,14 @@ useEffect(() => {
                           </button>
                         </li>
                         <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
+                          <Link className="inline-flex cursor-pointer items-center gap-1 px-3 py-3 text-gray-600 bg-gray-100 rounded-2xl transition hover:text-black">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6"
+                              className="size-7"
                             >
                               <path
                                 strokeLinecap="round"
@@ -290,7 +289,8 @@ useEffect(() => {
                             </svg>
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
                               {" "}
-                              {videoData.views}{" Views "}
+                              {videoData.views}
+                              {" Views "}
                             </span>
                           </Link>
                         </li>
@@ -300,8 +300,8 @@ useEffect(() => {
                           <button
                             onClick={async () => {
                               try {
-                                const res = await axios.put(
-                                  `/api/v1/account/subscribe/${videoData.owner}`
+                                const res = await api.put(
+                                  `/account/subscribe/${videoData.owner}`
                                 );
                                 setSubscribed(res.data.data.subscribed);
                                 setSubsCount(res.data.data.count);
@@ -309,22 +309,22 @@ useEffect(() => {
                                 console.error("Subscribe toggle failed:", e);
                               }
                             }}
-                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl overflow-hidden border border-gray-200"
+                            className="relative inline-flex items-center gap-2 px-6 py-3 rounded-2xl overflow-hidden border border-gray-200"
                             aria-pressed={subscribed}
                           >
                             {/* animated left→right fill */}
                             <span
                               className={`absolute top-0 bottom-0 left-0 z-0 transition-[width] duration-500 ${
                                 subscribed
-                                  ? "w-full bg-gradient-to-r from-blue-500 to-indigo-500"
-                                  : "w-0 bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  ? "w-full bg-gradient-to-r from-red-500 to-red-600"
+                                  : "w-0 bg-gradient-to-r from-red-500 to-red-600"
                               }`}
                             />
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 20 20"
                               fill="currentColor"
-                              className={`relative z-10 h-5 w-5 ${
+                              className={`relative z-10 h-7 w-7 ${
                                 subscribed ? "text-white" : "text-gray-600"
                               }`}
                             >
@@ -354,14 +354,14 @@ useEffect(() => {
                         </li>
 
                         <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
+                          <Link className="inline-flex cursor-pointer items-center gap-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-2xl transition hover:text-black">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6"
+                              className="size-7"
                             >
                               <path
                                 strokeLinecap="round"

@@ -1,7 +1,7 @@
 //EU6u4.p3.a1.69ln -  Subscribed Channels: build this subscribed page
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import api from "../api/axios.api";
 
  function Subscriptions() {
   const [channels, setChannels] = useState([]);
@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 
   const load = async () => {
     try {
-      const res = await axios.get("/api/v1/account/subscriptions");
+      const res = await api.get("/account/subscriptions");
       setChannels(res.data.data.channels || []);
     } finally {
       setLoading(false);
@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 
   const onToggle = async (channelId) => {
     try {
-      const res = await axios.put(`/api/v1/account/subscribe/${channelId}`);
+      const res = await api.put(`/account/subscribe/${channelId}`);
       const { subscribed } = res.data.data;
       // If user unsubscribed, remove from list
       if (!subscribed) {

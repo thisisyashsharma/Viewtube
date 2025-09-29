@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
+import api from '../api/axios.api';
 
 function History() {
   const [history, setHistory] = useState([]);
@@ -9,7 +9,7 @@ function History() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await axios.get('/api/v1/account/history');
+        const response = await api.get('/account/history');
         setHistory(response.data.data); // Assuming response.data contains the history array
       } catch (error) {
         console.error('Error fetching history:', error);
