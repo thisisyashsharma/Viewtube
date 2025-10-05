@@ -9,7 +9,7 @@ function YourChannel() {
   // console.log(data._id);
 
   const [userdata, setUserData] = useState();
-  const [subsCount, setSubsCount] = useState(0);                          //EU6u3.p4.a1.1ln - Subscribe feature - added a subsCount state 
+  const [subsCount, setSubsCount] = useState(0); //EU6u3.p4.a1.1ln - Subscribe feature - added a subsCount state
 
   useEffect(() => {
     if (data._id) {
@@ -19,7 +19,7 @@ function YourChannel() {
             `/api/v1/account/userData/${data._id}`
           );
           setUserData(response.data.data);
-           //EU6u3.p4.a2.4ln - Subscribe feature : fetch subscriber count and yes, called [data._id] as dependency , 
+          //EU6u3.p4.a2.4ln - Subscribe feature : fetch subscriber count and yes, called [data._id] as dependency ,
           const st = await axios.get(
             `/api/v1/account/subscribe/status/${data._id}`
           );
@@ -68,7 +68,7 @@ function YourChannel() {
                     Joined in {formatDate(userdata.createdAt)}
                   </div>
                   <div className="text-sm mb-3 text-gray-900 font-medium">
-                    {(subsCount??0).toLocaleString()} subscribers
+                    {(subsCount ?? 0).toLocaleString()} subscribers
                   </div>
 
                   <Link to={"/customize_channel"}>

@@ -14,10 +14,11 @@ const localUrlFromAbsPath = (req, absPath) => {                                 
   // normalize windows backslashes to forward slashes
   const normalized = absPath.replace(/\\/g, '/');
   // find "/public" segment
-  const idx = normalized.indexOf('/public');
+  const idx = normalized.lastIndexOf('/public');                                    // EU8u1.p3.a1.1wd - Thumbnail fixing : indexOf -> lastIndexOf
   const relative = idx >= 0 ? normalized.slice(idx + '/public'.length) : normalized;
   const path = relative.startsWith('/') ? relative : `/${relative}`;
-  return `${req.protocol}://${req.get('host')}${path}`;
+  const proto = req.get('x-forwarded-proto') || req.protocol;
+  return `${proto}://${req.get('host')}${path}`;
 };
 // --- END HELPER ---
 
@@ -50,11 +51,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
     // Default: Cloudinary
     const thumbUpload = await uploadOnCloudinary(thumbnailFile.path);
     const videoUpload = await uploadOnCloudinary(videoFile.path);
-    if (!thumbUpload?.url || !videoUpload?.url) {
+    if ((!thumbUpload?.url || !videoUpload?.url) ||  !(videoUpload?.secure_url || videoUpload?.url)) {
       throw new ApiError(400, "File upload problem");
     }
-    thumbnailUrl = thumbUpload.url;
-    videoUrl = videoUpload.url;
+    thumbnailUrl = thumbUpload.url || thumbUpload.url;
+    videoUrl = videoUpload.url || videoUpload.url;
   }
 
   const video = await Video.create({

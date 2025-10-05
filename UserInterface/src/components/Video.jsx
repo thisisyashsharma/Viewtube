@@ -170,6 +170,25 @@ useEffect(() => {
                         className="relative video-wrap"
                         style={{ height: "465px" }}
                       >
+                        {/* EU8u1.a1.p1.5ln - Thumbnail Fixing */}
+                        {/* <div className="mb-4">
+                          <img
+                            src={videoData.thumbnail}
+                            onError={(e) => {
+                                // Prevent infinite loop
+                                if (!e.currentTarget.dataset.fallbackApplied) {
+                                  const randomIndex =
+                                    Math.floor(Math.random() * 8) + 1; // 1–8
+                                  e.currentTarget.src = `http://localhost:8000/placeholders/loading${randomIndex}.gif`;
+                                  e.currentTarget.dataset.fallbackApplied =
+                                    "true";
+                                }
+                              }}
+                            alt={`${videoData.title} thumbnail`}
+                            className="w-full h-64 object-cover rounded-md"
+                          />
+                        </div> */}
+
                         <video
                           ref={videoRef}
                           className=" w-full h-full"
@@ -290,7 +309,8 @@ useEffect(() => {
                             </svg>
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
                               {" "}
-                              {videoData.views}{" Views "}
+                              {videoData.views}
+                              {" Views "}
                             </span>
                           </Link>
                         </li>

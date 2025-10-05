@@ -17,19 +17,19 @@ const videoUpload = upload.fields([
     { name: 'videoFile', maxCount: 1 },
     // { name: 'avatar', maxCount: 1 } // Add this if you are uploading avatar
   ]);
-
+  //EU5u1.p1.1ln - added Stream route for local video playback
+  router.get("/stream/:filename", streamVideo);
+  router.route("/allVideo").get(getAllVideos)
+  router.route("/allUserVideo/:owner").get(getAllUserVideos)
+  router.route("/videoData/:id").get(VideoDataById)
+  
   router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
-
-
-router.route("/publish").post(videoUpload , publishAVideo )
-router.route("/allVideo").get(getAllVideos)
-router.route("/allUserVideo/:owner").get(getAllUserVideos)
+  
+  
+  router.route("/publish").post(videoUpload , publishAVideo )
 router.route("/delete/:id").delete(deleteVideoById)
-router.route("/videoData/:id").get(VideoDataById)
 router.route("/incrementView/:id").put(viewsIncrement)
 
-//EU5u1.p1.1ln - added Stream route for local video playback
-router.get("/stream/:filename", streamVideo);
 
 //EU6u2.p1.a1.2ln - Like feature 
 router.put("/:id/like", verifyJWT, toggleVideoLike);

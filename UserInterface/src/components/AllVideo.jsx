@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+axios.defaults.withCredentials = true;
 
 // user all videos
 
@@ -14,7 +15,7 @@ function AllVideo() {
     const fetchVideos = async () => {
       try {
         setLoader(true)
-        const response = await axios.get(`/api/v1/videos/allUserVideo/${userdata._id}`);
+        const response = await axios.get(`/api/v1/videos/allUserVideo/${userdata._id}`,  { withCredentials: true });
         setVideos(response.data.data);
         setLoader(false)
       } catch (error) {
@@ -64,7 +65,7 @@ function AllVideo() {
                 <div key={video._id}>
                   <div className="relative">
                     <Link to={`/watch/${video._id}`}>
-                      <img src={video.thumbnail} alt={video.title} className="w-80 h-40"  />
+                      <img src={video.thumbnail} alt={video.title} className="w-80 h-40 object-cover rounded"  />
                     </Link>
                   </div>
                   <div className="mt-2 md:mt-0">

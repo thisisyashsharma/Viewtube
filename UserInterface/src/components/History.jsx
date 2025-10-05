@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+axios.defaults.withCredentials = true;
 
 function History() {
   const [history, setHistory] = useState([]);
@@ -9,10 +10,12 @@ function History() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await axios.get('/api/v1/account/history');
+        const response = await axios.get("/api/v1/account/history", {
+          withCredentials: true,
+        });
         setHistory(response.data.data); // Assuming response.data contains the history array
       } catch (error) {
-        console.error('Error fetching history:', error);
+        console.error("Error fetching history:", error);
       } finally {
         setIsLoading(false);
       }
@@ -26,7 +29,7 @@ function History() {
   //  if (history.data[0]) {
 
   //   console.log("data is not");
-    
+
   //  }else{
   //   console.log("data is");
   //  }
@@ -34,7 +37,7 @@ function History() {
   return (
     <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
       <div className="mb-4 col-span-full xl:mb-2">
-        <div className=' text-3xl font-black text-gray-900'>Watch history</div>
+        <div className=" text-3xl font-black text-gray-900">Watch history</div>
         <br />
         {/* <hr />
         <br /> */}
@@ -65,41 +68,55 @@ function History() {
         ) : (
           <div>
             {/* ----------------------content--------------------------- */}
-            { history.length > 0  ? (
+            {history.length > 0 ? (
               <section>
-              <div className="container">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {history.map((video) => (
-                    <div key={video._id}>
-                      <div className="relative">
-                        <Link to={`/watch/${video._id}`}>
-                          <img src={video.thumbnail} alt={video.title} 
-                          // className="w-full h-auto" 
-                          className="w-80 h-40" 
-                          />
-                        </Link>
-                      </div>
-                      <div className="mt-2 md:mt-0">
-                        <div>
-                          <h3 className="text-lg font-bold truncate">
-                            <Link to={`/watch/${video._id}`}>{video.title}</Link>
-                          </h3>
+                <div className="container">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {history.map((video) => (
+                      <div key={video._id}>
+                        <div className="relative">
+                          <Link to={`/watch/${video._id}`}>
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-80 h-40 object-cover rounded-2xl"
+                              // EU8p4.a1.8ln - Thumbnai fixing - added on errfunc
+                              onError={(e) => {
+                                // Prevent infinite loop
+                                if (!e.currentTarget.dataset.fallbackApplied) {
+                                  const randomIndex =
+                                    Math.floor(Math.random() * 12) + 1; // 1–8
+                                  e.currentTarget.src = `http://localhost:8000/placeholders/loading${randomIndex}.gif`;
+                                  e.currentTarget.dataset.fallbackApplied =
+                                    "true";
+                                }
+                              }}
+                            />
+                          </Link>
                         </div>
-                        <div className="mt-2">
-                          {/* <ul>
+                        <div className="mt-2 md:mt-0">
+                          <div>
+                            <h3 className="text-lg font-bold truncate">
+                              <Link to={`/watch/${video._id}`}>
+                                {video.title}
+                              </Link>
+                            </h3>
+                          </div>
+                          <div className="mt-2">
+                            {/* <ul>
                             <li className="text-sm">Duration: {video.duration} mins</li>
                           </ul> */}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
             ) : (
               <div>No history available</div>
             )}
-            
+
             {/* <div>No history available</div> */}
           </div>
         )}
