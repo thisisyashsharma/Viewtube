@@ -34,14 +34,25 @@ const userSignUp = new Schema(
     refreshToken: {
       type: String,
     },
-    //EU6u3.p1.a1.2ln - Subscribe feature: +2 
+    //EU6u3.p1.a1.2ln - Subscribe feature: +2
     subscribers: [{ type: Schema.Types.ObjectId, ref: "newUser" }],
     subscribedTo: [{ type: Schema.Types.ObjectId, ref: "newUser" }],
+    //EU9u1.p5.a1.6ln - Comment + Username  
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+userSignUp.path("username").set(v => (v ? String(v).toLowerCase().trim() : v));
+
 
 // hash if changed
 userSignUp.pre("save", async function (next) {

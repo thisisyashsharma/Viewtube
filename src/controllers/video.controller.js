@@ -240,7 +240,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { liked, count }, "Like toggled"));
 });
 
-export const getVideoLikeStatus = asyncHandler(async (req, res) => {
+const getVideoLikeStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;            // video id
   const userId = req.user._id;
   const existing = await Like.findOne({ video: id, likedBy: userId });
@@ -262,4 +262,5 @@ export {
   viewsIncrement,
   streamVideo,
   toggleVideoLike,
+  getVideoLikeStatus
 };

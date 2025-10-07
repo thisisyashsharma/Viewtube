@@ -45,17 +45,72 @@ const registerUser = asyncHandler(async (req, res) => {
   const avatar =
     "https://res.cloudinary.com/drr9bsrar/image/upload/v1716498256/egt2sufg3qzyn1ofws9t.jpg";
 
+  // inside registerUser, after validation and before create:
+  const base = (name || email.split("@")[0] || "user")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "");
+  let candidate = base || "user";
+  let suffix = 0;
+  while (await newUser.findOne({ username: candidate })) {
+    suffix += 1;
+    candidate = `${base}${suffix}`;
+  }
+
   const user = await newUser.create({
     name,
     email,
     password,
     avatar,
+    username: candidate,
   });
 
   return res
     .status(201)
     .json(new ApiResponse(200, user, "User created successfully"));
 });
+
+// GET /api/v1/account/username/availability?username=foo
+const checkUsernameAvailability = asyncHandler(async (req, res) => {
+  const q = String(req.query.username || "")
+    .toLowerCase()
+    .trim();
+  if (!q || !/^[a-z0-9_]{3,20}$/.test(q)) {
+    return res
+      .status(400)
+      .json(
+        new ApiResponse(400, { available: false }, "Invalid username format")
+      );
+  }
+  const exists = await newUser.findOne({ username: q });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { available: !exists }, "OK"));
+});
+
+// PUT /api/v1/account/username
+const updateUsername = asyncHandler(async (req, res) => {
+  const uid = req.user._id; // needs verifyJWT
+  const { username } = req.body;
+  const desired = String(username || "")
+    .toLowerCase()
+    .trim();
+
+  if (!/^[a-z0-9_]{3,20}$/.test(desired)) {
+    throw new ApiError(400, "Invalid username format");
+  }
+  const taken = await newUser.findOne({ username: desired, _id: { $ne: uid } });
+  if (taken) throw new ApiError(409, "Username already taken");
+
+  const user = await newUser
+    .findByIdAndUpdate(uid, { $set: { username: desired } }, { new: true })
+    .select("name email avatar username");
+
+  return res.status(200).json(new ApiResponse(200, user, "Username updated"));
+});
+
+
+
+
 // {------------------------ register user---------------------------}
 
 // {*****------------------------ login user---------------------------******}
@@ -87,12 +142,11 @@ const login = asyncHandler(async (req, res) => {
     .findById(userfind._id)
     .select("-refreshToken");
 
-   const options = {
-      httpOnly: true,
-      secure: false,        // <— false for http://localhost in dev      //3.ERROR - Token Error - step3
-      sameSite: "lax",      // <- added this line                        //3.Error - Token Error - step4
-    };
-
+  const options = {
+    httpOnly: true,
+    secure: false, // <— false for http://localhost in dev      //3.ERROR - Token Error - step3
+    sameSite: "lax", // <- added this line                        //3.Error - Token Error - step4
+  };
 
   return res
     .status(200)
@@ -121,50 +175,51 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-  
+
   return res
-  .status(200)
-  .clearCookie("accessToken", options)
-  .clearCookie("refreshToken", options)
-  .json(new ApiResponse(200, {}, "User logged out"));
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out"));
 });
 // {**********-------------------logout user-------------------**********}
 
 // {**********-------------------refrese  token-------------------**********}
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    try {
-        const incomingRefreshToken =
-        Refreq.cookies.refreshToken || req.body.refreshToken;
-        
-        if (incomingRefreshToken) {
-            throw new ApiError(401, "unauthorized requrest");
-        }
-        
-        const decodedToken = jwt.verify(
-            incomingRefreshToken,
-            process.env.JWT_REFRESH_TOKEN_SECRET
-        );
+  try {
+    const incomingRefreshToken =
+      Refreq.cookies.refreshToken || req.body.refreshToken;
 
-        const user = await newUser.findById(decodedToken?._id);
-        
-        if (!user) {
-            throw new ApiError(401, "Invalid refresh token (user not found)");
-        }
-        
+    if (incomingRefreshToken) {
+      throw new ApiError(401, "unauthorized requrest");
+    }
+
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.JWT_REFRESH_TOKEN_SECRET
+    );
+
+    const user = await newUser.findById(decodedToken?._id);
+
+    if (!user) {
+      throw new ApiError(401, "Invalid refresh token (user not found)");
+    }
+
     if (incomingRefreshToken !== user?.refreshToken) {
       throw new ApiError(401, "Refresh token is expired or used or rotated");
     }
- 
+
     const options = {
       httpOnly: true,
-      secure: false,    // <— false for http://localhost in dev      //3.ERROR - Token Error - step5
-      sameSite: "lax",  // <- added this line                        //3.ERROR - Token Error - step6
-    }; 
+      secure: false, // <— false for http://localhost in dev      //3.ERROR - Token Error - step5
+      sameSite: "lax", // <- added this line                        //3.ERROR - Token Error - step6
+    };
 
-
-
-    const { accessToken, refreshToken } =                            //3.ERROR - Token Error = step7 - "rewrefreshToken" to "refreshToken"
+    const {
+      accessToken,
+      refreshToken,
+    } = //3.ERROR - Token Error = step7 - "rewrefreshToken" to "refreshToken"
       await generateAccessAndRefreshTokens(user._id);
 
     return res
@@ -350,8 +405,8 @@ const addToWatchHistory = asyncHandler(async (req, res) => {
 //EU6u3.p2.a1.42ln - Subscribe feature: +2 function toggleSubscribe & getSubscribeStatus
 
 const toggleSubscribe = asyncHandler(async (req, res) => {
-  const viewerId = req.user._id;            // signed-in user
-  const { channelId } = req.params;         // channel owner userId
+  const viewerId = req.user._id; // signed-in user
+  const { channelId } = req.params; // channel owner userId
 
   if (viewerId.toString() === channelId) {
     throw new ApiError(400, "You cannot subscribe to your own channel");
@@ -360,22 +415,39 @@ const toggleSubscribe = asyncHandler(async (req, res) => {
   const channel = await newUser.findById(channelId);
   if (!channel) throw new ApiError(404, "Channel not found");
 
-  const already = await newUser.exists({ _id: channelId, subscribers: viewerId });
+  const already = await newUser.exists({
+    _id: channelId,
+    subscribers: viewerId,
+  });
 
   if (already) {
-    await newUser.findByIdAndUpdate(channelId, { $pull: { subscribers: viewerId }});
-    await newUser.findByIdAndUpdate(viewerId,  { $pull: { subscribedTo: channelId }});
+    await newUser.findByIdAndUpdate(channelId, {
+      $pull: { subscribers: viewerId },
+    });
+    await newUser.findByIdAndUpdate(viewerId, {
+      $pull: { subscribedTo: channelId },
+    });
   } else {
-    await newUser.findByIdAndUpdate(channelId, { $addToSet: { subscribers: viewerId }});
-    await newUser.findByIdAndUpdate(viewerId,  { $addToSet: { subscribedTo: channelId }});
+    await newUser.findByIdAndUpdate(channelId, {
+      $addToSet: { subscribers: viewerId },
+    });
+    await newUser.findByIdAndUpdate(viewerId, {
+      $addToSet: { subscribedTo: channelId },
+    });
   }
 
   const updated = await newUser.findById(channelId).select("subscribers");
   const count = updated?.subscribers?.length || 0;
 
-  return res.status(200).json(
-    new ApiResponse(200, { subscribed: !already, count }, "Subscription toggled")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { subscribed: !already, count },
+        "Subscription toggled"
+      )
+    );
 });
 
 const getSubscribeStatus = asyncHandler(async (req, res) => {
@@ -385,15 +457,15 @@ const getSubscribeStatus = asyncHandler(async (req, res) => {
   const channel = await newUser.findById(channelId).select("subscribers");
   if (!channel) throw new ApiError(404, "Channel not found");
 
-  const subscribed = channel.subscribers?.some(id => id.toString() === viewerId.toString()) || false;
+  const subscribed =
+    channel.subscribers?.some((id) => id.toString() === viewerId.toString()) ||
+    false;
   const count = channel.subscribers?.length || 0;
 
-  return res.status(200).json(
-    new ApiResponse(200, { subscribed, count }, "Subscription status")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { subscribed, count }, "Subscription status"));
 });
-
-
 
 //EU6u4.p1.a1.17ln - Subscribed Channels : +function getMySubscriptions
 const getMySubscriptions = asyncHandler(async (req, res) => {
@@ -405,15 +477,26 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
       select: "name avatar subscribers", // we’ll derive count from array length
     });
 
-  const channels = (me?.subscribedTo || []).map(ch => ({
+  const channels = (me?.subscribedTo || []).map((ch) => ({
     _id: ch._id,
     name: ch.name,
     avatar: ch.avatar,
     subscribersCount: Array.isArray(ch.subscribers) ? ch.subscribers.length : 0,
   }));
 
-  return res.status(200).json(new ApiResponse(200, { channels }, "My subscriptions"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { channels }, "My subscriptions"));
 });
+// GET /api/v1/account/me
+//EU9u1.p4.a1.6ln - Comment + Username 
+const getMe = asyncHandler(async (req, res) => {
+  const me = await newUser
+    .findById(req.user._id)
+    .select("_id username avatar");
+  return res.status(200).json(new ApiResponse(200, me, "OK"));
+});
+
 
 
 export {
@@ -429,4 +512,8 @@ export {
   toggleSubscribe,
   getSubscribeStatus,
   getMySubscriptions,
+
+  checkUsernameAvailability,
+  updateUsername,
+  getMe,
 };

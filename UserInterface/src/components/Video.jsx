@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-// import image from "../assets/profile-picture-5.jpg";
 import { Link, useParams } from "react-router-dom";
-
 import { useRef } from "react"; //EU6u1.p2.a1.1ln - Views Increment - updated one lines to target exact video elements
+import Comments from "./Comments";
 
 function Video() {
   const { id } = useParams();
@@ -18,6 +17,20 @@ function Video() {
   //EU6u3.p4.a1.2l - Subscribe feature: +2 states that are subscribe & subsCount
   const [subscribed, setSubscribed] = useState(false);
   const [subsCount, setSubsCount] = useState(0);
+  // EU9u1.p8.a1.11ln - Comment + Username 
+  const [commentCount, setCommentCount] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const res = await axios.get(`/api/v1/comments/${id}/count`, {
+          withCredentials: true,
+        });
+        setCommentCount(res.data.data.total || 0);
+      } catch (_) {}
+    };
+    loadCount();
+  }, [id]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long" };
@@ -170,7 +183,7 @@ useEffect(() => {
                         className="relative video-wrap"
                         style={{ height: "465px" }}
                       >
-                        {/* EU8u1.a1.p1.5ln - Thumbnail Fixing */}
+                        {/* EU8u1.p1.a1.5ln - Thumbnail Fixing */}
                         {/* <div className="mb-4">
                           <img
                             src={videoData.thumbnail}
@@ -394,10 +407,23 @@ useEffect(() => {
                             </span>
                           </Link>
                         </li>
+
+                         {/* EU9u1.p8.a2.5ln - Comment + Username  */}
+                        <li>
+                          <span className="inline-flex items-center gap-2 px-1 py-3 text-gray-600">
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                              {commentCount}
+                            </span>
+                          </span>
+                        </li>
+
                       </ul>
                     </div>
                   </div>
                   <p className="truncate">{videoData.description}</p>
+                  {/* EU9u1.p8.a3.1ln - Comment + Username   */}
+                  <Comments videoId={id} />
+
                 </div>
               </div>
             </div>

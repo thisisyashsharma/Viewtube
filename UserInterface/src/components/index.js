@@ -17,6 +17,7 @@ import AllVideo from "./AllVideo";
 import AuthLayout from "./AuthLayout";
 import Main from "./Main";
 import Subscriptions from "./Subscriptions";
+import Comments from "./Comments";
 
 export {
 
@@ -39,6 +40,7 @@ export {
     AuthLayout,
     Main,
     Subscriptions,
+    Comments,
 
 
 

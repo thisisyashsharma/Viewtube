@@ -25,11 +25,15 @@ app.use(cookieParser())
 
 import userAccount from './routes/account.routes.js'
 import videoRouter from "./routes/video.routes.js"
+import commentRouter from "./routes/comment.routes.js";
 
  
 
 app.use("/api/v1/account", userAccount)
 app.use("/api/v1/videos", videoRouter)
+
+//EU9u1.p6.a1.1ln - Comment + Username  
+app.use("/api/v1/comments", commentRouter);
  
             
 // --------------------------------check any error--------------------------------
