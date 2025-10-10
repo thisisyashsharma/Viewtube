@@ -332,10 +332,10 @@ useEffect(() => {
                               onToggleLike();
                             }}
                             className={[
-                              "inline-flex items-center gap-2 pl-3 px-2 py-2 rounded-l-xl  hover:bg-blue-100",
+                              "inline-flex items-center gap-2 pl-4 px-3 py-2 rounded-l-xl  hover:bg-blue-100 ",
                               liked
                                 ? "text-blue-500"
-                                : "bg-gray-100 text-gray-700 hover:text-black",
+                                : "bg-gray-100 text-gray-700 hover:text-black ",
                             ].join(" ")}
                             aria-pressed={liked}
                             aria-label={liked ? "Unlike" : "Like"}
@@ -346,7 +346,7 @@ useEffect(() => {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6"
+                              className="size-6 hover:transform hover:rotate-[-20deg] ease-in-out hover:scale-[1.2] transition-all duration-200"
                             >
                               <path
                                 strokeLinecap="round"
@@ -355,7 +355,9 @@ useEffect(() => {
                               />
                             </svg>
                             {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
-                            <span className="px-2 py-0.5">{likesCount}</span>{" "}
+                            <span className="px-2 py-0.5 hover:scale-[1.3] transition-all duration-100 ">
+                              {likesCount > 0 && likesCount}
+                            </span>
                           </button>
                           {/* Dislike button  */}
                           <span className="text-[1rem]"> {"|"}</span>
@@ -380,7 +382,8 @@ useEffect(() => {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6 transform rotate-180"
+                              className="size-6 transform rotate-180
+                              hover:scale-[0.9] duration-100"
                             >
                               <path
                                 strokeLinecap="round"
@@ -393,11 +396,12 @@ useEffect(() => {
 
                         {/* Bookmark/SAVE button  */}
                         <li>
-                          <button className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl transition hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black"
-                          onClick={()=>{
-                            setSaved(true);
-                            onToggleSave();
-                          }}
+                          <button
+                            className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl transition hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black"
+                            onClick={() => {
+                              setSaved(true);
+                              onToggleSave();
+                            }}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -413,7 +417,9 @@ useEffect(() => {
                                 d="M5 3h14a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"
                               />
                             </svg>
-                            Save
+                            <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">
+                              Save
+                            </span>
                           </button>
                         </li>
                         {/* Download button */}
@@ -433,7 +439,7 @@ useEffect(() => {
                                 d="M12 3v12m0 0l4-4m-4 4l-4-4m-3 9h15"
                               />
                             </svg>
-                            Download
+                             <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Download</span>
                           </button>
                         </li>
                         {/* Share button */}
@@ -460,7 +466,7 @@ useEffect(() => {
                                 />
                               </g>
                             </svg>
-                            Share
+                             <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Share</span>
                           </button>
                         </li>
 
@@ -487,7 +493,7 @@ useEffect(() => {
                               alt="Icon"
                               className="fixed-size-icon mt-1w-5 h-5 rounded-full hover:fill-red-600 "
                             />
-                            Report
+                              <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Report</span>
                           </button>
                         </li>
                       </ul>
@@ -509,7 +515,6 @@ useEffect(() => {
                       <span className="mr-3">{videoData.views} views </span>{" "}
                       <span>{formatDate(videoData.createdAt)}</span>
                       <br />
-
                       <span className="font-normal text-gray-900">
                         {videoData.description}
                       </span>
