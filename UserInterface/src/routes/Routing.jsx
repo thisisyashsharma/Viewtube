@@ -22,6 +22,9 @@ import {
   AuthLayout,
   Main,
   Subscriptions,
+  ReportHistory,
+  Help,
+  Feedback,
 } from "../components";
 
 function Routing() {
@@ -90,7 +93,7 @@ function Routing() {
                 </AuthLayout>
               }
             />
-        
+
             <Route
               path="shorts"
               element={
@@ -123,6 +126,30 @@ function Routing() {
                 </AuthLayout>
               }
             />
+              <Route
+                path="reportHistory"
+                element={
+                  <AuthLayout>
+                    <ReportHistory />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="help"
+                element={
+                  <AuthLayout>
+                    <Help />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="feedback"
+                element={
+                  <AuthLayout>
+                    <Feedback />
+                  </AuthLayout>
+                }
+              />
             {/* EU6u4.p4.a2.5ln -  Subscribed Channels: routed the subscription page */}
             <Route
               path="subscriptions"
@@ -133,6 +160,7 @@ function Routing() {
               }
             />
           </Route>
+          
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>

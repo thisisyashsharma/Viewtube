@@ -185,10 +185,10 @@ export default function Comments({ videoId }) {
           onChange={(e) => setText(e.target.value)}
         />
         <button
-          className="border-b-2 px-4 border-blue-700 px-3 py-2 font-medium rounded-tr-xl bg-blue-600 text-white hover:bg-blue-900 transition duration-500"
+          className="px-5 py-2 font-medium rounded-tr-xl bg-blue-600 text-white hover:bg-blue-700 transition duration-500"
           onClick={post}
         >
-          Comment
+          Comment 
         </button>
       </div>
 
@@ -207,7 +207,7 @@ export default function Comments({ videoId }) {
               <div className="flex items-center gap-2 ">
                 <img
                   src={c.owner?.avatar}
-                  className="w-10 h-10 rounded-full  transform translate-y-2.5"
+                  className="w-10 h-10 rounded-full transform translate-y-2.5"
                 />
                 <div className="text-[0.85rem] text-gray-700 font-semibold">
                   @{c.owner?.username}
@@ -492,7 +492,7 @@ function ReplyInline({
       />
 
       <button
-        className="text-sm border-b-2 border-blue-700 px-3 py-2 font-medium rounded-tr-lg bg-blue-500 text-white hover:bg-blue-800 transition duration-500"
+        className="text-sm border-b-2 border-blue-700 px-3 py-2 font-medium rounded-tr-lg bg-blue-600 text-white hover:bg-blue-800 transition duration-500"
         onClick={handleSubmit}
       >
         Reply

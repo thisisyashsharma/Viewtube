@@ -37,7 +37,9 @@ function History() {
   return (
     <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
       <div className="mb-4 col-span-full xl:mb-2">
-        <div className=" text-3xl font-black text-gray-900">Watch history</div>
+        <div className="text-lg mb-8 ">
+          <h1 className="text-4xl font-semibold mb-4">History</h1>
+        </div>
         <br />
         {/* <hr />
         <br /> */}

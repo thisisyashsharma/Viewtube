@@ -1,12 +1,12 @@
 import React from 'react'
 
-function Playlist() {
+function  Feedback() {
   return (
     <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4  ">
      <div className="mb-4 col-span-full xl:mb-2"> 
        {/*-------------------content---------------------  */}
        <div className="text-lg mb-8 ">
-          <h1 className="text-4xl font-semibold mb-4">Playlist</h1>
+          <h1 className="text-4xl font-semibold mb-4">Feedback</h1>
         </div>
        {/*-------------------content---------------------  */}
     </div>
@@ -14,4 +14,4 @@ function Playlist() {
   )
 }
 
-export default Playlist
+export default  Feedback

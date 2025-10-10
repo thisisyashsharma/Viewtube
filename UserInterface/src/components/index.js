@@ -18,6 +18,11 @@ import AuthLayout from "./AuthLayout";
 import Main from "./Main";
 import Subscriptions from "./Subscriptions";
 import Comments from "./Comments";
+import Feedback from "./Feedback";
+import Help from "./Help";
+import ReportHistory from "./ReportHistory";
+import SubscribeButton from "./SubscribeButton";
+
 
 export {
 
@@ -41,6 +46,11 @@ export {
     Main,
     Subscriptions,
     Comments,
+    Feedback,
+    Help,
+    ReportHistory,
+    SubscribeButton,
+
 
 
 

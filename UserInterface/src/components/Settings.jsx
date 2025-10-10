@@ -1,8 +1,7 @@
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import img from "../assets/gde-najti-ssylku-na-svoj-kanal-youtube.jpg";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 function Settings() {
@@ -30,19 +29,25 @@ function Settings() {
     }
   };
 
+  // ---------- Username change + availability ----------
   const [username, setUsername] = useState(userdata?.username || "");
   const [checkState, setCheckState] = useState(null); // null | "checking" | true | false
   const [uMsg, setUMsg] = useState("");
+  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [currentUsername, setCurrentUsername] = useState(
+    userdata?.username || ""
+  );
 
   const usernameOk = (u) => /^[a-z0-9_]{3,20}$/.test(String(u).toLowerCase());
 
-  const checkAvailability = async () => {
+  const checkAvailability = async (valueFromChange) => {
     setUMsg("");
-    const u = username.trim().toLowerCase();
+    const u = (valueFromChange ?? username).trim().toLowerCase();
+
     if (!usernameOk(u)) {
       setCheckState(false);
       setUMsg("Use 3-20 chars a-z, 0-9, _");
-      return;
+      return false;
     }
     try {
       setCheckState("checking");
@@ -52,13 +57,38 @@ function Settings() {
         )}`,
         { withCredentials: true }
       );
-      setCheckState(res.data?.data?.available ? true : false);
-      setUMsg(res.data?.data?.available ? "Available" : "Taken");
+      const available = !!res?.data?.data?.available;
+      setCheckState(available ? true : false);
+      setUMsg(available ? "Available ✅" : "This handle isn't available");
+      return available;
     } catch (e) {
       setCheckState(false);
       setUMsg("Could not check. Try again.");
+      return false;
     }
   };
+
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setUsername(value);
+    setCheckState(null);
+    setUMsg("");
+
+    if (typingTimeout) clearTimeout(typingTimeout);
+
+    const newTimeout = setTimeout(async () => {
+      await checkAvailability(value); // use the latest typed value
+    }, 500);
+
+    setTypingTimeout(newTimeout);
+  };
+
+  // Clear debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) clearTimeout(typingTimeout);
+    };
+  }, [typingTimeout]);
 
   const saveUsername = async () => {
     setUMsg("");
@@ -76,15 +106,14 @@ function Settings() {
       );
       setLoader(false);
       setUMsg("Username updated ✔");
-      // Optional: refresh user data (if you have an action, dispatch it here)
-      // or quick client-side reflect:
-      // window.location.reload();
+      setCurrentUsername(u);
     } catch (e) {
       setLoader(false);
       setUMsg(e?.response?.data?.message || "Update failed");
     }
   };
 
+  // ---------------- UI ----------------
   return loader ? (
     <div className="text-center  my-72 ">
       <div className="p-4 text-center">
@@ -113,36 +142,39 @@ function Settings() {
     <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4  ">
       <div className="mb-4 col-span-full xl:mb-2">
         {/*-------------------content---------------------  */}
-        <div className="text-lg mb-8 ">Settings</div>
+        <div className="text-lg mb-8 ">
+          <h1 className="text-4xl font-semibold mb-4">Settings</h1>
+        </div>
 
-        <div className="mb-16 flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row  max-w-6xl ">
+        <div className="mb-16 flex flex-col items-center bg-white border-4 border-gray-100 rounded-3xl md:flex-row max-w-6xl">
           <div className="flex flex-col justify-between p-4 leading-normal">
-            <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900  ">
+            <h5 className="ml-6 text-xl font-bold tracking-tight text-gray-500  ">
               Set up YouTube exactly how you want it
             </h5>
           </div>
           <img
-            className="ms-auto object-cover rounded-t-lg  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"
+            className="ms-auto object-cover rounded-t-lg  md:h-auto md:w-48 md:rounded-none md:rounded-r-3xl"
             src={img}
             alt=""
           />
         </div>
         {/* ----------table---------- */}
 
-        <div className="relative overflow-x-auto  sm:rounded-lg">
-          <table className="w-1/2 text-sm text-left rtl:text-right text-gray-500 ">
+        <div className="relative overflow-x-auto text-[1rem] sm:rounded-lg">
+          <table className="w-1/2 text-left rtl:text-right text-gray-700 ">
             <tbody>
               <tr className="bg-white   ">
                 <th
                   scope="row"
-                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap  "
+                  className="px-6 py-4 font-medium  whitespace-nowrap  "
                 >
                   Edit channel
                 </th>
                 <td className="px-6 py-4">
                   <Link
                     to={"/customize_channel"}
-                    className="font-medium text-blue-600  hover:underline"
+                    className="px-5 py-2 font-medium text-blue-600 rounded-md hover:bg-gray-100 outline-none active:scale-95 hover:shadow-inner transition-all duration-100 ease-in-out focus:text-blue-800 
+                    focus:bg-gray-300"
                   >
                     Edit
                   </Link>
@@ -151,72 +183,94 @@ function Settings() {
               <tr className="bg-white   ">
                 <th
                   scope="row"
-                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+                  className="px-6 py-4 font-medium  whitespace-nowrap"
                 >
                   Delete channel
                 </th>
                 <td className="px-6 py-4">
                   <button
                     onClick={handleDeleteClick}
-                    className="font-medium text-blue-600 hover:underline"
+                    className="px-5 py-2 font-medium text-blue-600 rounded-md hover:bg-gray-100 outline-none active:scale-95 hover:shadow-inner transition-all duration-100 ease-in-out focus:text-blue-800 
+                    focus:bg-gray-300"
                   >
                     Delete
                   </button>
                 </td>
               </tr>
-              {/* Added username feature */}
+              <tr className="bg-white">
+                <th
+                  scope="row"
+                  className="px-6 py-4 font-medium  whitespace-nowrap"
+                >
+                  Current Username
+                </th>
+                <td className="px-6 py-4">
+                  {userdata?.username && (
+                    <div className="font-semibold text-gray-500 m-2 pl-3 ">
+                      <span className="text-gray-800 bg-gray-100 px-1 py-0.5">
+                        @{currentUsername}
+                      </span>
+                    </div>
+                  )}
+                </td>
+              </tr>
+
+              {/* ---------- Username row (fixed) ---------- */}
+
+              <tr className=" bg-white">
+                <th
+                  scope="row"
+                  className="px-6 py-4 font-medium  whitespace-nowrap"
+                >
+                  New Username
+                </th>
+                <td className="px-9 py-3">
+                  <div className="flex items-center">
+                    <span className="text-blue-700 px-2 border-gray-300 font-semibold">@</span>
+                    <input
+                      className={`p-2 border-b-2 text-gray-400 focus:text-gray-900  focus:border-blue-500 hover:border-gray-800 focus:bg-gray-100 outline-none transition-all duration-500 
+                        ${
+                          checkState === true
+                            ? "border-green-500 rounded-tl-xl"
+                            : checkState === false
+                            ? "border-red-500 rounded-t-md"
+                            : "border-gray-300 rounded-t-md"
+                        }`}
+                      value={username}
+                      onChange={handleChange}
+                      placeholder="new_username"
+                    />
+
+                    {/* Only show Save when available */}
+                    {checkState === true && usernameOk(username) && (
+                      <button
+                        type="button"
+                        onClick={saveUsername}
+                        className="px-5 py-2.5  rounded-tr-xl text-[1rem] text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-500"
+                      >
+                        Update
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
               <tr className="bg-white">
                 <th
                   scope="row"
                   className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-                >
-                  Username
-                </th>
+                ></th>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-700">@</span>
-                    <input
-                      value={username}
-                      onChange={(e) => {
-                        setUsername(e.target.value);
-                        setCheckState(null);
-                        setUMsg("");
-                      }}
-                      placeholder="your_username"
-                      className="border rounded px-2 py-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={checkAvailability}
-                      className="border rounded px-3 py-1 hover:bg-gray-50"
-                    >
-                      {checkState === "checking" ? "Checking..." : "Check"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveUsername}
-                      disabled={checkState === false}
-                      className={`px-3 py-1 rounded text-white ${
-                        checkState
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      Save
-                    </button>
-                  </div>
                   {!!uMsg && (
                     <div
-                      className={`text-sm mt-1 ${
-                        checkState ? "text-green-600" : "text-red-600"
+                      className={`text-sm pl-3 font-semibold ${
+                        checkState === true
+                          ? "text-green-600 border-green-500"
+                          : checkState === "checking"
+                          ? "text-gray-500 border-red-500"
+                          : "text-red-600 border-red-500"
                       }`}
                     >
-                      {uMsg}
-                    </div>
-                  )}
-                  {userdata?.username && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Current: <b>@{userdata.username}</b>
+                      {checkState === "checking" ? "Checking..." : uMsg}
                     </div>
                   )}
                 </td>

@@ -45,6 +45,12 @@ const userSignUp = new Schema(
       lowercase: true,
       trim: true,
     },
+    about:{
+      type: String, 
+      trim: true,
+      maxlength:1000,
+      default:"", 
+    }
   },
   {
     timestamps: true,

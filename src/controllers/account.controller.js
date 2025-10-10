@@ -28,7 +28,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 // {******------------------------ register user---------------------------******}
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, about } = req.body;
 
   if (!name || !email || !password) {
     throw new ApiError(400, "All fields are required");
@@ -107,9 +107,6 @@ const updateUsername = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, user, "Username updated"));
 });
-
-
-
 
 // {------------------------ register user---------------------------}
 
@@ -243,26 +240,34 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 // {**********-------------------Update user-------------------**********}
 
 const updateAccount = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, about } = req.body;
 
-  if (!name || !email || !password) {
-    throw new ApiError(400, "All fields are required");
+  // allow partial updates; only error if literally nothing was sent
+  if (
+    !req.file &&
+    name === undefined &&
+    email === undefined &&
+    password === undefined &&
+    about === undefined
+  ) {
+    throw new ApiError(400, "No fields to update");
   }
 
   let avatarName;
   if (req.file) {
-    const avatarLocalPath = req.file.path; // Path to the uploaded file
+    const avatarLocalPath = req.file.path;
     avatarName = await uploadOnCloudinary(avatarLocalPath);
   }
 
-  const updateData = {
-    name,
-    email,
-    password,
-  };
-
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (email !== undefined) updateData.email = email;
+  if (about !== undefined) updateData.about = about;
+  if (password !== undefined && password !== "") {
+    updateData.password = await bcrypt.hash(password, 10);
+  }
   if (avatarName) {
-    updateData.avatar = avatarName.url; // Save the avatar path to the database if it exists
+    updateData.avatar = avatarName.url;
   }
 
   const user = await newUser.findByIdAndUpdate(
@@ -474,13 +479,15 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
     .select("subscribedTo")
     .populate({
       path: "subscribedTo",
-      select: "name avatar subscribers", // we’ll derive count from array length
+      select: "name avatar subscribers username about", // we’ll derive count from array length
     });
 
   const channels = (me?.subscribedTo || []).map((ch) => ({
     _id: ch._id,
     name: ch.name,
     avatar: ch.avatar,
+    username: ch.username ?? null,
+    about: ch.about ?? "",
     subscribersCount: Array.isArray(ch.subscribers) ? ch.subscribers.length : 0,
   }));
 
@@ -489,15 +496,11 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { channels }, "My subscriptions"));
 });
 // GET /api/v1/account/me
-//EU9u1.p4.a1.6ln - Comment + Username 
+//EU9u1.p4.a1.6ln - Comment + Username
 const getMe = asyncHandler(async (req, res) => {
-  const me = await newUser
-    .findById(req.user._id)
-    .select("_id username avatar");
+  const me = await newUser.findById(req.user._id).select("_id username avatar");
   return res.status(200).json(new ApiResponse(200, me, "OK"));
 });
-
-
 
 export {
   registerUser,
@@ -512,7 +515,6 @@ export {
   toggleSubscribe,
   getSubscribeStatus,
   getMySubscriptions,
-
   checkUsernameAvailability,
   updateUsername,
   getMe,

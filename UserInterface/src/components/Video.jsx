@@ -71,21 +71,7 @@ function Video() {
   };
 
   //EU6u1.p1.27ln - Views Increment - only if user plays video for few second - replaced 10L - 27L
-  /*
-  useEffect(() => {
-    const incrementViewCount = async () => {
-      try {
-        await axios.put(`/api/v1/videos/incrementView/${id}`);
-        console.log("View count incremented");
-      } catch (error) {
-        console.error("Error incrementing view count:", error);
-      }
-    };
-    incrementViewCount();
-  }, [id]);
-  */
-
-  useEffect(() => {
+    useEffect(() => {
     if (loading) return; // wait until video is rendered
 
     let viewSent = false;
@@ -116,22 +102,7 @@ function Video() {
     return () => el.removeEventListener("timeupdate", handler);
   }, [id, loading]);
 
-  /*
-//EU6u1.p2.a4.0ln - Views Increment - commenting next 11 lines - as the reason i found - removed the separate addToWatchHistory effect to prevent double inserts,  (Your old effect here was causing duplicates.)
-
-useEffect(() => {
-  const addToWatchHistory = async () => {
-      try {
-        await axios.put(`/api/v1/account/addToHistory/${id}`);
-        console.log("addToWatchHistory");
-      } catch (error) {
-        console.error("Error addToWatchHistory:", error);
-      }
-    };
-    addToWatchHistory();
-  }, [id]);
-*/
-
+  //EU6u1.p2.a4.0ln - Views Increment - commenting next 11 lines - as the reason i found - removed the separate addToWatchHistory effect to prevent double inserts,  (Your old effect here was causing duplicates.)
   useEffect(() => {
     if (videoData && videoData.owner) {
       const fetchUser = async () => {
@@ -305,7 +276,7 @@ useEffect(() => {
                             </svg>
                             <span
                               className={`relative z-10 ${
-                                subscribed ? "text-white" : "text-gray-700"
+                                subscribed ? "text-white" : "text-gray-700 px-1"
                               }`}
                             >
                               {subscribed ? "Subscribed" : "Subscribe"}
@@ -314,7 +285,7 @@ useEffect(() => {
                               className={`relative z-10 ml-1 rounded-full px-2 py-0.5   ${
                                 subscribed
                                   ? "text-white bg-white/0"
-                                  : "text-gray-600 bg-gray-100"
+                                  : "text-gray-600"
                               }`}
                             >
                               {subsCount}
@@ -346,7 +317,7 @@ useEffect(() => {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6 hover:transform hover:rotate-[-20deg] ease-in-out hover:scale-[1.2] transition-all duration-200"
+                              className="size-6 hover:transform hover:rotate-[-10deg] ease-in-out hover:scale-[1.2] transition-all duration-200"
                             >
                               <path
                                 strokeLinecap="round"
@@ -368,9 +339,9 @@ useEffect(() => {
                               onToggleDislike();
                             }}
                             className={[
-                              "inline-flex items-center gap-2 pr-3 px-3 py-2 pr-4 rounded-r-xl hover:bg-red-100 transition-all duration-400",
+                              "inline-flex items-center gap-2 pr-3 px-3 py-2 pr-4 rounded-r-xl hover:bg-red-100 transition-all duration-400 hover:scale-[0.9] ",
                               disliked
-                                ? " text-red-500 "
+                                ? " text-red-500"
                                 : " text-gray-700 hover:text-black",
                             ].join(" ")}
                             aria-pressed={disliked}
@@ -382,8 +353,7 @@ useEffect(() => {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6 transform rotate-180
-                              hover:scale-[0.9] duration-100"
+                              className="size-6 rotate-180"
                             >
                               <path
                                 strokeLinecap="round"
@@ -397,7 +367,7 @@ useEffect(() => {
                         {/* Bookmark/SAVE button  */}
                         <li>
                           <button
-                            className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl transition hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black"
+                            className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black transition-all duration-100 hover:scale-[0.95]"
                             onClick={() => {
                               setSaved(true);
                               onToggleSave();
@@ -417,9 +387,7 @@ useEffect(() => {
                                 d="M5 3h14a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"
                               />
                             </svg>
-                            <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">
-                              Save
-                            </span>
+                            <span>Save</span>
                           </button>
                         </li>
                         {/* Download button */}
@@ -439,7 +407,7 @@ useEffect(() => {
                                 d="M12 3v12m0 0l4-4m-4 4l-4-4m-3 9h15"
                               />
                             </svg>
-                             <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Download</span>
+                            <span>Download</span>
                           </button>
                         </li>
                         {/* Share button */}
@@ -466,7 +434,7 @@ useEffect(() => {
                                 />
                               </g>
                             </svg>
-                             <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Share</span>
+                            <span>Share</span>
                           </button>
                         </li>
 
@@ -487,13 +455,13 @@ useEffect(() => {
 
                         {/* Report button */}
                         <li>
-                          <button className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl hover:text-red-600">
+                          <button className="inline-flex items-center gap-2 px-3 py-2.5 rounded-lg focus:text-red-600 focus:bg-gray-100 transition-all duration-300 transform hover:scale-[0.95]">
                             <img
                               src="/src/assets/flag.svg"
                               alt="Icon"
-                              className="fixed-size-icon mt-1w-5 h-5 rounded-full hover:fill-red-600 "
+                              className="fixed-size-icon mt-1w-5 h-5"
                             />
-                              <span className=" transition-all duration-100 hover:scale-[1.1] hover:rotate-[-10deg] ">Report</span>
+                            <span>Report</span>
                           </button>
                         </li>
                       </ul>
