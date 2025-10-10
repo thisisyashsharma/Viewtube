@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
+import mongoose from 'mongoose';
 
 // POST /api/v1/comments/:videoId
 const addComment = asyncHandler(async (req, res) => {
@@ -57,11 +58,37 @@ const getCommentsByVideo = asyncHandler(async (req, res) => {
 });
 
 // GET /api/v1/comments/:videoId/count
+
 const getCommentCount = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const total = await Comment.countDocuments({ video: videoId });
-  return res.status(200).json(new ApiResponse(200, { total }, "OK"));
+
+  try {
+    const commentCount = await Comment.countDocuments({ video: videoId });
+
+    const replyCount = await Comment.aggregate([
+      { $match: { video: new mongoose.Types.ObjectId(videoId) } }, 
+      { $unwind: "$replies" }, 
+      { $group: { _id: null, totalReplies: { $sum: 1 } } }, 
+    ]);
+
+    const totalReplies = replyCount.length > 0 ? replyCount[0].totalReplies : 0;
+
+    const totalComments = commentCount + totalReplies;
+
+    return res.status(200).json({
+      status: "success",
+      data: { total: totalComments },
+      message: "Comment and reply count fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching comment count:", error);
+    return res.status(500).json({ status: "error", message: "Failed to fetch counts" });
+  }
 });
+
+
+
+
 
 // DELETE /api/v1/comments/:id
 const deleteComment = asyncHandler(async (req, res) => {

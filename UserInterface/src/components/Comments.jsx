@@ -165,9 +165,12 @@ export default function Comments({ videoId }) {
         const res = await axios.get(`/api/v1/comments/${id}/count`, {
           withCredentials: true,
         });
-        setCommentCount(res.data.data.total || 0);
-      } catch (_) {}
+        setCommentCount(res.data.data.total || 0); // This will now return the combined count
+      } catch (_) {
+        console.error("Failed to fetch comment count");
+      }
     };
+
     loadCount();
   }, [id]);
 
