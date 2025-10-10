@@ -1,8 +1,11 @@
-//EU9u1.p7.a1.471ln - Comment + Username  
+//EU9u1.p7.a1.471ln - Comment + Username
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 
 export default function Comments({ videoId }) {
+  const { id } = useParams();
   const [items, setItems] = useState([]);
   const [text, setText] = useState("");
   const [page, setPage] = useState(1);
@@ -91,11 +94,7 @@ export default function Comments({ videoId }) {
   }, [videoId]);
 
   const fmt = (iso) =>
-    new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    formatDistanceToNowStrict(new Date(iso), { addSuffix: true });
 
   const renderWithMentions = (s) =>
     (s || "").split(/(\@[a-zA-Z0-9_]+)/g).map((part, i) =>
@@ -157,24 +156,40 @@ export default function Comments({ videoId }) {
       ? comment.likes.count
       : comment?.likes?.users?.length || 0;
 
+  // EU9u1.p8.a1.11ln - Comment + Username
+  const [commentCount, setCommentCount] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const res = await axios.get(`/api/v1/comments/${id}/count`, {
+          withCredentials: true,
+        });
+        setCommentCount(res.data.data.total || 0);
+      } catch (_) {}
+    };
+    loadCount();
+  }, [id]);
+
   return (
     <div className="mt-6">
-      <h3 className="font-semibold mb-2">Comments</h3>
-
-      {/* new top-level comment */}
-      <div className="flex gap-2 mb-3">
+      <h3 className="font-semibold mb-2">{commentCount} Comments</h3>
+      <div className="flex item-center mb-2 ">
         <input
-          className="border p-2 flex-1 rounded"
-          placeholder="Add a comment..."
+          className="pl-3 px-1 p-2 flex-1 border-b-2 border-gray-300 text-gray-400 focus:text-gray-900 rounded-tl-xl focus:border-gray-900 focus:bg-gray-100 outline-none transition-all duration-500"
+          placeholder={`Add a comment...`}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <button className="bg-blue-500 text-white px-4 rounded" onClick={post}>
-          Post
+        <button
+          className="border-b-2 px-4 border-blue-700 px-3 py-2 font-medium rounded-tr-xl bg-blue-600 text-white hover:bg-blue-900 transition duration-500"
+          onClick={post}
+        >
+          Comment
         </button>
       </div>
 
-      <ul className="space-y-5">
+      <ul>
         {items.map((c) => {
           const replyById = Object.fromEntries(
             (c.replies || []).map((r) => [r._id, r])
@@ -184,18 +199,25 @@ export default function Comments({ videoId }) {
           );
 
           return (
-            <li key={c._id}>
+            <li key={c._id} className="m-0 p-0">
               {/* comment header — AVATAR + @username (no real name) + date */}
-              <div className="flex items-center gap-2">
-                <img src={c.owner?.avatar} className="w-8 h-8 rounded-full" />
-                <div className="text-sm text-gray-700">
+              <div className="flex items-center gap-2 ">
+                <img
+                  src={c.owner?.avatar}
+                  className="w-10 h-10 rounded-full  transform translate-y-2.5"
+                />
+                <div className="text-[0.85rem] text-gray-700 font-semibold">
                   @{c.owner?.username}
                 </div>
-                <div className="text-xs text-gray-500">{fmt(c.createdAt)}</div>
+                <div className="text-[0.75rem] text-gray-500">
+                  {fmt(c.createdAt)}
+                </div>
               </div>
 
               {/* comment content */}
-              <div className="ml-10 mt-1">{renderWithMentions(c.content)}</div>
+              <div className="ml-12 mt-1 text-[0.90rem]  m-0 p-0">
+                {renderWithMentions(c.content)}
+              </div>
 
               {/* actions */}
               {/* actions row (Like • Reply • Delete) */}
@@ -204,8 +226,8 @@ export default function Comments({ videoId }) {
                 <button
                   onClick={() => likeComment(c._id)}
                   className={[
-                    "inline-flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition duration-200",
-                    likedByMeComment(c) ? "text-blue-600 " : "text-gray-400 ",
+                    "inline-flex items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 transition duration-200",
+                    likedByMeComment(c) ? "text-blue-500 " : "text-gray-400 ",
                   ].join(" ")}
                   aria-pressed={likedByMeComment(c)}
                   aria-label={
@@ -215,7 +237,7 @@ export default function Comments({ videoId }) {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
+                    fill={likedByMeComment(c) ? "currentColor" : "none"}
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
@@ -234,7 +256,7 @@ export default function Comments({ videoId }) {
 
                 {/* Reply */}
                 <button
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-blue-800 text-base hover:bg-gray-100 focus:bg-gray-200 transition duration-200"
+                  className="inline-flex items-center text-[0.80rem] gap-1 px-2.5 py-1.5 font-semibold rounded-lg text-blue-600 text-base hover:bg-gray-100 focus:bg-gray-200 transition duration-200"
                   onClick={() => openReplyForComment(c._id)}
                   aria-label="Reply to comment"
                   title="Reply"
@@ -245,7 +267,7 @@ export default function Comments({ videoId }) {
                 {/* owner-only Delete */}
                 {me && c.owner?._id === me._id && (
                   <button
-                    className="inline-flex items-center justify-center text-red-300 focus:bg-red-400 focus:text-white hover:bg-gray-100 hover:text-red-500 focus:outline-none rounded-lg px-3 py-2 transition duration-200"
+                    className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                     onClick={() => deleteComment(c._id)}
                     aria-label="Delete comment"
                     title="Delete"
@@ -274,13 +296,14 @@ export default function Comments({ videoId }) {
                   <ReplyInline
                     autoFocus
                     initialText={openReplyBox[c._id].initialText}
+                    placeholder={`Reply to @${c.owner?.username}...`}
                     onSubmit={(t) => addReply(c._id, t, null)}
                   />
                 </div>
               )}
 
               {/* FLAT replies */}
-              <div className="ml-14 mt-3 space-y-4">
+              <div className="ml-14 mt-3 space-y-3">
                 {flatReplies.map((r) => {
                   const target = r.parentReply
                     ? replyById[r.parentReply]
@@ -293,7 +316,7 @@ export default function Comments({ videoId }) {
                       <div className="flex items-center gap-2">
                         <img
                           src={r.owner?.avatar}
-                          className="w-6 h-6 rounded-full"
+                          className="w-8 h-8 rounded-full translate-y-2.5"
                         />
                         <div className="text-sm text-gray-700">
                           @{r.owner?.username}
@@ -304,7 +327,7 @@ export default function Comments({ videoId }) {
                       </div>
 
                       {/* reply content (flat), with optional ↪ @target */}
-                      <div className="ml-8 text-sm">
+                      <div className="ml-10 text-sm">
                         {targetUsername && (
                           <span className="mr-1 opacity-70">
                             ↪ @{targetUsername}
@@ -320,8 +343,8 @@ export default function Comments({ videoId }) {
                         <button
                           onClick={() => likeReply(c._id, r._id)}
                           className={[
-                            "inline-flex items-center gap-0 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition duration-200",
-                            likedByMe(r) ? "text-blue-700" : "text-gray-400",
+                            "inline-flex items-center gap-0 px-2 py-2 rounded-lg hover:bg-gray-100 transition duration-200",
+                            likedByMe(r) ? "text-blue-500" : "text-gray-400",
                           ].join(" ")}
                           aria-pressed={likedByMe(r)}
                           aria-label={
@@ -331,7 +354,7 @@ export default function Comments({ videoId }) {
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
+                            fill={likedByMe(r) ? "currentColor" : "none"}
                             viewBox="0 0 24 24"
                             strokeWidth={1.5}
                             stroke="currentColor"
@@ -350,7 +373,7 @@ export default function Comments({ videoId }) {
 
                         {/* Reply */}
                         <button
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-blue-800 text-base hover:bg-gray-100 focus:bg-gray-200 transition duration-200"
+                          className="inline-flex items-center text-[0.80rem] gap-1 px-2.5 py-1.5 font-semibold rounded-lg text-blue-600 text-base hover:bg-gray-100 focus:bg-gray-200 transition duration-200"
                           onClick={() => openReplyForReply(c._id, r)}
                           aria-label={`Reply to @${r.owner?.username}`}
                           title={`Reply to @${r.owner?.username}`}
@@ -361,7 +384,8 @@ export default function Comments({ videoId }) {
                         {/* owner-only Delete */}
                         {me && r.owner?._id === me._id && (
                           <button
-                            className="inline-flex items-center justify-center text-red-400 focus:bg-red-400 focus:text-white hover:bg-gray-100 focus:outline-none rounded-lg px-3 py-2 transition duration-500"
+                            // className="inline-flex items-center justify-center text-red-400 focus:bg-red-400 focus:text-white hover:bg-gray-100 focus:outline-none rounded-lg px-3 py-2 transition duration-500"
+                            className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                             onClick={() => deleteReply(c._id, r._id)}
                             aria-label="Delete reply"
                             title="Delete reply"
@@ -447,22 +471,23 @@ function ReplyInline({
 
   const handleSubmit = () => {
     const val = (t || "").trim();
-    if (!val) return;
+    if (val.length <= initialText.trim().length) return;
     onSubmit(val);
     setT("");
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center  ">
       <input
-        className="border p-1 px-2 rounded text-sm"
+        className="pl-3 px-1 text-sm p-2 border-gray-300 border-b-2 flex-1 text-gray-400 focus:text-gray-900 rounded-tl-xl focus:border-gray-900 focus:bg-gray-100 outline-none transition-all duration-500"
         placeholder={placeholder}
         value={t}
         onChange={(e) => setT(e.target.value)}
         autoFocus={autoFocus}
       />
+
       <button
-        className="text-sm border px-2 py-1 rounded"
+        className="text-sm border-b-2 border-blue-700 px-3 py-2 font-medium rounded-tr-lg bg-blue-500 text-white hover:bg-blue-800 transition duration-500"
         onClick={handleSubmit}
       >
         Reply

@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link, useParams } from "react-router-dom";
 import { useRef } from "react"; //EU6u1.p2.a1.1ln - Views Increment - updated one lines to target exact video elements
 import Comments from "./Comments";
+import { formatDistanceToNowStrict } from "date-fns";
 
 function Video() {
   const { id } = useParams();
@@ -13,29 +14,29 @@ function Video() {
   const videoRef = useRef(null); //EU6u1.p2.a2.1ln - Views Increment -to target exact video elements
   const [liked, setLiked] = useState(false); //EU6u2.p3.a1.2ln - Like feature - +2 states - liked and likesCount
   const [likesCount, setLikesCount] = useState(0);
+  const [disliked, setDisliked] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const onToggleDislike = () => {
+    setDisliked(!disliked);
+  };
+  const onToggleSave = () => {
+    setSaved(!saved);
+  };
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleToggle = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   //EU6u3.p4.a1.2l - Subscribe feature: +2 states that are subscribe & subsCount
   const [subscribed, setSubscribed] = useState(false);
   const [subsCount, setSubsCount] = useState(0);
-  // EU9u1.p8.a1.11ln - Comment + Username 
-  const [commentCount, setCommentCount] = useState(0);
-
-  useEffect(() => {
-    const loadCount = async () => {
-      try {
-        const res = await axios.get(`/api/v1/comments/${id}/count`, {
-          withCredentials: true,
-        });
-        setCommentCount(res.data.data.total || 0);
-      } catch (_) {}
-    };
-    loadCount();
-  }, [id]);
 
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long" };
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, options);
+    return formatDistanceToNowStrict(date, { addSuffix: true });
   };
 
   useEffect(() => {
@@ -249,7 +250,7 @@ useEffect(() => {
 
                   <div>
                     <div className="border-b border-b-gray-100">
-                      <ul className="-mb-px flex items-center gap-5 text-sm font-sm">
+                      <ul className="-mb-px flex items-center gap-5 text-sm font-sm transition-all duration-200 text-gray-500 font-semibold text-[0.9rem] ">
                         <li>
                           {userData ? (
                             <Link className="inline-flex cursor-pointer items-center gap-3 px-1 py-3 text-black hover:text-gray-700 ">
@@ -264,71 +265,6 @@ useEffect(() => {
                             <div>Loading user data...</div>
                           )}
                         </li>
-
-                        <li>
-                          {/* EU6u2.p3.a4.11ln - Like feature - added a button for liking the video  */}
-                          {/* <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black"> */}
-                          <button
-                            onClick={onToggleLike}
-                            className={[
-                              "inline-flex items-center gap-2 px-2 py-2 rounded-xl transition",
-                              liked
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700 hover:text-black",
-                            ].join(" ")}
-                            aria-pressed={liked}
-                            aria-label={liked ? "Unlike" : "Like"}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="size-6"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
-                              />
-                            </svg>
-                            {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
-                            <span className="px-2 py-0.5 text-xs font-semibold">
-                              {likesCount}
-                            </span>{" "}
-                          </button>
-                        </li>
-                        <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="size-6"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                              />
-                            </svg>
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                              {" "}
-                              {videoData.views}
-                              {" Views "}
-                            </span>
-                          </Link>
-                        </li>
-                        {/* EU6u3.p4.a3.45ln - Subscribe feature: replaced older button for subscribe and its logic 25ln -> 45ln */}
-
                         <li>
                           <button
                             onClick={async () => {
@@ -342,22 +278,22 @@ useEffect(() => {
                                 console.error("Subscribe toggle failed:", e);
                               }
                             }}
-                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl overflow-hidden border border-gray-200"
+                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-[0.9rem] overflow-hidden border border-gray-200"
                             aria-pressed={subscribed}
                           >
                             {/* animated left→right fill */}
                             <span
                               className={`absolute top-0 bottom-0 left-0 z-0 transition-[width] duration-500 ${
                                 subscribed
-                                  ? "w-full bg-gradient-to-r from-blue-500 to-indigo-500"
-                                  : "w-0 bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  ? "w-full bg-gradient-to-r from-gray-700 to-gray-700"
+                                  : "w-0 bg-gradient-to-r from-gray-700 to-gray-700 "
                               }`}
                             />
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 20 20"
                               fill="currentColor"
-                              className={`relative z-10 h-5 w-5 ${
+                              className={`relative z-10 h-6 w-6 ${
                                 subscribed ? "text-white" : "text-gray-600"
                               }`}
                             >
@@ -368,14 +304,14 @@ useEffect(() => {
                               />
                             </svg>
                             <span
-                              className={`relative z-10 text-sm font-medium ${
+                              className={`relative z-10 ${
                                 subscribed ? "text-white" : "text-gray-700"
                               }`}
                             >
                               {subscribed ? "Subscribed" : "Subscribe"}
                             </span>
                             <span
-                              className={`relative z-10 ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              className={`relative z-10 ml-1 rounded-full px-2 py-0.5   ${
                                 subscribed
                                   ? "text-white bg-white/0"
                                   : "text-gray-600 bg-gray-100"
@@ -386,11 +322,27 @@ useEffect(() => {
                           </button>
                         </li>
 
-                        <li>
-                          <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black">
+                        <li className="inline-flex items-center bg-gray-100 rounded-xl ">
+                          {/* EU6u2.p3.a4.11ln - Like feature - added a button for liking the video  */}
+                          {/* <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black"> */}
+                          <button
+                            onClick={() => {
+                              setLiked(true);
+                              setDisliked(false);
+                              onToggleLike();
+                            }}
+                            className={[
+                              "inline-flex items-center gap-2 pl-3 px-2 py-2 rounded-l-xl  hover:bg-blue-100",
+                              liked
+                                ? "text-blue-500"
+                                : "bg-gray-100 text-gray-700 hover:text-black",
+                            ].join(" ")}
+                            aria-pressed={liked}
+                            aria-label={liked ? "Unlike" : "Like"}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
+                              fill={liked ? "currentColor" : "none"}
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
@@ -399,31 +351,190 @@ useEffect(() => {
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+                                d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
                               />
                             </svg>
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                              {formatDate(videoData.createdAt)}
+                            {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
+                            <span className="px-2 py-0.5">{likesCount}</span>{" "}
+                          </button>
+                          {/* Dislike button  */}
+                          <span className="text-[1rem]"> {"|"}</span>
+                          <button
+                            onClick={() => {
+                              setLiked(false);
+                              setDisliked(true);
+                              onToggleDislike();
+                            }}
+                            className={[
+                              "inline-flex items-center gap-2 pr-3 px-3 py-2 pr-4 rounded-r-xl hover:bg-red-100 transition-all duration-400",
+                              disliked
+                                ? " text-red-500 "
+                                : " text-gray-700 hover:text-black",
+                            ].join(" ")}
+                            aria-pressed={disliked}
+                            aria-label={disliked ? "Undislike" : "Dislike"}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill={disliked ? "currentColor" : "none"}
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="size-6 transform rotate-180"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
+                              />
+                            </svg>
+                          </button>
+                        </li>
+
+                        {/* Bookmark/SAVE button  */}
+                        <li>
+                          <button className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl transition hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black"
+                          onClick={()=>{
+                            setSaved(true);
+                            onToggleSave();
+                          }}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill={saved ? "currentColor" : "none"}
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-6 h-6" // You can adjust the size by changing w-6 h-6
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 3h14a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"
+                              />
+                            </svg>
+                            Save
+                          </button>
+                        </li>
+                        {/* Download button */}
+                        <li>
+                          <button className="inline-flex items-center gap-2 px-3 py-2 pr-5 rounded-xl hover:bg-blue-100 hover:text-blue-700 bg-gray-100 text-gray-700 hover:text-black">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-6 h-6" // You can adjust the size by changing w-6 h-6
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 3v12m0 0l4-4m-4 4l-4-4m-3 9h15"
+                              />
+                            </svg>
+                            Download
+                          </button>
+                        </li>
+                        {/* Share button */}
+                        <li>
+                          <button className="inline-flex items-center gap-2 px-4 py-2.5 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 hover:text-black">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              xmlns:xlink="http://www.w3.org/1999/xlink"
+                              viewBox="0 0 122.88 114.318"
+                              fill="none"
+                              stroke="currentColor"
+                              className="w-5 h-5" // You can adjust the size by changing w-6 h-6
+                            >
+                              <g>
+                                <path
+                                  fill="currentColor" // Adjust this to apply the fill color as desired
+                                  fillRule="evenodd"
+                                  clipRule="evenodd"
+                                  d="M122.88,35.289L87.945,70.578v-17.58c-22.091-4.577-39.542,0.468-52.796,17.271 c2.301-34.558,25.907-51.235,52.795-52.339L87.945,0L122.88,35.289L122.88,35.289z"
+                                />
+                                <path
+                                  fill="currentColor" // Adjust this to apply the fill color as desired
+                                  d="M6.908,23.746h35.626c-4.587,3.96-8.71,8.563-12.264,13.815H13.815v62.943h80.603V85.831l13.814-13.579v35.159 c0,3.814-3.093,6.907-6.907,6.907H6.908c-3.815,0-6.908-3.093-6.908-6.907V30.653C0,26.838,3.093,23.746,6.908,23.746L6.908,23.746 z"
+                                />
+                              </g>
+                            </svg>
+                            Share
+                          </button>
+                        </li>
+
+                        {/* EU6u3.p4.a3.45ln - Subscribe feature: replaced older button for subscribe and its logic 25ln -> 45ln */}
+
+                        <li>
+                          <Link className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:text-black ">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2 py-0.5 mr-2">
+                              <img
+                                src="/src/assets/uploadedTime.webp"
+                                alt="Icon"
+                                className="fixed-size-icon mt-1w-5 h-5 rounded-full"
+                              />
+                              <span>{formatDate(videoData.createdAt)}</span>
                             </span>
                           </Link>
                         </li>
 
-                         {/* EU9u1.p8.a2.5ln - Comment + Username  */}
+                        {/* Report button */}
                         <li>
-                          <span className="inline-flex items-center gap-2 px-1 py-3 text-gray-600">
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                              {commentCount}
-                            </span>
-                          </span>
+                          <button className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl hover:text-red-600">
+                            <img
+                              src="/src/assets/flag.svg"
+                              alt="Icon"
+                              className="fixed-size-icon mt-1w-5 h-5 rounded-full hover:fill-red-600 "
+                            />
+                            Report
+                          </button>
                         </li>
-
                       </ul>
                     </div>
                   </div>
-                  <p className="truncate">{videoData.description}</p>
+                  {/* <p className="truncate">{videoData.description}</p> */}
+
+                  <div className="mt-4 font-bold  ">
+                    {/* Show only 3 lines initially */}
+                    <p
+                      className={`transition-all duration-500 ease-in-out p-4 relative ${
+                        isExpanded
+                          ? "max-h-full pt-4 rounded-2xl text-gray-700"
+                          : "max-h-20 rounded-xl overflow-hidden pt-2 text-gray-500"
+                      } bg-gray-100`} // Light gray background
+                      style={{ cursor: "pointer" }}
+                      onClick={handleToggle}
+                    >
+                      <span className="mr-3">{videoData.views} views </span>{" "}
+                      <span>{formatDate(videoData.createdAt)}</span>
+                      <br />
+
+                      <span className="font-normal text-gray-900">
+                        {videoData.description}
+                      </span>
+                      {/* Gradient mask to fade the text at the bottom */}
+                      {!isExpanded && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-100 via-gray-100 to-transparent"
+                          style={{ pointerEvents: "none" }}
+                        ></div>
+                      )}
+                    </p>
+
+                    {/* Show 'Show More' link if not expanded */}
+                    {!isExpanded && (
+                      <span
+                        className="text-blue-600 mt-2 ml-3 cursor-pointer"
+                        onClick={handleToggle}
+                      >
+                        ...more
+                      </span>
+                    )}
+                  </div>
+
                   {/* EU9u1.p8.a3.1ln - Comment + Username   */}
                   <Comments videoId={id} />
-
                 </div>
               </div>
             </div>
