@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import dns from "dns/promises";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -502,6 +503,82 @@ const getMe = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, me, "OK"));
 });
 
+//EU10u1.p1.a1.73ln - Email verification level 2 - Real-time email validation
+
+// GET /api/v1/account/validate-email?email=foo@bar.com
+const validateEmailRealtime = asyncHandler(async (req, res) => {
+  const emailRaw = String(req.query.email || "").trim();
+
+  // 1) Syntax check (frontend also does this, but we re-check on server)
+  const syntaxRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const syntaxValid = syntaxRegex.test(emailRaw);
+
+  const result = {
+    email: emailRaw,
+    syntaxValid,
+    domainHasMX: false,
+    isDisposable: false,
+    deliverability: "unknown", // "deliverable" | "undeliverable" | "risky" | "unknown"
+    notes: [],
+  };
+
+  if (!syntaxValid) {
+    return res.status(200).json(new ApiResponse(200, result, "Syntax invalid"));
+  }
+
+  const [, domain] = emailRaw.split("@");
+
+  // 2) Domain MX lookup
+  try {
+    const mxRecords = await dns.resolveMx(domain);
+    if (Array.isArray(mxRecords) && mxRecords.length > 0) {
+      result.domainHasMX = true;
+    } else {
+      result.notes.push("No MX records found.");
+    }
+  } catch {
+    result.notes.push("MX lookup failed or domain not found.");
+  }
+
+  // 3) Disposable domain check (minimal in-file list; you can swap for a lib. )
+  const disposableList = new Set([
+    "mailinator.com",
+    "tempmail.com",
+    "10minutemail.com",
+    "guerrillamail.com",
+    "yopmail.com",
+  ]);
+  if (disposableList.has(domain)) {
+    result.isDisposable = true;
+    result.notes.push("Disposable/temporary email domain.");
+  }
+
+  // 4) Deliverability via 3rd party service (optional but best for acc)
+  // 5) Configure one provider using env var (DON'T expose on frontend)- eg.Kickbox
+  if (process.env.KICKBOX_API_KEY) {
+    try {
+      const kb = await axios.get("https://api.kickbox.com/v2/verify", {
+        params: {
+          email: emailRaw,
+          apikey: process.env.KICKBOX_API_KEY,
+        },
+        timeout: 6000,
+      });
+      // kb.data.result → "deliverable" | "undeliverable" | "risky" | "unknown"
+      if (kb?.data?.result) result.deliverability = kb.data.result;
+      if (kb?.data?.reason) result.notes.push(`Reason: ${kb.data.reason}`);
+    } catch (e) {
+      result.notes.push(
+        "3rd-party deliverability check failed (timeout/blocked)."
+      );
+    }
+  } else {
+    result.notes.push("No 3rd-party validator configured.");
+  }
+
+  return res.status(200).json(new ApiResponse(200, result, "OK"));
+});
+
 export {
   registerUser,
   login,
@@ -518,4 +595,5 @@ export {
   checkUsernameAvailability,
   updateUsername,
   getMe,
+  validateEmailRealtime,
 };

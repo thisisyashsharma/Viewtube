@@ -18,6 +18,7 @@ import {
   checkUsernameAvailability,
   updateUsername,
   getMe,
+  validateEmailRealtime,
 } from "../controllers/account.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -37,6 +38,7 @@ router.route("/update/:id").put(upload.single("avatar"), updateAccount);
 router.route("/userData/:id").get(getUserById);
 router.route("/history").get(verifyJWT, GetWatchHistory);
 router.route("/addToHistory/:id").put(verifyJWT, addToWatchHistory);
+router.route("/validate-email").get(validateEmailRealtime);                   //EU10u1.p2.a1.1ln - Email verification level 2 - route
 
 //EU6u3.p3.a2.2ln - Subscribe feature - routed both features
 router.put("/subscribe/:channelId", verifyJWT, toggleSubscribe);
@@ -46,5 +48,6 @@ router.get("/subscribe/status/:channelId", verifyJWT, getSubscribeStatus);
 router.get("/subscriptions", verifyJWT, getMySubscriptions);
 
 router.get("/me",verifyJWT, getMe);
+
 
 export default router;
