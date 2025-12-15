@@ -1,7 +1,17 @@
+// /mnt/data/History.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { formatDistanceToNowStrict } from "date-fns";
+import { getThumbnailUrl, formatDuration } from "../utils/thumbnail.utils";
+
 axios.defaults.withCredentials = true;
+
+function formatDate(dateString) {
+  return dateString
+    ? formatDistanceToNowStrict(new Date(dateString), { addSuffix: true })
+    : "";
+}
 
 function History() {
   const [history, setHistory] = useState([]);
@@ -13,7 +23,7 @@ function History() {
         const response = await axios.get("/api/v1/account/history", {
           withCredentials: true,
         });
-        setHistory(response.data.data); // Assuming response.data contains the history array
+        setHistory(response.data.data || []); // ensure array
       } catch (error) {
         console.error("Error fetching history:", error);
       } finally {
@@ -24,16 +34,6 @@ function History() {
     fetchHistory();
   }, []); // Empty dependency array to run the effect only once
 
-  //  console.log(history[0]._id);
-
-  //  if (history.data[0]) {
-
-  //   console.log("data is not");
-
-  //  }else{
-  //   console.log("data is");
-  //  }
-
   return (
     <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
       <div className="mb-4 col-span-full xl:mb-2">
@@ -41,8 +41,7 @@ function History() {
           <h1 className="text-4xl font-semibold mb-4">History</h1>
         </div>
         <br />
-        {/* <hr />
-        <br /> */}
+
         {isLoading ? (
           <div className="text-center my-72">
             <div className="p-4 text-center">
@@ -69,45 +68,86 @@ function History() {
           </div>
         ) : (
           <div>
-            {/* ----------------------content--------------------------- */}
             {history.length > 0 ? (
               <section>
                 <div className="container">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {history.map((video) => (
-                      <div key={video._id}>
-                        <div className="relative">
+                      <div
+                        key={video._id}
+                        className="bg-white rounded-lg overflow-hidden"
+                      >
+                        {/* Card similar to Home/VideoCard */}
+                        <div className="p-0">
                           <Link to={`/watch/${video._id}`}>
-                            <img
-                              src={video.thumbnail}
-                              alt={video.title}
-                              className="w-80 h-40 object-cover rounded-2xl"
-                              // EU8p4.a1.8ln - Thumbnai fixing - added on errfunc
-                              onError={(e) => {
-                                // Prevent infinite loop
-                                if (!e.currentTarget.dataset.fallbackApplied) {
-                                  const randomIndex =
-                                    Math.floor(Math.random() * 12) + 1; // 1–8
-                                  e.currentTarget.src = `http://localhost:8000/placeholders/loading${randomIndex}.gif`;
-                                  e.currentTarget.dataset.fallbackApplied =
-                                    "true";
-                                }
+                            <div
+                              className="w-full rounded-2xl bg-gray-200 overflow-hidden"
+                              style={{
+                                paddingTop: "56.25%",
+                                position: "relative",
+                                borderRadius: "12px",
                               }}
-                            />
+                            >
+                              <img
+                                src={getThumbnailUrl(video)}
+                                alt={video.title}
+                                style={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: "12px",
+                                }}
+                                onError={(e) => {
+                                  if (
+                                    !e.currentTarget.dataset.fallbackApplied
+                                  ) {
+                                    e.currentTarget.src =
+                                      "http://localhost:8000/placeholders/noThumbnail.png";
+                                    e.currentTarget.dataset.fallbackApplied =
+                                      "true";
+                                  }
+                                }}
+                              />
+                              <span className="absolute bottom-1 right-1 bg-black text-white text-xs px-1 rounded">
+                                {formatDuration(video?.duration ?? 0)}
+                              </span>
+                            </div>
                           </Link>
-                        </div>
-                        <div className="mt-2 md:mt-0">
-                          <div>
-                            <h3 className="text-lg font-bold truncate">
-                              <Link to={`/watch/${video._id}`}>
-                                {video.title}
-                              </Link>
-                            </h3>
-                          </div>
-                          <div className="mt-2">
-                            {/* <ul>
-                            <li className="text-sm">Duration: {video.duration} mins</li>
-                          </ul> */}
+
+                          {/* Channel row: avatar, title, channel, views */}
+                          <div className="flex items-start gap-3 p-3">
+                            <img
+                              src={video?.owner?.avatar}
+                              alt={video?.owner?.name}
+                              className="w-10 h-10 rounded-full flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-[1rem] truncate">
+                                <Link to={`/watch/${video._id}`}>
+                                  {video.title}
+                                </Link>
+                              </h3>
+                              <p className="text-sm text-gray-600 truncate">
+                                {video.owner?.name ?? "Unknown Channel"}
+                              </p>
+                              <div className="text-sm text-gray-500 mt-1">
+                                {video.views ?? 0} views • {formatDate(video?.createdAt)}
+                              </div>
+                            </div>
+
+                            {/* three-dots / actions (keeps existing UI affordance) */}
+                            <div className="ml-2">
+                              <button className="rounded-all hover:bg-gray-50 rounded-3xl focus:scale-90 focus:bg-gray-200 rounded-[2rem] transition-all duration-50 p-2">
+                                <img
+                                  src="/src/assets/svg_icons/threeDots.svg"
+                                  alt="More"
+                                  className="w-7 h-7"
+                                />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -118,11 +158,8 @@ function History() {
             ) : (
               <div>No history available</div>
             )}
-
-            {/* <div>No history available</div> */}
           </div>
         )}
-        {/* ----------------------content--------------------------- */}
       </div>
     </div>
   );

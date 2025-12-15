@@ -22,7 +22,12 @@ import Feedback from "./Feedback";
 import Help from "./Help";
 import ReportHistory from "./ReportHistory";
 import SubscribeButton from "./SubscribeButton";
-
+import KeyboardShortcut from "./KeyboardShortcut";
+import ReportForm from "./ReportForm";
+import VideoStudio from "./VideoStudio";
+import Dashboard from "./Dashboard";
+import Trending from "./Trending";
+import About from "./About";
 
 export {
 
@@ -49,8 +54,13 @@ export {
     Feedback,
     Help,
     ReportHistory,
+    ReportForm,
     SubscribeButton,
-
+    KeyboardShortcut, 
+    VideoStudio, 
+    Dashboard, 
+    Trending,
+    About, 
 
 
 

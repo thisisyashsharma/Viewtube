@@ -23,9 +23,15 @@ import {
   Main,
   Subscriptions,
   ReportHistory,
+  ReportForm,
   Help,
   Feedback,
+  KeyboardShortcut,
+  VideoStudio,
+  Dashboard,
+  About,
 } from "../components";
+import Trending from "../components/Trending.jsx";
 
 function Routing() {
   return (
@@ -64,6 +70,14 @@ function Routing() {
                 element={
                   <AuthLayout>
                     <UploadVideo />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="about"
+                element={
+                  <AuthLayout>
+                    <About />
                   </AuthLayout>
                 }
               />
@@ -126,30 +140,30 @@ function Routing() {
                 </AuthLayout>
               }
             />
-              <Route
-                path="reportHistory"
-                element={
-                  <AuthLayout>
-                    <ReportHistory />
-                  </AuthLayout>
-                }
-              />
-              <Route
-                path="help"
-                element={
-                  <AuthLayout>
-                    <Help />
-                  </AuthLayout>
-                }
-              />
-              <Route
-                path="feedback"
-                element={
-                  <AuthLayout>
-                    <Feedback />
-                  </AuthLayout>
-                }
-              />
+            <Route
+              path="reportHistory"
+              element={
+                <AuthLayout>
+                  <ReportHistory />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="help"
+              element={
+                <AuthLayout>
+                  <Help />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="feedback"
+              element={
+                <AuthLayout>
+                  <Feedback />
+                </AuthLayout>
+              }
+            />
             {/* EU6u4.p4.a2.5ln -  Subscribed Channels: routed the subscription page */}
             <Route
               path="subscriptions"
@@ -159,8 +173,48 @@ function Routing() {
                 </AuthLayout>
               }
             />
+            <Route
+              path="keyboardShortcut"
+              element={
+                <AuthLayout>
+                  <KeyboardShortcut />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="/reportForm/:id"
+              element={
+                <AuthLayout>
+                  <ReportForm />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="videoStudio"
+              element={
+                <AuthLayout>
+                  <VideoStudio />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="dashboard"
+              element={
+                <AuthLayout>
+                  <Dashboard />
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="trending"
+              element={
+                <AuthLayout>
+                  <Trending />
+                </AuthLayout>
+              }
+            />
           </Route>
-          
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>

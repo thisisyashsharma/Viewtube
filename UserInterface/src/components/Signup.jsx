@@ -24,6 +24,15 @@ function Signup() {
     email: "",
     password: "",
   });
+  const [otp, setOtp] = useState("");
+  // const [step, setStep] = useState("form");
+  const validFor = Number(import.meta.env.VITE_OTP_VALID_MINUTES) || 5;
+
+  //EU10u2.p9.a1.4ln - Email verification level 2 - defined states
+  const [preToken, setPreToken] = useState(""); // proof from pre-verify
+  const [preOtpSending, setPreOtpSending] = useState(false);
+  const [preOtpVerifying, setPreOtpVerifying] = useState(false);
+  const [preOtpSent, setPreOtpSent] = useState(false);
 
   //EU10u1.p3.a2.6ln - Email verification level 2 -  Syntax check (pure frontend)
   const syntaxValid = useMemo(() => {
@@ -46,16 +55,42 @@ function Signup() {
 
     try {
       setLoader(true);
-      await dispatch(register(formData)).unwrap();
+      // EU10u2.p4.a1.6ln - Email verification level 2 - changed 6lines of logic
+      await dispatch(
+        register({
+          ...formData, // name, email, password
+          preVerifiedToken: preToken, // <-- must be non-empty after Verify
+        })
+      ).unwrap();
+
       setSuccessMessage("Signup successful!");
-      setFormData({ name: "", email: "", password: "" });
       setError("");
       setLoader(false);
-      alert(" SignUp Successfully .");
       navigate("/login");
     } catch (err) {
       setError(err.message || "An error occurred.");
       setSuccessMessage("");
+      setLoader(false);
+    }
+  };
+
+  // EU10u2.p4.a2.16ln - Email verification level 2 - verifyotp handler
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    try {
+      setLoader(true);
+      await axios.post("/api/v1/account/verify-email-otp", {
+        email: formData.email,
+        otp: otp.trim(),
+      });
+      setLoader(false);
+      alert("Email verified successfully.");
+      navigate("/login"); // or auto-login if you prefer
+    } catch (err) {
+      setLoader(false);
+      setError(
+        err?.response?.data?.message || err.message || "OTP verification failed"
+      );
     }
   };
 
@@ -96,6 +131,45 @@ function Signup() {
     };
   }, [debouncedEmail, syntaxValid]);
 
+  //EU10u2.p9.a2.34ln - Email verifification level 2 - preotp send & verify handlers
+
+  const sendPreOtp = async () => {
+    try {
+      setPreOtpSending(true);
+      await axios.post("/api/v1/account/pre-otp/send", {
+        email: formData.email,
+      });
+      setPreOtpSent(true);
+      setSuccessMessage("We’ve sent a verification code to your email.");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Could not send code yet");
+    } finally {
+      setPreOtpSending(false);
+    }
+  };
+
+  const verifyPreOtp = async () => {
+    try {
+      setPreOtpVerifying(true);
+      const { data } = await axios.post("/api/v1/account/pre-otp/verify", {
+        email: formData.email,
+        otp: otp.trim().toUpperCase(),
+      });
+      const token = data?.data?.preVerifiedToken || "";
+      if (token) {
+        setPreToken(token);
+        setSuccessMessage("Email verified. You can create your account now.");
+        setError("");
+      } else {
+        setError("Verification failed. Try again.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "OTP verification failed");
+    } finally {
+      setPreOtpVerifying(false);
+    }
+  };
+
   return loader ? (
     <div className="text-center  my-72 ">
       <div className="p-4 text-center">
@@ -132,147 +206,202 @@ function Signup() {
         <h2 className="text-2xl font-bold text-gray-900 ">
           Create a New Account
         </h2>
-        <form onSubmit={handleFormSubmit} className="mt-8 space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block mb-2 text-sm font-medium text-gray-900"
-            >
-              Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-              placeholder="Varshit Gupta"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="email"
-              className="block mb-2 text-sm font-medium text-gray-900"
-            >
-              Your email
-            </label>
-            <input
-              type="email"
-              name="email"
-              id="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-              placeholder="name@company.com"
-              required
-            />
-
-            {/* EU10u1.p3.a4.6ln - Email verification level 2 */}
-            {formData.email.length > 0 && (
-              <p
-                className={`text-xs mt-1 ${
-                  syntaxValid ? "text-green-500" : "text-red-500"
-                }`}
+          <form onSubmit={handleFormSubmit} className="mt-8 space-y-6">
+            <div>
+              <label
+                htmlFor="name"
+                className="block mb-2 text-sm font-medium text-gray-900"
               >
-                {syntaxValid
-                  ? "✓ Nice email"
-                  : "✗ Invalid email"}
-              </p>
-            )}
-            {emailChecking && syntaxValid && (
-              <p className="text-xs mt-1 text-gray-500">
-                Checking domain & deliverability…
-              </p>
-            )}
-            {!emailChecking && emailStatus && (
-              <div className="text-xs mt-2 space-y-1">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                placeholder="Varshit Gupta"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="email"
+                className="block mb-2 text-sm font-medium text-gray-900"
+              >
+                Your email
+              </label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                placeholder="name@company.com"
+                required
+              />
+
+              {/* EU10u1.p3.a4.6ln - Email verification level 2 */}
+              {formData.email.length > 0 && (
                 <p
-                  className={
-                    emailStatus.domainHasMX ? "text-green-500" : "text-red-500"
-                  }
+                  className={`text-xs mt-1 ${
+                    syntaxValid ? "text-green-500" : "text-red-500"
+                  }`}
                 >
-                  {emailStatus.domainHasMX
-                    ? "✓ MX"
-                    : "✗ Domain cannot receive email (no MX)"}
+                  {syntaxValid ? "✓ Nice email" : "✗ Invalid email"}
                 </p>
-                <p
-                  className={
-                    emailStatus.isDisposable ? "text-red-600" : "text-green-700"
-                  }
-                >
-                  {emailStatus.isDisposable
-                    ? "✗ Disposable/temporary email"
-                    : "✓ Not a disposable domain"}
+              )}
+              {emailChecking && syntaxValid && (
+                <p className="text-xs mt-1 text-gray-500">
+                  Checking domain & deliverability…
                 </p>
-                <p
-                  className={
-                    emailStatus.deliverability === "deliverable"
-                      ? "text-green-500"
-                      : emailStatus.deliverability === "undeliverable"
-                      ? "text-red-500"
-                      : emailStatus.deliverability === "risky"
-                      ? "text-orange-500"
-                      : "text-gray-500"
-                  }
-                >
-                  Deliverability: {emailStatus.deliverability}
-                </p>
-                {Array.isArray(emailStatus.notes) &&
+              )}
+              {!emailChecking && emailStatus && (
+                <div className="text-xs mt-2 space-y-1">
+                  <p
+                    className={
+                      emailStatus.domainHasMX
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }
+                  >
+                    {emailStatus.domainHasMX
+                      ? "✓ MX"
+                      : "✗ Domain cannot receive email (no MX)"}
+                  </p>
+                  <p
+                    className={
+                      emailStatus.isDisposable
+                        ? "text-red-600"
+                        : "text-green-700"
+                    }
+                  >
+                    {emailStatus.isDisposable
+                      ? "✗ Disposable email"
+                      : "✓ Nice domain"}
+                  </p>
+                  <p
+                    className={
+                      emailStatus.deliverability === "✓ deliverable"
+                        ? "text-green-500"
+                        : emailStatus.deliverability === "✗ undeliverable"
+                        ? "text-red-500"
+                        : emailStatus.deliverability === "✗ risky"
+                        ? "text-orange-500"
+                        : "text-gray-500"
+                    }
+                  >
+                    {/* {emailStatus.deliverability} */}
+                  </p>
+
+                  {/* //Testing to show the valid email in UI
+                 {Array.isArray(emailStatus.notes) &&
                   emailStatus.notes.length > 0 && (
                     <ul className="list-disc ml-5 text-gray-600">
                       {emailStatus.notes.map((n, i) => (
                         <li key={i}>{n}</li>
                       ))}
                     </ul>
-                  )}
-              </div>
+                  )} */}
+                </div>
+              )}
+            </div>
+
+            {/* EU10u2.p9.a3.42ln - Email verification level 2 - conditional rendering for otp verification */}
+            {/* Pre-signup OTP actions (send + verify) */}
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={sendPreOtp}
+                disabled={!syntaxValid || preOtpSending}
+                className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50"
+                title={!syntaxValid ? "Enter a valid email first" : "Send code"}
+              >
+                {preOtpSending
+                  ? "Sending..."
+                  : preOtpSent
+                  ? "Resend code"
+                  : "Send code"}
+              </button>
+
+              <input
+                type="text"
+                inputMode="latin"
+                pattern="[A-Z0-9]*"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.toUpperCase())}
+                placeholder="OTP"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2 tracking-widest w-40"
+                disabled={!preOtpSent}
+              />
+
+              <button
+                type="button"
+                onClick={verifyPreOtp}
+                disabled={!preOtpSent || !otp || preOtpVerifying}
+                className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50"
+              >
+                {preOtpVerifying ? "Verifying..." : "Verify"}
+              </button>
+            </div>
+
+            {preOtpSent && (
+              <p className="text-xs text-gray-600 mt-1">
+                The code is valid for {validFor} minutes.
+              </p>
             )}
-          </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block mb-2 text-sm font-medium text-gray-900"
+            {preToken && (
+              <p className="text-xs text-green-600 mt-1">Email verified ✓</p>
+            )}
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block mb-2 text-sm font-medium text-gray-900"
+              >
+                Your password
+              </label>
+              <input
+                type="password"
+                name="password"
+                id="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="••••••••"
+                className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                required
+              />
+            </div>
+            {/* EU10u1.p3.a4.6ln - Email verification level 2 - conditional rendering */}
+            <button
+              type="submit"
+              className="w-full px-5 py-3 text-base font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-black focus:ring-4 focus:ring-primary-300 sm:w-auto disabled:opacity-50"
+              disabled={
+                !syntaxValid ||
+                !preToken || //EU10u2.p9.a4.1ln - Email verification level 2 - require pre-verification proof
+                (emailStatus &&
+                  (!emailStatus.domainHasMX ||
+                    emailStatus.isDisposable ||
+                    emailStatus.deliverability === "undeliverable"))
+              }
             >
-              Your password
-            </label>
-            <input
-              type="password"
-              name="password"
-              id="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="••••••••"
-              className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-              required
-            />
-          </div>
-          {/* EU10u1.p3.a4.6ln - Email verification level 2 - conditional rendering */}
-          <button
-            type="submit"
-            className="w-full px-5 py-3 text-base font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-black focus:ring-4 focus:ring-primary-300 sm:w-auto disabled:opacity-50"
-            disabled={
-              !syntaxValid ||
-              (emailStatus &&
-                (!emailStatus.domainHasMX ||
-                  emailStatus.isDisposable ||
-                  emailStatus.deliverability === "undeliverable"))
-            }
-          >
-            Create account
-          </button>
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-          {successMessage && (
-            <div className="text-green-500 text-sm">{successMessage}</div>
-          )}
-          <div className="text-sm font-medium text-gray-500">
-            Already have an account?{" "}
-            <Link to="/login" className="text-blue-700 hover:underline">
-              Login here
-            </Link>
-          </div>
-        </form>
+              Create account
+            </button>
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+            {successMessage && (
+              <div className="text-green-500 text-sm">{successMessage}</div>
+            )}
+            <div className="text-sm font-medium text-gray-500">
+              Already have an account?{" "}
+              <Link to="/login" className="text-blue-700 hover:underline">
+                Login here
+              </Link>
+            </div>
+            </form>
+            {/* // EU10u2.p4.a3.   - Email verification level 2 - conditional rendering for otp */}
+        
       </div>
     </div>
   );

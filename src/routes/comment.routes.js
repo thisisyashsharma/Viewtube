@@ -10,6 +10,7 @@ import {
   toggleLikeComment,
   toggleLikeReply,
   deleteReply,
+  deleteCommentById,
 } from "../controllers/comment.controller.js";
 
 const router = Router();
@@ -24,6 +25,7 @@ router.route("/:videoId")
 
 router.get("/:videoId/count", getCommentCount);
 router.delete("/:id", deleteComment);
+router.delete("/:id", verifyJWT, deleteCommentById);
 
 
 router.post("/:id/replies", addReply);

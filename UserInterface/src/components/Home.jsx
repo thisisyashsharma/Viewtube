@@ -1,219 +1,277 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { formatDistanceToNowStrict } from "date-fns";
+import { getThumbnailUrl, formatDuration } from "../utils/thumbnail.utils";
+
 axios.defaults.withCredentials = true;
 
-function Home() {
-  const [videos, setVideos] = useState([]);
-  const [loader, setLoader] = useState(false);
+function ShimmerCard() {
+  return (
+    <div className="relative bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+      <div className="absolute inset-0 pointer-events-none shimmer-only-here" />
+      <div className="p-3 space-y-2">
+        <div className="w-full h-40 bg-gray-100 rounded-xl" />
+        <div className="h-4 bg-gray-100 rounded-lg w-3/4" />
+        <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+      </div>
+      <style>{`
+        .shimmer-only-here {
+          background: linear-gradient(
+            90deg,
+            rgba(255,255,255,0) 0%,
+            rgba(255,255,255,0.65) 50%,
+            rgba(255,255,255,0) 100%
+          );
+          background-size: 200% 100%;
+          animation: shimmer-only-here-kf 0.5s infinite linear;
+        }
+        @keyframes shimmer-only-here-kf {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function formatDate(dateString) {
+  return dateString
+    ? formatDistanceToNowStrict(new Date(dateString), { addSuffix: true })
+    : "";
+}
+
+export default function Home() {
+  const [videosAll, setVideosAll] = useState([]); // full fetched list
+  const [displayed, setDisplayed] = useState([]); // progressively shown videos
+  const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState(null);
+  const timersRef = useRef([]);
+
+  const [me, setMe] = useState(null);
+
+  const [openMenuFor, setOpenMenuFor] = useState(null); // videoId
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState(null); // videoId
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    axios
+      .get("/api/v1/account/me", { withCredentials: true })
+      .then((res) => setMe(res.data.data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setFetching(true);
+    setError(null);
+
+    (async () => {
       try {
-        // setLoader(true)
         const response = await axios.get("/api/v1/videos/allVideo", {
           withCredentials: true,
         });
-        // setLoader(false)
-        setVideos(response.data.data);
-      } catch (error) {
-        console.error("Error fetching videos:", error);
-      }
-    };
 
-    fetchVideos();
+        if (!mounted) return;
+
+        const data = response?.data?.data ?? [];
+        setVideosAll(Array.isArray(data) ? data : []);
+        setDisplayed([]);
+
+        // Stagger reveal over ~3 seconds total
+        const totalMs = 3000;
+        const count = Array.isArray(data) ? data.length : 0;
+        if (count > 0) {
+          const interval = Math.max(60, Math.floor(totalMs / count)); // minimum interval guard
+          data.forEach((item, idx) => {
+            const t = setTimeout(() => {
+              setDisplayed((prev) => [...prev, item]);
+            }, interval * (idx + 1));
+            timersRef.current.push(t);
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching videos:", err);
+        if (!mounted) return;
+        setError("Unable to load videos.");
+      } finally {
+        if (!mounted) return;
+        setFetching(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
+    };
   }, []);
 
-  return loader ? (
-    <div className="text-center  my-72 ">
-      <div className="p-4 text-center">
-        <div role="status">
-          <svg
-            aria-hidden="true"
-            className="inline w-8 h-8 text-gray-200 animate-spin  fill-black"
-            viewBox="0 0 100 101"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-              fill="currentColor"
-            />
-            <path
-              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-              fill="currentFill"
-            />
-          </svg>
-          <span className="sr-only">Loading...</span>
-        </div>
-      </div>
-    </div>
-  ) : (
+  const placeholderCount = fetching
+    ? 8
+    : Math.max(0, (videosAll?.length || 0) - displayed.length);
+
+  return (
     <>
       <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
         <div className="mb-4 col-span-full xl:mb-2">
-          {/*----------- content ------------- */}
           <section>
             <div className="container">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {videos.map((video) => (
+                {/* Render revealed videos first */}
+                {displayed.map((video) => (
                   <div key={video._id}>
+                    {/* Duration Display on thumbnail */}
                     <div className="relative">
                       <Link to={`/watch/${video._id}`}>
-                        <img
-                          src={video.thumbnail}
-                          alt={video.title}
-                          className="w-80 h-40 object-cover rounded-2xl"
-                          // EU8p5.a1.8ln - Thumbnai fixing - added on errfunc
-                          onError={(e) => {
-                            // Prevent infinite loop
-                            if (!e.currentTarget.dataset.fallbackApplied) {
-                              const randomIndex =
-                                Math.floor(Math.random() * 12) + 1; // 1–8
-                              e.currentTarget.src = `http://localhost:8000/placeholders/loading${randomIndex}.gif`;
-                              e.currentTarget.dataset.fallbackApplied = "true";
-                            }
-                          }}
-                        />
+                        <div
+                          className="w-full rounded-lg bg-gray-100 overflow-hidden"
+                          style={{ paddingTop: "56.25%", position: "relative" }} // 16:9 aspect ratio
+                        >
+                          <img
+                            src={getThumbnailUrl(video)}
+                            alt={video?.title || "video thumbnail"}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onError={(e) => {
+                              // single fixed fallback image for missing/broken thumbnails
+                              if (!e.currentTarget.dataset.fallbackApplied) {
+                                e.currentTarget.src =
+                                  "http://localhost:8000/placeholders/noThumbnail.png";
+                                e.currentTarget.dataset.fallbackApplied =
+                                  "true";
+                              }
+                            }}
+                          />
+                          <span className="absolute bottom-1 right-1 bg-black text-white text-xs px-1 rounded">
+                            {formatDuration(video?.duration ?? 0)}
+                          </span>
+                        </div>
                       </Link>
                     </div>
-                    <div className="mt-2 md:mt-0">
-                      <div>
-                        <h3 className="text-lg font-bold truncate">
-                          <Link to={`/watch/${video._id}`}>{video.title}</Link>
-                        </h3>
+                    {/*  Card :  Video Title - Video Owner - Date - Menu   */}
+                    <div className="flex items-start justify-between w-full md:mt-0 text-[0.9rem] font-medium text-gray-500 ">
+                      <div className="px-1 py-2 flex items-start gap-2">
+                        <img
+                          src={video?.owner?.avatar}
+                          alt={video?.owner?.name}
+                          className="w-8 h-8 rounded-full flex-shrink-0"
+                        />
+                        <div className="flex flex-col overflow-hidden">
+                          <h3 className="font-semibold text-[1rem] truncate">
+                            <Link to={`/watch/${video._id}`}>
+                              {video.title}
+                            </Link>
+                          </h3>
+                          <p className="text-sm text-gray-600 truncate">
+                            {video?.owner?.name ?? ""}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {video.views ?? 0} views •{" "}
+                            {formatDate(video.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="mt-2">
-                        {/* <ul>
-                          <li className="text-sm">Duration: {video.duration} mins</li>
-                        </ul> */}
+                      {/* THREE DOT MENU */}
+                      <div className="relative">
+                        <button
+                          onClick={() =>
+                            setOpenMenuFor(
+                              openMenuFor === video._id ? null : video._id
+                            )
+                          }
+                          className="hover:bg-gray-100 p-2 rounded-full"
+                        >
+                          <img
+                            src="/src/assets/svg_icons/threeDots.svg"
+                            className="w-6 h-6"
+                          />
+                        </button>
+
+                        {openMenuFor === video._id && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white border rounded-xl shadow z-50">
+                            <Link
+                              to={`/reportForm/${video._id}`}
+                              onClick={() => setOpenMenuFor(null)}
+                              className="block w-full text-left px-4 py-2 text-sm
+             hover:bg-gray-100 transition"
+                            >
+                              🚩 Report
+                            </Link>
+
+                            {me?.role === "admin" && (
+                              <button
+                                className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 rounded-xl"
+                                onClick={() => {
+                                  setOpenMenuFor(null);
+                                  setConfirmDeleteFor(video._id);
+                                }}
+                              >
+                                🗑 Delete (Admin)
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
+                  </div>
+                ))}
+
+                {confirmDeleteFor && (
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-80">
+                      <h2 className="font-semibold text-red-600">
+                        Delete video?
+                      </h2>
+                      <p className="text-sm text-gray-600 mt-2">
+                        This action is irreversible.
+                      </p>
+
+                      <div className="flex justify-end gap-3 mt-4">
+                        <button
+                          onClick={() => setConfirmDeleteFor(null)}
+                          className="px-3 py-1 bg-gray-100 rounded"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await axios.delete(
+                              `/api/v1/videos/delete/${confirmDeleteFor}`
+                            );
+                            setVideosAll((v) =>
+                              v.filter((x) => x._id !== confirmDeleteFor)
+                            );
+                            setDisplayed((v) =>
+                              v.filter((x) => x._id !== confirmDeleteFor)
+                            );
+                            setConfirmDeleteFor(null);
+                          }}
+                          className="px-3 py-1 bg-red-600 text-white rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Placeholders for unrevealed videos */}
+                {Array.from({ length: placeholderCount }).map((_, i) => (
+                  <div key={`ph-${i}`}>
+                    <ShimmerCard />
                   </div>
                 ))}
               </div>
             </div>
           </section>
-          {/*----------- content ------------- */}
         </div>
       </div>
     </>
   );
 }
-
-export default Home;
-
-// import  {Link} from 'react-router-dom'
-// import React from 'react'
-// import logo from '../assets/asset-6.jpg'
-// import logo2 from '../assets/image-1@2x.jpg'
-// import image from "../assets/F0ZWYHTI8ZQZ55Q.webp"
-
-// function Home() {
-//   return (
-//     <>
-//    <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4  ">
-//      <div className="mb-4 col-span-full xl:mb-2">
-
-//         {/*----------- content ------------- */}
-//         <section >
-//         <div className="container">
-//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-//               {/* ------------video------------ */}
-//                 <div>
-//                     <div className="relative">
-//                     <Link to={"/watch"}>
-//                       <img src={image} alt="Image Not Found" className="w-full h-auto"/>
-//                     </Link>
-//                     </div>
-//                     <div className="mt-2 md:mt-0">
-//                         <div>
-//                             <h3 className="text-lg font-bold"><Link to={"/watch"}>JARVIS - Marvel's Iron Man 3 Second Screen Experience - Trailer</Link></h3>
-//                         </div>
-//                         <div className="mt-2">
-//                             <ul>
-//                                 <li className="text-sm"> 00mins : 16sec</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 </div>
-//             {/* --------------------------------- */}
-//             <div>
-//                     <div className="relative">
-//                     <Link to={"/"}>
-//                       <img src={logo} alt="Image Not Found" className="w-full h-auto"/>
-//                     </Link>                    </div>
-//                     <div className="gen-info-contain mt-2 md:mt-0">
-//                         <div className="gen-movie-info">
-//                             <h3 className="text-lg font-bold"><Link to="single-movie.html">The warrior life</Link></h3>
-//                         </div>
-//                         <div className="mt-2">
-//                             <ul>
-//                                 <li className="text-sm">2hr 00mins</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 </div>
-//                 {/*  */}
-//                 <div>
-//                     <div className="relative">
-//                     <Link to={"/"}>
-//                       <img src={logo2} alt="Image Not Found" className="w-full h-auto"/>
-//                     </Link>                    </div>
-//                     <div className="gen-info-contain mt-2 md:mt-0">
-//                         <div className="gen-movie-info">
-//                             <h3 className="text-lg font-bold"><Link to="single-movie.html">The warrior life</Link></h3>
-//                         </div>
-//                         <div className="mt-2">
-//                             <ul>
-//                                 <li className="text-sm">2hr 00mins</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 </div>
-//                 {/*  */}
-//                 <div>
-//                     <div className="relative">
-//                     <Link to={"/"}>
-//                       <img src={logo} alt="Image Not Found" className="w-full h-auto"/>
-//                     </Link>                    </div>
-//                     <div className="gen-info-contain mt-2 md:mt-0">
-//                         <div className="gen-movie-info">
-//                             <h3 className="text-lg font-bold"><Link to="single-movie.html">The warrior life</Link></h3>
-//                         </div>
-//                         <div className="mt-2">
-//                             <ul>
-//                                 <li className="text-sm">2hr 00mins</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 </div>
-//                 {/*  */}
-//                 <div>
-//                     <div className="relative">
-//                     <Link to={"/"}>
-//                       <img src={logo2} alt="Image Not Found" className="w-full h-auto"/>
-//                     </Link>                    </div>
-//                     <div className="gen-info-contain mt-2 md:mt-0">
-//                         <div className="gen-movie-info">
-//                             <h3 className="text-lg font-bold"><Link to="single-movie.html">The warrior life</Link></h3>
-//                         </div>
-//                         <div className="mt-2">
-//                             <ul>
-//                                 <li className="text-sm">2hr 00mins</li>
-//                             </ul>
-//                         </div>
-//                     </div>
-//                 </div>
-//         </div>
-//     </div>
-// </section>
-
-//         {/*----------- content ------------- */}
-//     </div>
-// </div>
-//     </>
-//   )
-// }
-
-// export default Home

@@ -5,6 +5,9 @@ import { useRef } from "react"; //EU6u1.p2.a1.1ln - Views Increment - updated on
 import Comments from "./Comments";
 import { formatDistanceToNowStrict } from "date-fns";
 
+import ThumbUpOffAltRoundedIcon from "@mui/icons-material/ThumbUpOffAltRounded"; // outline
+import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded"; // filled
+
 function Video() {
   const { id } = useParams();
   const [videoData, setVideoData] = useState(null); //EU6u1.p2.a3.1ln - Views Increment - id -> null, we'll fetch real object below
@@ -16,6 +19,55 @@ function Video() {
   const [likesCount, setLikesCount] = useState(0);
   const [disliked, setDisliked] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // UI feedback states
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Save toggle (visual only for now — still calls your onToggleSave)
+  const handleSaveToggle = async () => {
+    setSaveLoading(true);
+    try {
+      // optimistic UI toggle
+      setSaved((s) => !s);
+      // call existing handler (keeps existing API call behaviour)
+      onToggleSave();
+      // small delay to show loading -> success
+      await new Promise((r) => setTimeout(r, 350));
+    } catch (e) {
+      console.error("Save toggle failed", e);
+      // rollback on failure
+      setSaved((s) => !s);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {};
+
+  const handleShare = async () => {
+    const payload = videoData?._id || id || "unknown-id";
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(payload);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = payload;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    } catch (err) {
+      console.error("Copy failed", err);
+      alert("Unable to copy to clipboard");
+    }
+  };
 
   const onToggleDislike = () => {
     setDisliked(!disliked);
@@ -71,7 +123,7 @@ function Video() {
   };
 
   //EU6u1.p1.27ln - Views Increment - only if user plays video for few second - replaced 10L - 27L
-    useEffect(() => {
+  useEffect(() => {
     if (loading) return; // wait until video is rendered
 
     let viewSent = false;
@@ -107,8 +159,13 @@ function Video() {
     if (videoData && videoData.owner) {
       const fetchUser = async () => {
         try {
+          const channelId =
+            typeof videoData.owner === "object"
+              ? videoData.owner._id
+              : videoData.owner;
+
           const response = await axios.get(
-            `/api/v1/account/userData/${videoData.owner}`
+            `/api/v1/account/userData/${channelId}`
           );
           setUserData(response.data.data);
           //EU6u3.p4.a2.3l - Subscribe feature: fetches initial status
@@ -156,23 +213,7 @@ function Video() {
                         style={{ height: "465px" }}
                       >
                         {/* EU8u1.p1.a1.5ln - Thumbnail Fixing */}
-                        {/* <div className="mb-4">
-                          <img
-                            src={videoData.thumbnail}
-                            onError={(e) => {
-                                // Prevent infinite loop
-                                if (!e.currentTarget.dataset.fallbackApplied) {
-                                  const randomIndex =
-                                    Math.floor(Math.random() * 8) + 1; // 1–8
-                                  e.currentTarget.src = `http://localhost:8000/placeholders/loading${randomIndex}.gif`;
-                                  e.currentTarget.dataset.fallbackApplied =
-                                    "true";
-                                }
-                              }}
-                            alt={`${videoData.title} thumbnail`}
-                            className="w-full h-64 object-cover rounded-md"
-                          />
-                        </div> */}
+                      
 
                         <video
                           ref={videoRef}
@@ -182,14 +223,11 @@ function Video() {
                           {" "}
                           {/* EU6u1.p2.a5.2wd - Views Increment - added ref={videoref} */}
                           {/* EU5u1.p1.10ln */}
-                          {/* <source src={videoData.videoFile} type="video/mp4"/> */}
                           {(() => {
-                            // If videoData.videoFile is a local URL that contains "/temp/", use the stream route
                             const isLocal =
                               typeof videoData.videoFile === "string" &&
                               videoData.videoFile.includes("/temp/");
                             if (isLocal) {
-                              // extract filename from the URL (works for cloud or local full URLs)
                               const parts = videoData.videoFile.split("/");
                               const filename = parts[parts.length - 1];
                               return (
@@ -240,8 +278,16 @@ function Video() {
                           <button
                             onClick={async () => {
                               try {
+                                const channelId =
+                                  videoData?.owner &&
+                                  typeof videoData.owner === "object"
+                                    ? videoData.owner._id
+                                    : videoData?.owner;
+
                                 const res = await axios.put(
-                                  `/api/v1/account/subscribe/${videoData.owner}`
+                                  `/api/v1/account/subscribe/${encodeURIComponent(
+                                    channelId
+                                  )}`
                                 );
                                 setSubscribed(res.data.data.subscribed);
                                 setSubsCount(res.data.data.count);
@@ -249,7 +295,7 @@ function Video() {
                                 console.error("Subscribe toggle failed:", e);
                               }
                             }}
-                            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-[0.9rem] overflow-hidden border border-gray-200"
+                            className="relative inline-flex items-center gap-1 px-3 py-2 rounded-[0.9rem] overflow-hidden border-2 border border-gray-200"
                             aria-pressed={subscribed}
                           >
                             {/* animated left→right fill */}
@@ -295,7 +341,6 @@ function Video() {
 
                         <li className="inline-flex items-center bg-gray-100 rounded-xl ">
                           {/* EU6u2.p3.a4.11ln - Like feature - added a button for liking the video  */}
-                          {/* <Link className="inline-flex cursor-pointer items-center gap-2 px-1 py-3 text-gray-600 hover:text-black"> */}
                           <button
                             onClick={() => {
                               setLiked(true);
@@ -303,7 +348,7 @@ function Video() {
                               onToggleLike();
                             }}
                             className={[
-                              "inline-flex items-center gap-2 pl-4 px-3 py-2 rounded-l-xl  hover:bg-blue-100 ",
+                              "inline-flex items-center gap-2 pl-4 px-3 py-2 rounded-l-xl  hover:bg-blue-100 focus:scale-95 ",
                               liked
                                 ? "text-blue-500"
                                 : "bg-gray-100 text-gray-700 hover:text-black ",
@@ -317,7 +362,7 @@ function Video() {
                               viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
-                              className="size-6 hover:transform hover:rotate-[-10deg] ease-in-out hover:scale-[1.2] transition-all duration-200"
+                              className="size-6 hover:transform hover:rotate-[-10deg] ease-in-out hover:scale-[1.2] focus:scale-95 transition-all duration-200"
                             >
                               <path
                                 strokeLinecap="round"
@@ -325,11 +370,13 @@ function Video() {
                                 d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
                               />
                             </svg>
-                            {/* EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI */}
+                            {/* // EU6u2.p3.a5.4ln - Like feature - added a span - to show the likes in UI * */}
                             <span className="px-2 py-0.5 hover:scale-[1.3] transition-all duration-100 ">
                               {likesCount > 0 && likesCount}
                             </span>
                           </button>
+                          
+
                           {/* Dislike button  */}
                           <span className="text-[1rem]"> {"|"}</span>
                           <button
@@ -367,74 +414,82 @@ function Video() {
                         {/* Bookmark/SAVE button  */}
                         <li>
                           <button
-                            className="inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black transition-all duration-100 hover:scale-[0.95]"
-                            onClick={() => {
-                              setSaved(true);
-                              onToggleSave();
-                            }}
+                            onClick={handleSaveToggle}
+                            disabled={saveLoading}
+                            aria-pressed={saved}
+                            className={[
+                              "inline-flex items-center gap-2 px-4 py-2 pr-5 rounded-xl transition-all duration-150",
+                              saveLoading
+                                ? "bg-gray-200 text-gray-500"
+                                : saved
+                                ? "bg-blue-100 text-blue-500"
+                                : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-black",
+                            ].join(" ")}
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill={saved ? "currentColor" : "none"}
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-6 h-6" // You can adjust the size by changing w-6 h-6
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 3h14a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2z"
-                              />
-                            </svg>
-                            <span>Save</span>
+                            <img
+                              src="/src/assets/svg_icons/save.svg"
+                              alt="Icon"
+                              className="fixed-size-icon w-6 h-6"
+                            />
+                            <span>
+                              {saveLoading
+                                ? ".........."
+                                : saved
+                                ? "Saved"
+                                : "Save"}
+                            </span>
                           </button>
                         </li>
+
                         {/* Download button */}
                         <li>
-                          <button className="inline-flex items-center gap-2 px-3 py-2 pr-5 rounded-xl hover:bg-blue-100 hover:text-blue-700 bg-gray-100 text-gray-700 hover:text-black">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-6 h-6" // You can adjust the size by changing w-6 h-6
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 3v12m0 0l4-4m-4 4l-4-4m-3 9h15"
+                          <button
+                            onClick={handleDownload}
+                            disabled={downloadLoading}
+                            className="inline-flex items-center gap-2 px-3 py-2 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 text-gray-700 hover:text-black transition-all duration-150"
+                            aria-busy={downloadLoading}
+                          >
+                            {downloadLoading ? (
+                              <svg
+                                className="w-5 h-5 animate-spin"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  fill="none"
+                                  strokeDasharray="31.4 31.4"
+                                />
+                              </svg>
+                            ) : (
+                              <img
+                                src="/src/assets/svg_icons/download.svg"
+                                alt="Icon"
+                                className="fixed-size-icon w-6 h-6"
                               />
-                            </svg>
-                            <span>Download</span>
+                            )}
+                            <span>
+                              {/* {downloadLoading ? "Downloading..." : "Download"} */}
+                            </span>
                           </button>
                         </li>
+
                         {/* Share button */}
                         <li>
-                          <button className="inline-flex items-center gap-2 px-4 py-2.5 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 hover:text-black">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              xmlns:xlink="http://www.w3.org/1999/xlink"
-                              viewBox="0 0 122.88 114.318"
-                              fill="none"
-                              stroke="currentColor"
-                              className="w-5 h-5" // You can adjust the size by changing w-6 h-6
-                            >
-                              <g>
-                                <path
-                                  fill="currentColor" // Adjust this to apply the fill color as desired
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M122.88,35.289L87.945,70.578v-17.58c-22.091-4.577-39.542,0.468-52.796,17.271 c2.301-34.558,25.907-51.235,52.795-52.339L87.945,0L122.88,35.289L122.88,35.289z"
-                                />
-                                <path
-                                  fill="currentColor" // Adjust this to apply the fill color as desired
-                                  d="M6.908,23.746h35.626c-4.587,3.96-8.71,8.563-12.264,13.815H13.815v62.943h80.603V85.831l13.814-13.579v35.159 c0,3.814-3.093,6.907-6.907,6.907H6.908c-3.815,0-6.908-3.093-6.908-6.907V30.653C0,26.838,3.093,23.746,6.908,23.746L6.908,23.746 z"
-                                />
-                              </g>
-                            </svg>
-                            <span>Share</span>
+                          <button
+                            onClick={handleShare}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 pr-5 rounded-xl hover:bg-blue-100 bg-gray-100 hover:text-black transition"
+                            aria-live="polite"
+                          >
+                            <img
+                              src="/src/assets/svg_icons/share.svg"
+                              alt="Icon"
+                              className="fixed-size-icon w-6 h-6"
+                            />
+                            <span>{shareCopied ? "URL Copied!" : "Share"}</span>
                           </button>
                         </li>
 
@@ -444,7 +499,7 @@ function Video() {
                           <Link className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:text-black ">
                             <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2 py-0.5 mr-2">
                               <img
-                                src="/src/assets/uploadedTime.webp"
+                                src="/src/assets/svg_icons/timeAgo.svg"
                                 alt="Icon"
                                 className="fixed-size-icon mt-1w-5 h-5 rounded-full"
                               />
@@ -455,14 +510,17 @@ function Video() {
 
                         {/* Report button */}
                         <li>
-                          <button className="inline-flex items-center gap-2 px-3 py-2.5 rounded-lg focus:text-red-600 focus:bg-gray-100 transition-all duration-300 transform hover:scale-[0.95]">
+                          <Link
+                            to={`/reportForm/${id}`}
+                            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-lg focus:text-red-600 focus:bg-gray-100 transition-all duration-300 transform hover:scale-[0.95]"
+                          >
                             <img
-                              src="/src/assets/flag.svg"
+                              src="/src/assets/svg_icons/flag.svg"
                               alt="Icon"
-                              className="fixed-size-icon mt-1w-5 h-5"
+                              className="fixed-size-icon w-5 h-5"
                             />
                             <span>Report</span>
-                          </button>
+                          </Link>
                         </li>
                       </ul>
                     </div>

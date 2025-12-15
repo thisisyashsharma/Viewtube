@@ -270,12 +270,12 @@ export default function Comments({ videoId }) {
                 </button>
 
                 {/* owner-only Delete */}
-                {me && c.owner?._id === me._id && (
+                {me &&( me.role === "admin" || c.owner?._id === me._id) && (
                   <button
                     className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                     onClick={() => deleteComment(c._id)}
                     aria-label="Delete comment"
-                    title="Delete"
+                    title= {me.role === "admin" ? "Admin Delete " : "Delete" }
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -386,14 +386,13 @@ export default function Comments({ videoId }) {
                           Reply
                         </button>
 
-                        {/* owner-only Delete */}
-                        {me && r.owner?._id === me._id && (
+                        {/* owner-only Delete  or admin */}
+                        {me &&( me.role === "admin" || r.owner?._id === me._id) && (
                           <button
-                            // className="inline-flex items-center justify-center text-red-400 focus:bg-red-400 focus:text-white hover:bg-gray-100 focus:outline-none rounded-lg px-3 py-2 transition duration-500"
                             className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                             onClick={() => deleteReply(c._id, r._id)}
                             aria-label="Delete reply"
-                            title="Delete reply"
+                            title= { me.role === "admin" ? "Admin delete " : "Delete reply" }
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"

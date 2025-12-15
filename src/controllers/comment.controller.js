@@ -1,10 +1,10 @@
-//EU9u1.p2.a1.193ln - Comment + Username 
+//EU9u1.p2.a1.193ln - Comment + Username
 import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 // POST /api/v1/comments/:videoId
 const addComment = asyncHandler(async (req, res) => {
@@ -66,9 +66,9 @@ const getCommentCount = asyncHandler(async (req, res) => {
     const commentCount = await Comment.countDocuments({ video: videoId });
 
     const replyCount = await Comment.aggregate([
-      { $match: { video: new mongoose.Types.ObjectId(videoId) } }, 
-      { $unwind: "$replies" }, 
-      { $group: { _id: null, totalReplies: { $sum: 1 } } }, 
+      { $match: { video: new mongoose.Types.ObjectId(videoId) } },
+      { $unwind: "$replies" },
+      { $group: { _id: null, totalReplies: { $sum: 1 } } },
     ]);
 
     const totalReplies = replyCount.length > 0 ? replyCount[0].totalReplies : 0;
@@ -82,21 +82,24 @@ const getCommentCount = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching comment count:", error);
-    return res.status(500).json({ status: "error", message: "Failed to fetch counts" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Failed to fetch counts" });
   }
 });
-
-
-
-
 
 // DELETE /api/v1/comments/:id
 const deleteComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const comment = await Comment.findById(id);
   if (!comment) throw new ApiError(404, "Comment not found");
-  if (comment.owner.toString() !== req.user._id.toString())
+  const isOwner = comment.owner.toString() === req.user._id.toString();
+
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
     throw new ApiError(403, "Not authorized");
+  }
 
   await comment.deleteOne();
   return res.status(200).json(new ApiResponse(200, {}, "Comment deleted"));
@@ -104,7 +107,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 // POST /api/v1/comments/:id/replies
 const addReply = asyncHandler(async (req, res) => {
-  const { id } = req.params;                 // comment id
+  const { id } = req.params; // comment id
   const { content, parentReplyId } = req.body;
 
   if (!content?.trim()) throw new ApiError(400, "Content is required");
@@ -133,14 +136,6 @@ const addReply = asyncHandler(async (req, res) => {
   const newReply = c.replies[c.replies.length - 1];
   return res.status(201).json(new ApiResponse(201, newReply, "Reply added"));
 });
-
-
-
-
-
-
-
-
 
 // PATCH /api/v1/comments/:id/like
 const toggleLikeComment = asyncHandler(async (req, res) => {
@@ -200,8 +195,13 @@ const deleteReply = asyncHandler(async (req, res) => {
   const r = c.replies.id(replyId);
   if (!r) throw new ApiError(404, "Reply not found");
 
-  if (r.owner.toString() !== req.user._id.toString())
+  const isOwner = r.owner.toString() === req.user._id.toString();
+
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
     throw new ApiError(403, "Not authorized");
+  }
 
   r.deleteOne();
   await c.save();
@@ -209,13 +209,34 @@ const deleteReply = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "Reply deleted"));
 });
 
+const deleteCommentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const comment = await Comment.findById(id);
+
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  const isOwner = comment.owner.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ApiError(403, "Not allowed");
+  }
+
+  await comment.deleteOne();
+
+  res.status(200).json(new ApiResponse(200, null, "Comment deleted"));
+});
+
 export {
   addComment,
+  deleteComment,
   getCommentsByVideo,
   getCommentCount,
-  deleteComment,
   addReply,
+  deleteReply,
   toggleLikeComment,
   toggleLikeReply,
-  deleteReply,
+  deleteCommentById,
 };

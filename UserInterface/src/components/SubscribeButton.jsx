@@ -10,22 +10,60 @@ function SubscribeButton({
   const [subscribed, setSubscribed] = useState(defaultSubscribed);
   const [count, setCount] = useState(defaultCount);
   const [busy, setBusy] = useState(false);
+/*
+const toggle = async () => {
+  if (!channelId || busy) return;
+  try {
+    setBusy(true);
+    const res = await axios.put(`/api/v1/account/subscribe/${channelId}`);
+    const { subscribed: s, count: c } = res?.data?.data || {};
+    setSubscribed(!!s);
+    if (typeof c === "number") setCount(c);
+    onChange && onChange(!!s, c);
+  } catch (e) {
+    console.error("Subscribe toggle failed:", e);
+  } finally {
+    setBusy(false);
+  }
+};
+*/
 
-  const toggle = async () => {
-    if (!channelId || busy) return;
-    try {
-      setBusy(true);
-      const res = await axios.put(`/api/v1/account/subscribe/${channelId}`);
-      const { subscribed: s, count: c } = res?.data?.data || {};
-      setSubscribed(!!s);
-      if (typeof c === "number") setCount(c);
-      onChange && onChange(!!s, c);
-    } catch (e) {
-      console.error("Subscribe toggle failed:", e);
-    } finally {
-      setBusy(false);
-    }
-  };
+// paste into SubscribeButton.jsx (replace existing toggle handler)
+const toggle = async () => {
+  if (busy) return;
+
+  // Normalize channelId to a string id if caller passed an object
+  let idStr = "";
+  if (!channelId) {
+    console.warn("SubscribeButton: no channelId provided, skip toggle");
+    return;
+  } else if (typeof channelId === "object") {
+    idStr = channelId._id || channelId.id || "";
+  } else {
+    idStr = String(channelId);
+  }
+
+  // Basic ObjectId format sanity check (24 hex chars). This avoids a backend validation error.
+  const maybeObjectId = /^[a-fA-F0-9]{24}$/.test(idStr);
+  if (!maybeObjectId) {
+    console.warn("SubscribeButton: invalid channelId format, skipping API call:", idStr);
+    return;
+  }
+
+  try {
+    setBusy(true);
+    const res = await axios.put(`/api/v1/account/subscribe/${encodeURIComponent(idStr)}`);
+    const { subscribed: s, count: c } = res?.data?.data || {};
+    setSubscribed(!!s);
+    if (typeof c === "number") setCount(c);
+    onChange && onChange(!!s, c);
+  } catch (e) {
+    console.error("Subscribe toggle failed:", e?.response?.data || e?.message || e);
+  } finally {
+    setBusy(false);
+  }
+};
+
 
   return (
     <button

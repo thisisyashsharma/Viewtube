@@ -37,7 +37,7 @@ const userSignUp = new Schema(
     //EU6u3.p1.a1.2ln - Subscribe feature: +2
     subscribers: [{ type: Schema.Types.ObjectId, ref: "newUser" }],
     subscribedTo: [{ type: Schema.Types.ObjectId, ref: "newUser" }],
-    //EU9u1.p5.a1.6ln - Comment + Username  
+    //EU9u1.p5.a1.6ln - Comment + Username
     username: {
       type: String,
       unique: true,
@@ -45,20 +45,30 @@ const userSignUp = new Schema(
       lowercase: true,
       trim: true,
     },
-    about:{
-      type: String, 
+    about: {
+      type: String,
       trim: true,
-      maxlength:1000,
-      default:"", 
-    }
+      maxlength: 1000,
+      default: "",
+    },
+    isVerified: { type: Boolean, default: false },
+    emailOtpHash: { type: String },
+    emailOtpExpires: { type: Date },
+    emailOtpAttempts: { type: Number, default: 0 },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-userSignUp.path("username").set(v => (v ? String(v).toLowerCase().trim() : v));
-
+userSignUp
+  .path("username")
+  .set((v) => (v ? String(v).toLowerCase().trim() : v));
 
 // hash if changed
 userSignUp.pre("save", async function (next) {
@@ -68,9 +78,6 @@ userSignUp.pre("save", async function (next) {
 });
 
 userSignUp.methods.isPasswordCorrect = async function (password) {
-  /*
-       3.ERROR - Token Error - step2 - return this.password === password;
-    */
   return bcrypt.compare(password, this.password);
 };
 
@@ -87,6 +94,7 @@ userSignUp.methods.generateAccessToken = function () {
     }
   );
 };
+
 userSignUp.methods.generateRefreshToken = function () {
   return jwt.sign(
     {

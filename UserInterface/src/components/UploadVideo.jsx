@@ -9,7 +9,11 @@ function UploadVideo() {
   const [thumbnail, setThumbnail] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
   const [loader, setLoader] = useState(false);
-  const [useLocal, setUseLocal] = useState(false); // <-- NEW
+  const [useLocal, setUseLocal] = useState(true); // <-- NEW
+
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+  const [videoSizeError, setVideoSizeError] = useState("");
+  const [videoSizeMB, setVideoSizeMB] = useState(0);
 
   const handleToggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -22,10 +26,30 @@ function UploadVideo() {
   };
 
   const handleVideoFileChange = (e) => {
-    setVideoFile(e.target.files[0]);
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const sizeMB = file.size / (1024 * 1024);
+    setVideoSizeMB(sizeMB.toFixed(2));
+
+    if (file.size > MAX_VIDEO_SIZE) {
+      setVideoSizeError(
+        `🚫 File is ${sizeMB.toFixed(2)}MB. Max allowed is 100MB.`
+      );
+      setVideoFile(null);
+      e.target.value = ""; // reset input
+      return;
+    }
+
+    setVideoSizeError("");
+    setVideoFile(file);
   };
 
   const handleSubmit = async (e) => {
+    if (videoSizeError || !videoFile) {
+      return;
+    }
+
     e.preventDefault();
 
     const formData = new FormData();
@@ -47,16 +71,27 @@ function UploadVideo() {
           "Content-Type": "multipart/form-data",
         },
         withCredentials: true, // send cookies (accessToken/refreshToken) to backend
-        timeout: 120000 // allow longer time for big uploads
-    });
+        timeout: 120000, // allow longer time for big uploads
+      });
 
-      alert("Successfully Video Uploaded");
+      // ✅ SUCCESS FLOW
+      setVideoSizeError("");
+      setVideoSizeMB(0);
+      setVideoFile(null);
+      setThumbnail(null);
+      setTitle("");
+      setDescription("");
+
       setLoader(false);
+      setIsModalOpen(false); // 🔥 close modal cleanly
       history("/your_channel");
-      // console.log(res.data);
     } catch (error) {
-      console.log("Video Upload error: ", error);
-      alert(" Something went worng ?");
+      console.log("Video Upload error:", error);
+
+      const msg =
+        error?.response?.data?.message || "Upload failed. Please try again.";
+
+      setVideoSizeError(`⚠️ ${msg}`);
       setLoader(false);
     }
   };
@@ -91,29 +126,31 @@ function UploadVideo() {
         <button
           onClick={handleToggleModal}
           type="button"
-          className="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 mt-4"
+          className="text-md text-white bg-gray-600 hover:bg-gray-800 focus:outline-none focus:scale-95 transition-all duration-100 font-semibold rounded-xl   px-7 py-3 me-2 my-6"
         >
-          Create
+          Upload
         </button>
       </div>
 
       {isModalOpen && (
         <div
           id="crud-modal"
-          className="fixed inset-0 z-50 flex justify-center items-center w-full h-full bg-black bg-opacity-50"
+          // className="fixed inset-0 z-50 flex justify-center items-center w-full h-full bg-black bg-opacity-50"
+          className="fixed inset-0 z-50 flex justify-center items-center w-full h-full
+             bg-black/5 backdrop-blur-sm "
         >
-          <div className="relative p-4 w-full max-w-xl max-h-full bg-white rounded-lg shadow">
-            <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Share Your Video
+          <div className="relative p-2 w-full max-w-xl max-h-full bg-white border-[0.4rem] border-gray-100 rounded-[2.5rem] shadow">
+            <div className="flex items-center justify-between p-8 md:p-7 border-b-4 border-gray-100 rounded-t">
+              <h3 className="text-4xl font-medium text-gray-700">
+                Upload Video
               </h3>
               <button
                 type="button"
                 onClick={handleToggleModal}
-                className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center"
+                className="text-gray-400 hover:bg-gray-50 focus:scale-95 transition-all duration-200 hover:text-red-500 rounded-xl text-sm w-10 h-10 ms-auto inline-flex justify-center items-center"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-4 h-4"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -130,12 +167,13 @@ function UploadVideo() {
                 <span className="sr-only">Close modal</span>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 md:p-5">
-              <div className="grid gap-4 mb-4 grid-cols-2">
+
+            <form onSubmit={handleSubmit} className="p-4 md:p-5 ">
+              <div className="grid gap-4 mb-4 grid-cols-2 text-[0.9rem]">
                 <div className="col-span-2">
                   <label
                     htmlFor="title"
-                    className="block mb-2 text-sm font-medium text-gray-900"
+                    className="block mb-3 font-medium text-gray-900"
                   >
                     Title
                   </label>
@@ -145,7 +183,7 @@ function UploadVideo() {
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900  rounded-xl focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                     placeholder="Enter video title"
                     required
                   />
@@ -153,7 +191,7 @@ function UploadVideo() {
                 <div className="col-span-2">
                   <label
                     htmlFor="thumbnail"
-                    className="block mb-2 text-sm font-medium text-gray-900"
+                    className="block mb-2 font-medium text-gray-900"
                   >
                     Thumbnail
                   </label>
@@ -162,14 +200,14 @@ function UploadVideo() {
                     name="thumbnail"
                     id="thumbnail"
                     onChange={handleThumbnailChange}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900  rounded-xl focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                     required
                   />
                 </div>
                 <div className="col-span-2">
                   <label
                     htmlFor="videoFile"
-                    className="block mb-2 text-sm font-medium text-gray-900"
+                    className="block mb-2   font-medium text-gray-900"
                   >
                     Video
                   </label>
@@ -178,14 +216,43 @@ function UploadVideo() {
                     name="videoFile"
                     id="videoFile"
                     onChange={handleVideoFileChange}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900  rounded-xl focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                     required
                   />
+                  {/* Uploading video size BAR  */}
+                  {videoSizeMB > 0 && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>File size: {videoSizeMB} MB</span>
+                        <span>Limit: 100 MB</span>
+                      </div>
+
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-500 ${
+                            videoSizeMB > 100 ? "bg-red-500" : "bg-green-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              (videoSizeMB / 100) * 100,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {videoSizeError && (
+                    <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm animate-pulse">
+                      {videoSizeError}
+                    </div>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <label
                     htmlFor="description"
-                    className="block mb-2 text-sm font-medium text-gray-900"
+                    className="block mb-2 font-medium text-gray-900"
                   >
                     Description
                   </label>
@@ -194,30 +261,31 @@ function UploadVideo() {
                     rows="4"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                    className="block p-2.5 w-full  text-gray-900 bg-gray-50 rounded-xl border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter video description"
                     required
                   ></textarea>
                 </div>
 
                 {/* STORAGE TOGGLE */}
-                <div className="col-span-2 mb-4 flex items-center gap-3">
-                  <input
+                <div className="col-span-2 mb-2 flex items-center gap-3">
+                  {/* <input
                     id="useLocal"
                     type="checkbox"
                     checked={useLocal}
-                    onChange={() => setUseLocal((prev) => !prev)}
+                    //Just for now -  onChange={() => setUseLocal((prev) => !prev)}
                     className="w-4 h-4"
-                  />
-                  <label htmlFor="useLocal" className="text-sm text-gray-700">
-                    Use local storage (skip Cloudinary)
+                  /> */}
+                  <label htmlFor="useLocal" className="  text-gray-700">
+                    {/* Use local storage */}
+                    {/* (skip Cloudinary) */}
                   </label>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="text-white inline-flex items-center bg-gray-700 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                className="inline-flex items-center text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:scale-95 focus:bg-black transition-all duration-200 font-medium rounded-xl   px-5 py-2.5 "
               >
                 <svg
                   className="me-1 -ms-1 w-5 h-5"

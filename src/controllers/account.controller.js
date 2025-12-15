@@ -7,6 +7,10 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import dns from "dns/promises";
+import crypto from "crypto";
+import { sendMail } from "../utils/mailer.utils.js";
+
+import { Preverify } from "../models/preverify.model.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -29,7 +33,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 // {******------------------------ register user---------------------------******}
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, about } = req.body;
+  const { name, email, password, about, preVerifiedToken } = req.body;
 
   if (!name || !email || !password) {
     throw new ApiError(400, "All fields are required");
@@ -41,6 +45,22 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (checkUser) {
     throw new ApiError(409, "User with email or username already exists");
+  }
+
+  //EU10u2.p8.a1.6ln - Email verification level 2 - accepts otp token and mark accept
+  let isVerified = false;
+  if (preVerifiedToken) {
+    try {
+      const secret =
+        process.env.EMAIL_PREVERIFY_SECRET || process.env.ACCESS_TOKEN_SECRET;
+      const payload = jwt.verify(preVerifiedToken, secret);
+      if (
+        payload?.pre_verified &&
+        payload?.email?.toLowerCase() === email.toLowerCase()
+      ) {
+        isVerified = true;
+      }
+    } catch {}
   }
 
   const avatar =
@@ -57,12 +77,21 @@ const registerUser = asyncHandler(async (req, res) => {
     candidate = `${base}${suffix}`;
   }
 
+  // EU151225.u1.p2 - Admin role
+
+  const isAdminEmail =
+  process.env.ADMIN_EMAIL &&
+  email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+
+
   const user = await newUser.create({
     name,
     email,
     password,
     avatar,
     username: candidate,
+    isVerified,
+    role: isAdminEmail ? "admin" : "user",
   });
 
   return res
@@ -287,7 +316,6 @@ const updateAccount = asyncHandler(async (req, res) => {
 
 const deleteAccount = asyncHandler(async (req, res) => {
   const user = await newUser.findByIdAndDelete(req.params.id);
-
   if (!user) {
     throw new ApiError(404, "User not found");
   }
@@ -414,10 +442,13 @@ const toggleSubscribe = asyncHandler(async (req, res) => {
   const viewerId = req.user._id; // signed-in user
   const { channelId } = req.params; // channel owner userId
 
+  if (!mongoose.Types.ObjectId.isValid(channelId)) {
+    throw new ApiError(400, "Invalid channel ID");
+  }
+
   if (viewerId.toString() === channelId) {
     throw new ApiError(400, "You cannot subscribe to your own channel");
   }
-
   const channel = await newUser.findById(channelId);
   if (!channel) throw new ApiError(404, "Channel not found");
 
@@ -460,6 +491,10 @@ const getSubscribeStatus = asyncHandler(async (req, res) => {
   const viewerId = req.user._id;
   const { channelId } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(channelId)) {
+    throw new ApiError(400, "Invalid channel ID");
+  }
+
   const channel = await newUser.findById(channelId).select("subscribers");
   if (!channel) throw new ApiError(404, "Channel not found");
 
@@ -480,7 +515,7 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
     .select("subscribedTo")
     .populate({
       path: "subscribedTo",
-      select: "name avatar subscribers username about", // we’ll derive count from array length
+      select: "name avatar subscribers username about ",
     });
 
   const channels = (me?.subscribedTo || []).map((ch) => ({
@@ -499,7 +534,7 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
 // GET /api/v1/account/me
 //EU9u1.p4.a1.6ln - Comment + Username
 const getMe = asyncHandler(async (req, res) => {
-  const me = await newUser.findById(req.user._id).select("_id username avatar");
+  const me = await newUser.findById(req.user._id).select("_id username avatar  role email");
   return res.status(200).json(new ApiResponse(200, me, "OK"));
 });
 
@@ -579,11 +614,275 @@ const validateEmailRealtime = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, result, "OK"));
 });
 
+//EU10u2.p3.a1.135ln - Email verification level 2 - func logic- makeAlphaNumOTP, otpEmailTemplate, sendEmailOtp, verifyEmailOtp, resendEmailOtp
+
+// Alphanumeric OTP (A–Z, 0–9), uppercase, length from env or default 8
+function makeAlphaNumOTP(length = 6) {
+  const L = Math.max(4, Math.min(32, Number(process.env.OTP_LENGTH) || length));
+  const bytes = crypto.randomBytes(L);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  for (let i = 0; i < L; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
+function sha256(s) {
+  return crypto.createHash("sha256").update(String(s)).digest("hex");
+}
+
+function minutesFromNow(mins) {
+  const m = Number(process.env.OTP_VALID_MINUTES) || mins || 5;
+  return new Date(Date.now() + m * 60 * 1000);
+}
+
+function otpEmailTemplate({ code, validMinutes }) {
+  const v = validMinutes ?? (Number(process.env.OTP_VALID_MINUTES) || 5);
+  return {
+    subject: "Your One-Time Verification Code",
+    text: `Your verification code is: ${code}
+
+Please use this code to verify your email address.
+This code will remain valid for ${v} minutes.
+
+If you did not make this request, you can safely ignore this email.`,
+    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;line-height:1.6">
+  <p>Hello,</p>
+  <p>Your verification code is:</p>
+  <div style="font-size:22px;font-weight:700;letter-spacing:2px;background:#f6f6f6;border:1px solid #eaeaea;padding:12px 16px;display:inline-block;border-radius:8px">
+    ${code}
+  </div>
+  <p style="margin-top:12px">Please use this code to verify your email address.</p>
+  <p style="color:#555">This code will remain valid for <strong>${v} minutes</strong>.</p>
+  <p style="color:#777;font-size:12px">If you did not make this request, you can safely ignore this email.</p>
+  <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
+  <p style="color:#999;font-size:12px">Sent from an automated address. Replies are not monitored.</p>
+</div>`,
+  };
+}
+
+const sendEmailOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const user = await newUser.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+
+  // Optional: if already verified, short-circuit
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { alreadyVerified: true },
+          "Email already verified"
+        )
+      );
+  }
+
+  const otp = makeAlphaNumOTP();
+  user.emailOtpHash = sha256(otp);
+  user.emailOtpExpires = minutesFromNow(15);
+  user.emailOtpAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  const tpl = otpEmailTemplate({
+    code: otp,
+    validMinutes: Number(process.env.OTP_VALID_MINUTES) || 5,
+  });
+  await sendMail({
+    to: email,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
+  });
+
+  return res.status(200).json(new ApiResponse(200, { sent: true }, "OTP sent"));
+});
+
+const verifyEmailOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) throw new ApiError(400, "Email and OTP are required");
+
+  const user = await newUser.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { ok: true }, "Already verified"));
+  }
+
+  if (
+    !user.emailOtpHash ||
+    !user.emailOtpExpires ||
+    new Date() > user.emailOtpExpires
+  ) {
+    throw new ApiError(400, "OTP expired, please request a new one");
+  }
+
+  if ((user.emailOtpAttempts || 0) >= 5) {
+    throw new ApiError(429, "Too many attempts, please request a new OTP");
+  }
+
+  user.emailOtpAttempts = (user.emailOtpAttempts || 0) + 1;
+
+  const ok = sha256(String(otp)) === user.emailOtpHash;
+  if (!ok) {
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(400, "Incorrect OTP");
+  }
+
+  user.isVerified = true;
+  user.emailOtpHash = undefined;
+  user.emailOtpExpires = undefined;
+  user.emailOtpAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { ok: true }, "Email verified"));
+});
+
+const resendEmailOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const user = await newUser.findOne({ email });
+  if (!user) throw new ApiError(404, "User not found");
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { alreadyVerified: true },
+          "Email already verified"
+        )
+      );
+  }
+
+  // Optional: simple cooldown — do not resend if current OTP is still valid for > 2 min
+  if (
+    user.emailOtpExpires &&
+    user.emailOtpExpires > new Date(Date.now() + 1 * 60 * 1000)
+  ) {
+    return res
+      .status(429)
+      .json(
+        new ApiResponse(429, { retryAfter: 60 }, "Please wait 1 min resending")
+      );
+  }
+
+  const otp = makeAlphaNumOTP();
+  user.emailOtpHash = sha256(otp);
+  user.emailOtpExpires = minutesFromNow(5);
+  user.emailOtpAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  const tpl = otpEmailTemplate({
+    code: otp,
+    validMinutes: Number(process.env.OTP_VALID_MINUTES) || 5,
+  });
+  await sendMail({
+    to: email,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { sent: true }, "OTP resent"));
+});
+
+//EU10u2.p6.a1.50ln  - Email verification level 2 - presignup send + verify
+
+// issue short-lived proof JWT after OTP verify (stateless proof)
+function issuePreverifiedJWT(email) {
+  const secret =
+    process.env.EMAIL_PREVERIFY_SECRET || process.env.ACCESS_TOKEN_SECRET;
+  // short life: 15 min
+  return jwt.sign({ email, pre_verified: true }, secret, { expiresIn: "15m" });
+}
+
+// POST /api/v1/account/pre-otp/send { email }
+const preOtpSend = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const otp = makeAlphaNumOTP(Number(process.env.OTP_LENGTH) || 6);
+  const doc = {
+    email: email.toLowerCase().trim(),
+    otpHash: sha256(otp),
+    expiresAt: minutesFromNow(Number(process.env.OTP_VALID_MINUTES) || 5),
+    attempts: 0,
+  };
+  await Preverify.findOneAndUpdate({ email: doc.email }, doc, { upsert: true });
+
+  const tpl = otpEmailTemplate({
+    code: otp,
+    validMinutes: Number(process.env.OTP_VALID_MINUTES) || 5,
+  });
+  await sendMail({
+    to: email,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
+  });
+
+  return res.json(new ApiResponse(200, { sent: true }, "OTP sent"));
+});
+
+// POST /api/v1/account/pre-otp/verify { email, otp }
+const preOtpVerify = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) throw new ApiError(400, "Email and OTP are required");
+
+  const rec = await Preverify.findOne({ email: email.toLowerCase().trim() });
+  if (!rec || new Date() > rec.expiresAt)
+    throw new ApiError(400, "OTP expired, please send again");
+  if ((rec.attempts || 0) >= 5)
+    throw new ApiError(429, "Too many attempts, resend OTP");
+
+  rec.attempts = (rec.attempts || 0) + 1;
+  const ok = sha256(String(otp)) === rec.otpHash;
+  await rec.save();
+
+  if (!ok) throw new ApiError(400, "Incorrect OTP");
+
+  // success → issue short-lived proof token, and delete record (optional)
+  const token = issuePreverifiedJWT(rec.email);
+  await Preverify.deleteOne({ _id: rec._id });
+
+  return res.json(
+    new ApiResponse(200, { preVerifiedToken: token }, "Email pre-verified")
+  );
+});
+
+
+// EU151225.u3.p1 - Admin role
+const adminDeleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (req.user._id.toString() === id) {
+    throw new ApiError(400, "Admin cannot delete self");
+  }
+
+  await newUser.findByIdAndDelete(id);
+
+  res.status(200).json(
+    new ApiResponse(200, null, "User deleted by admin")
+  );
+});
+ 
 export {
   registerUser,
-  login,
   updateAccount,
   deleteAccount,
+  login,
   logoutUser,
   refreshAccessToken,
   getUserById,
@@ -596,4 +895,10 @@ export {
   updateUsername,
   getMe,
   validateEmailRealtime,
+  sendEmailOtp,
+  verifyEmailOtp,
+  resendEmailOtp,
+  preOtpSend,
+  preOtpVerify,
+  adminDeleteUser,
 };

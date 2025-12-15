@@ -77,7 +77,7 @@ function CustomizeChannel() {
   const inputBase =
     "p-2 border-b-2 text-gray-400 focus:text-gray-900 focus:border-blue-500 hover:border-gray-800 focus:bg-gray-100 outline-none transition-all duration-500 rounded-t-md";
   const saveBtnBase =
-    "px-5 py-2.5 rounded text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-300 disabled:opacity-60";
+    "px-5 py-2.5 rounded-[0.5rem] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition-all duration-100 disabled:opacity-60 focus:scale-95 focus:bg-blue-800";
 
   return loader ? (
     <div className="text-center my-72">
@@ -190,7 +190,7 @@ function CustomizeChannel() {
         <div className="mt-8">
           <button
             onClick={() => history("/your_channel")}
-            className="px-5 py-2.5 rounded text-white bg-gray-700 hover:bg-black transition-all duration-300"
+            className="px-5 py-2.5 rounded-lg text-white bg-gray-600 hover:bg-gray-800 focus:bg-black focus:scale-95 transition-all duration-100"
           >
             Done
           </button>

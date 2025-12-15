@@ -173,8 +173,7 @@ function Settings() {
                 <td className="px-6 py-4">
                   <Link
                     to={"/customize_channel"}
-                    className="px-5 py-2 font-medium text-blue-600 rounded-md hover:bg-gray-100 outline-none active:scale-95 hover:shadow-inner transition-all duration-100 ease-in-out focus:text-blue-800 
-                    focus:bg-gray-300"
+                    className="px-5 py-2 font-medium  rounded-lg hover:bg-gray-100 outline-none active:scale-95 text-purple-600 transition-all duration-100 ease-in-out focus:text-green-700"
                   >
                     Edit
                   </Link>
@@ -190,7 +189,7 @@ function Settings() {
                 <td className="px-6 py-4">
                   <button
                     onClick={handleDeleteClick}
-                    className="px-5 py-2 font-medium text-blue-600 rounded-md hover:bg-gray-100 outline-none active:scale-95 hover:shadow-inner transition-all duration-100 ease-in-out focus:text-blue-800 
+                    className="px-5 py-2 font-medium  rounded-lg hover:bg-gray-100 outline-none active:scale-95 text-red-500 transition-all duration-100 ease-in-out focus:text-red-700
                     focus:bg-gray-300"
                   >
                     Delete

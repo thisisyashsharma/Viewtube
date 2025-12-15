@@ -7,7 +7,7 @@ function Shorts() {
       <div className="mb-4 col-span-full xl:mb-2">
         {/*-------------------content---------------------*/}
         <div className="text-lg mb-8 ">
-          <h1 className="text-4xl font-semibold mb-4">Shorts</h1>
+          <h1 className="text-4xl font-semibold mb-4">Short asdfa sdfForm</h1>
         </div>
         {/*-------------------content---------------------*/}
       </div>

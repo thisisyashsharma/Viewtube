@@ -7,6 +7,7 @@ import {
   VideoDataById,
   viewsIncrement,
   streamVideo,
+  getMyLikedVideos,
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -41,5 +42,6 @@ router.route("/incrementView/:id").put(viewsIncrement);
 //EU6u2.p1.a1.2ln - Like feature
 router.put("/:id/like", verifyJWT, toggleVideoLike);
 router.get("/:id/like/status", verifyJWT, getVideoLikeStatus);
+router.get("/api/v1/likes", verifyJWT, getMyLikedVideos);                  //EU12u1.p4 - Liked Page
 
 export default router;

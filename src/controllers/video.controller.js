@@ -3,24 +3,24 @@ import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { Like } from "../models/like.model.js";                                     // EU6u1.p2.a1.1ln - Like feature 
+import { Like } from "../models/like.model.js"; // EU6u1.p2.a1.1ln - Like feature
+import "dotenv/config";
 
-/*
-Convert an absolute path like "C:\.../public/temp/FILE.mp4" or "./public/temp/FILE.mp4"
-into a public URL like "http://localhost:8000/temp/FILE.mp4"
-*/
-const localUrlFromAbsPath = (req, absPath) => {                                     // EU4u2.p0.10l- added this function    
+const localUrlFromAbsPath = (req, absPath) => {
   if (!absPath) return null;
-  // normalize windows backslashes to forward slashes
-  const normalized = absPath.replace(/\\/g, '/');
-  // find "/public" segment
-  const idx = normalized.lastIndexOf('/public');                                    // EU8u1.p3.a1.1wd - Thumbnail fixing : indexOf -> lastIndexOf
-  const relative = idx >= 0 ? normalized.slice(idx + '/public'.length) : normalized;
-  const path = relative.startsWith('/') ? relative : `/${relative}`;
-  const proto = req.get('x-forwarded-proto') || req.protocol;
-  return `${proto}://${req.get('host')}${path}`;
+  const normalized = String(absPath).replace(/\\/g, "/");
+  const idx = normalized.lastIndexOf("/public");
+  let relative;
+  if (idx >= 0) {
+    relative = normalized.slice(idx + "/public".length);
+  } else {
+    const base = path.basename(normalized);
+    relative = `/temp/${base}`;
+  }
+  if (!relative.startsWith("/")) relative = `/${relative}`;
+  const proto = req.get("x-forwarded-proto") || req.protocol;
+  return `${proto}://${req.get("host")}${relative}`;
 };
-// --- END HELPER ---
 
 // ********------------------video upload-------------------********
 
@@ -51,7 +51,25 @@ const publishAVideo = asyncHandler(async (req, res) => {
     // Default: Cloudinary
     const thumbUpload = await uploadOnCloudinary(thumbnailFile.path);
     const videoUpload = await uploadOnCloudinary(videoFile.path);
-    if ((!thumbUpload?.url || !videoUpload?.url) ||  !(videoUpload?.secure_url || videoUpload?.url)) {
+
+    // ❌ Reject large videos BEFORE any upload
+    const MAX_VIDEO_SIZE =
+      Number(process.env.MAX_VIDEO_SIZE) || 100 * 1024 * 1024;
+      
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      throw new ApiError(
+        413,
+        `Video too large. Max allowed size is ${Math.floor(
+          MAX_VIDEO_SIZE / (1024 * 1024)
+        )}MB`
+      );
+    }
+
+    if (
+      !thumbUpload?.url ||
+      !videoUpload?.url ||
+      !(videoUpload?.secure_url || videoUpload?.url)
+    ) {
       throw new ApiError(400, "File upload problem");
     }
     thumbnailUrl = thumbUpload.url || thumbUpload.url;
@@ -75,7 +93,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
 // ********------------------all video find-------------------********
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const videos = await Video.find(); // Fetch all videos from the Video collection
+  const videos = await Video.find()
+    .select("title views createdAt thumbnail owner")
+    .populate("owner", "name avatar username")
+    .lean();
 
   return res
     .status(200)
@@ -91,7 +112,10 @@ const getAllUserVideos = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Owner ID is required");
   }
 
-  const userVideos = await Video.find({ owner }); // Fetch all videos that match the owner's ID
+  const userVideos = await Video.find({ owner }) // Fetch all videos that match the owner's ID
+    .select("title views createdAt thumbnail owner")
+    .populate("owner", "name avatar username")
+    .lean();
 
   if (!userVideos.length) {
     return res
@@ -116,12 +140,16 @@ const deleteVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-  // Check if the logged-in user is the owner of the video
-  if (video.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, "You are not authorized to delete this video");
+  // EU151225.u2.p3 - Admin role
+
+  const isOwner = video.owner.toString() === userId.toString();
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ApiError(403, "Not allowed to delete this video");
   }
 
-  await Video.findByIdAndDelete(id); // Delete the video from the database
+  await Video.findByIdAndDelete(id);
 
   return res
     .status(200)
@@ -132,8 +160,10 @@ const deleteVideoById = asyncHandler(async (req, res) => {
 
 const VideoDataById = asyncHandler(async (req, res) => {
   const { id } = req.params; // Extract the video ID from the request parameters
-
-  const video = await Video.findById(id); // Find the video by ID
+  const video = await Video.findById(id)
+    .select("title description views createdAt thumbnail videoFile owner")
+    .populate("owner", "name avatar username")
+    .lean();
 
   if (!video) {
     throw new ApiError(404, "Video not found");
@@ -163,7 +193,6 @@ const viewsIncrement = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video Views Updated"));
 });
 
-
 //EU5u1.p2.55ln - added streamVideo controller
 import fs from "fs";
 import path from "path";
@@ -188,12 +217,12 @@ const streamVideo = async (req, res) => {
 
       if (start >= fileSize || end >= fileSize) {
         res.status(416).set({
-          "Content-Range": `bytes */${fileSize}`
+          "Content-Range": `bytes */${fileSize}`,
         });
         return res.end();
       }
 
-      const chunkSize = (end - start) + 1;
+      const chunkSize = end - start + 1;
       const file = fs.createReadStream(filePath, { start, end });
       const head = {
         "Content-Range": `bytes ${start}-${end}/${fileSize}`,
@@ -218,10 +247,9 @@ const streamVideo = async (req, res) => {
   }
 };
 
-
 //EU6u2.p2.a2.30ln - Like feature : +2 functions that're toggleVideoLike and getVideoLikeStatus
 const toggleVideoLike = asyncHandler(async (req, res) => {
-  const { id } = req.params;              // video id
+  const { id } = req.params; // video id
   const userId = req.user._id;
 
   const existing = await Like.findOne({ video: id, likedBy: userId });
@@ -241,7 +269,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 });
 
 const getVideoLikeStatus = asyncHandler(async (req, res) => {
-  const { id } = req.params;            // video id
+  const { id } = req.params; // video id
   const userId = req.user._id;
   const existing = await Like.findOne({ video: id, likedBy: userId });
   const count = await Like.countDocuments({ video: id });
@@ -251,7 +279,36 @@ const getVideoLikeStatus = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, { liked, count }, "Like status"));
 });
+//EU12u1.p2 - Liked Page
+const getMyLikedVideos = asyncHandler(async (req, res) => {
+  const userId = req.user && req.user._id;
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(401).json(new ApiResponse(401, null, "Unauthorized"));
+  }
 
+  // Find all likes by this user and populate the video and its owner (if video still exists)
+  const likes = await Like.find({ likedBy: userId })
+    .populate({
+      path: "video",
+      select: "title thumbnail views owner createdAt",
+      populate: { path: "owner", select: "name username avatar" },
+    })
+    .lean();
+
+  const videos = likes.map((l) => l.video).filter(Boolean);
+
+  return res.status(200).json(new ApiResponse(200, videos, "Liked videos"));
+});
+
+function getVideoDurationSeconds(filePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) return reject(err);
+      const dur = metadata?.format?.duration;
+      resolve(dur ? Math.floor(Number(dur)) : 0);
+    });
+  });
+}
 
 export {
   publishAVideo,
@@ -262,5 +319,7 @@ export {
   viewsIncrement,
   streamVideo,
   toggleVideoLike,
-  getVideoLikeStatus
+  getVideoLikeStatus,
+  getMyLikedVideos,
+  getVideoDurationSeconds,
 };
