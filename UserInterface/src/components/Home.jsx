@@ -55,16 +55,32 @@ export default function Home() {
   const timersRef = useRef([]);
 
   const [me, setMe] = useState(null);
-
-  const [openMenuFor, setOpenMenuFor] = useState(null); // videoId
-  const [confirmDeleteFor, setConfirmDeleteFor] = useState(null); // videoId
-
   useEffect(() => {
     axios
       .get("/api/v1/account/me", { withCredentials: true })
       .then((res) => setMe(res.data.data))
       .catch(() => {});
   }, []);
+
+  const [openMenuFor, setOpenMenuFor] = useState(null); // videoId
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState(null); // videoId
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuFor(null);
+      }
+    };
+
+    if (openMenuFor !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenuFor]);
 
   // Fetch videos based on search or normal
   const fetchVideos = useCallback(async () => {
@@ -312,46 +328,54 @@ export default function Home() {
                             </p>
                           </div>
                         </div>
-                          {/* THREE DOT MENU */}
-                      <div className="relative">
-                        <button
-                          onClick={() =>
-                            setOpenMenuFor(
-                              openMenuFor === video._id ? null : video._id
-                            )
-                          }
-                          className="hover:bg-gray-100 p-2 rounded-full"
-                        >
-                          <img
-                            src="/src/assets/svg_icons/threeDots.svg"
-                            className="w-6 h-6"
-                          />
-                        </button>
+                        {/* THREE DOT MENU */}
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setOpenMenuFor(
+                                openMenuFor === video._id ? null : video._id
+                              )
+                            }
+                            className="focus:bg-gray-200 p-2 rounded-full  focus:scale-[0.8] transition-all duration-200"
+                          >
+                            <img
+                              src="/src/assets/svg_icons/threeDots.svg"
+                              className="w-6 h-6"
+                            />
+                          </button>
 
-                        {openMenuFor === video._id && (
-                          <div className="absolute right-0 top-10 mt-2 w-40  rounded-xl   z-50  bg-gray-100 border-4 border-gray-50 bg-opacity-20 backdrop-blur-lg">
-                            <Link
-                              to={`/reportForm/${video._id}`}
-                              onClick={() => setOpenMenuFor(null)}
-                              className="block w-full text-left  px-4 py-2 hover:bg-gray-200 transition rounded-t-xl "
+                          {openMenuFor === video._id && (
+                            <div
+                              ref={menuRef}
+                              className={`absolute text-gray-900 right-0 top-10 mt-2 w-40 p-1 flex flex-col rounded-2xl z-10 bg-gray-100 border-4 border-gray-50
+  ${me?.role === "admin" ? "justify-between" : "justify-center"}`}
                             >
-                              ⚠️ Report
-                            </Link>
-
-                            {me?.role === "admin" && (
-                              <button
-                                className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-b-xl"
-                                onClick={() => {
-                                  setOpenMenuFor(null);
-                                  setConfirmDeleteFor(video._id);
-                                }}
-                              >
-                                <span>❌ Delete </ span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                              <div>
+                                <Link
+                                  to={`/reportForm/${video._id}`}
+                                  onClick={() => setOpenMenuFor(null)}
+                                  className="block w-full text-left  px-4 py-2 hover:bg-gray-200 transition rounded-[0.6rem] "
+                                >
+                                  ⚠️ Report
+                                </Link>
+                              </div>
+                              <div>
+                                {(me?.role === "admin" ||
+                                  video?.owner?._id === me?._id) && (
+                                  <button
+                                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-b-xl"
+                                    onClick={() => {
+                                      setOpenMenuFor(null);
+                                      setConfirmDeleteFor(video._id);
+                                    }}
+                                  >
+                                    ❌ Delete
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

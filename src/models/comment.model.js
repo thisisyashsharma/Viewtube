@@ -1,4 +1,4 @@
-//EU9u1.p1.a1.30ln - Comment + Username 
+//EU9u1.p1.a1.30ln - Comment + Username
 
 import mongoose, { Schema } from "mongoose";
 
@@ -22,7 +22,7 @@ const commentSchema = new Schema(
     owner: { type: Schema.Types.ObjectId, ref: "newUser", required: true },
     likes: {
       count: { type: Number, default: 0 },
-      users: [{ type: Schema.Types.ObjectId, ref: "newUser" }],
+      users: [{ type: Schema.Types.ObjectId, ref: "newUser" }],                    //is it really needed ? Do we have to track that which user liked that specific comment or not? 
     },
     replies: [replySchema],
   },

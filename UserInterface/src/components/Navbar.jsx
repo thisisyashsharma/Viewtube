@@ -17,7 +17,25 @@ function Navbar({ openChange }) {
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef(null);
+  const profileRef = useRef(null); 
   const navigate = useNavigate();
+
+  useEffect(() => {
+  const handleClickOutsideProfile = (e) => {
+    if (profileRef.current && !profileRef.current.contains(e.target)) {
+      setDropdownVisible(false);
+    }
+  };
+
+  if (dropdownVisible) {
+    document.addEventListener("mousedown", handleClickOutsideProfile);
+  }
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutsideProfile);
+  };
+}, [dropdownVisible]);
+
 
   // Debounce function for search
   const debounce = (func, delay) => {
@@ -358,7 +376,7 @@ function Navbar({ openChange }) {
               <div className="relative ml-auto lg:ml-4">
                 <button
                   type="button"
-                  className="flex text-sm  rounded-full border-4 border-gray-50  focus:border-blue-200"
+                  className="flex text-sm  rounded-full border-4 border-gray-50  focus:border-gray-200  focus:scale-[0.8] transition-all duration-300 "
                   id="user-menu-button-2"
                   aria-expanded={dropdownVisible}
                   onClick={toggleDropdown}
@@ -399,7 +417,8 @@ function Navbar({ openChange }) {
                 </button>
                 {dropdownVisible && (
                   <div
-                    className="absolute right-0 z-50 mt-2 min-w-80  divide-y divide text-base list-none bg-white  rounded-[1.5rem] shadow-2xl border-4 border-gray-100 "
+                    ref = {profileRef}
+                    className="absolute right-0 z-50 mt-2 min-w-80  divide-y divide text-base list-none bg-white  rounded-[1.4rem] shadow-xl-gray-300 border-[0.4rem] border-gray-100 "
                     id="dropdown-2"
                   >
                     {userdata ? (

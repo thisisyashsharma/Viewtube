@@ -160,9 +160,13 @@ const deleteVideoById = asyncHandler(async (req, res) => {
   }
 
   // Check if the logged-in user is the owner of the video
-  if (video.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, "You are not authorized to delete this video");
-  }
+const isOwner = video.owner.toString() === req.user._id.toString();
+const isAdmin = req.user.role === "admin";
+
+if (!isOwner && !isAdmin) {
+  throw new ApiError(403, "Not authorized");
+}
+
 
   await Video.findByIdAndDelete(id); // Delete the video from the database
 

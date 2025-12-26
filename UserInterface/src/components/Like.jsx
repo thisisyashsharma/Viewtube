@@ -196,7 +196,7 @@ export default function Like() {
     : 0;
 
   return (
-    <div className="min-h-screen lg:mt-8 px-4 py-6 bg-white">
+    <div className="min-h-screen lg:mt-12 mx-4 px-4 py-6 bg-white">
       <div className="max-w-6xl mx-auto">
         <header className="mb-6">
           <h1 className="text-3xl font-semibold text-gray-900">Liked videos</h1>
@@ -217,7 +217,7 @@ export default function Like() {
             </div>
           ) : displayed.length === 0 && !fetching && likedAll.length === 0 ? (
             // Empty: fetched but no liked videos
-            <div className="p-8 bg-white border-2 border-gray-100 rounded-xl text-center">
+            <div className="p-8 bg-white border-4 border-gray-100 rounded-3xl text-center">
               <div className="text-gray-700 text-lg mb-2">
                 No liked videos yet
               </div>

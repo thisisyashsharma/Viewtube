@@ -11,11 +11,19 @@ export default function Comments({ videoId }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [me, setMe] = useState(null); // current user for owner-only delete
+
+  const [me, setMe] = useState(null);
+  useEffect(() => {
+  axios.get("/api/v1/account/me", { withCredentials: true })
+    .then(res => setMe(res.data.data))
+    .catch(() => {});
+}, []);
+ 
 
   // which reply box is open for a given comment
   const [openReplyBox, setOpenReplyBox] = useState({});
   const LIMIT = 20;
+
 
   const load = async (p = 1) => {
     const res = await axios.get(
@@ -188,7 +196,7 @@ export default function Comments({ videoId }) {
           className="px-5 py-2 font-medium rounded-tr-xl bg-blue-600 text-white hover:bg-blue-700 transition duration-500"
           onClick={post}
         >
-          Comment 
+          Comment
         </button>
       </div>
 
@@ -270,7 +278,7 @@ export default function Comments({ videoId }) {
                 </button>
 
                 {/* owner-only Delete */}
-                {me && c.owner?._id === me._id && (
+                {(me?.role === "admin" || c.owner?._id === me._id) && (
                   <button
                     className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                     onClick={() => deleteComment(c._id)}
@@ -387,9 +395,8 @@ export default function Comments({ videoId }) {
                         </button>
 
                         {/* owner-only Delete */}
-                        {me && r.owner?._id === me._id && (
+                        {(me?.role === "admin" || r.owner?._id === me._id) && (
                           <button
-                            // className="inline-flex items-center justify-center text-red-400 focus:bg-red-400 focus:text-white hover:bg-gray-100 focus:outline-none rounded-lg px-3 py-2 transition duration-500"
                             className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400"
                             onClick={() => deleteReply(c._id, r._id)}
                             aria-label="Delete reply"

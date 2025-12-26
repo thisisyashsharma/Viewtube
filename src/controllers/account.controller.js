@@ -85,6 +85,13 @@ const registerUser = asyncHandler(async (req, res) => {
     candidate = `${base}${suffix}`;
   }
 
+  const isAdminEmail =
+  process.env.ADMIN_EMAIL &&
+  email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+
+
+
+
   const user = await newUser.create({
     name,
     email,
@@ -92,6 +99,8 @@ const registerUser = asyncHandler(async (req, res) => {
     avatar,
     username: candidate,
     isVerified,
+    role: isAdminEmail ? "admin" : "user",
+
   });
 
   return res
@@ -556,7 +565,7 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
 // GET /api/v1/account/me
 //EU9u1.p4.a1.6ln - Comment + Username
 const getMe = asyncHandler(async (req, res) => {
-  const me = await newUser.findById(req.user._id).select("_id username avatar");
+  const me = await newUser.findById(req.user._id).select("_id username avatar role");
   return res.status(200).json(new ApiResponse(200, me, "OK"));
 });
 

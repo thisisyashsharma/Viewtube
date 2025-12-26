@@ -45,6 +45,11 @@ const userSignUp = new Schema(
       lowercase: true,
       trim: true,
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     about: {
       type: String,
       trim: true,

@@ -15,10 +15,10 @@ const subscriptionEventSchema = new Schema(
     },
     action: {
       type: String,
-      enum: ["subscribe", "unsubscribe"],
+      enum: ["subscribe", "unsubscribe"],                     //default will be unsubscribe !
       required: true,
     },
-    day: {
+    day: {                                                                     // leaving analytical, Is tracking the day of subscribing anywhere else needed?
       type: Date,
       required: true,
       index: true,
