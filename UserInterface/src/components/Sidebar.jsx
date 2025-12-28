@@ -110,10 +110,22 @@ function Sidebar({ hidden }) {
   return (
     <>
       {/* {{ sidebar }} */}
-      {hidden && (
+     
         <aside
           id="sidebar"
-          className={`fixed top-0 lg:top-5 left-0 z-20 flex flex-col flex-shrink-0 w-57 h-full pt-10 font-semibold  text-[1rem] text-gray-900 duration-75 lg:flex transition-width `}
+        className={`
+  fixed top-0 lg:top-5 left-0 z-20
+  flex flex-col flex-shrink-0 w-57 h-full pt-10
+  font-semibold text-[1rem] text-gray-900 lg:flex
+
+  transform
+  transition-transform transition-opacity
+  duration-900 ease-in-out
+
+  ${hidden ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}
+`}
+
+       
           aria-label="Sidebar"
         >
           <div className="relative flex flex-col flex-1 pt-5 pt-0 bg-white border-4 border-gray-100  ">
@@ -354,7 +366,7 @@ function Sidebar({ hidden }) {
             </div>
           </div>
         </aside>
-      )}
+     
       {/* </div> */}
     </>
   );

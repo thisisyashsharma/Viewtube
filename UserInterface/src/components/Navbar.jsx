@@ -17,25 +17,24 @@ function Navbar({ openChange }) {
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef(null);
-  const profileRef = useRef(null); 
+  const profileRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-  const handleClickOutsideProfile = (e) => {
-    if (profileRef.current && !profileRef.current.contains(e.target)) {
-      setDropdownVisible(false);
+    const handleClickOutsideProfile = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setDropdownVisible(false);
+      }
+    };
+
+    if (dropdownVisible) {
+      document.addEventListener("mousedown", handleClickOutsideProfile);
     }
-  };
 
-  if (dropdownVisible) {
-    document.addEventListener("mousedown", handleClickOutsideProfile);
-  }
-
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutsideProfile);
-  };
-}, [dropdownVisible]);
-
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideProfile);
+    };
+  }, [dropdownVisible]);
 
   // Debounce function for search
   const debounce = (func, delay) => {
@@ -78,8 +77,12 @@ function Navbar({ openChange }) {
         // Sort by relevance (you can implement more sophisticated ranking)
         const sortedVideos = videos.sort((a, b) => {
           // Simple relevance: exact match in title first
-          const aTitleMatch = a.title.toLowerCase().includes(query.toLowerCase());
-          const bTitleMatch = b.title.toLowerCase().includes(query.toLowerCase());
+          const aTitleMatch = a.title
+            .toLowerCase()
+            .includes(query.toLowerCase());
+          const bTitleMatch = b.title
+            .toLowerCase()
+            .includes(query.toLowerCase());
 
           if (aTitleMatch && !bTitleMatch) return -1;
           if (!aTitleMatch && bTitleMatch) return 1;
@@ -131,8 +134,6 @@ function Navbar({ openChange }) {
     };
   }, []);
 
-
-
   const dispatch = useDispatch();
   const toggleSidebar = () => {
     console.log("Sidebar toggle triggered");
@@ -181,7 +182,6 @@ function Navbar({ openChange }) {
                 onClick={toggleSidebar}
                 className="fixed top-1 lg:top-2 left-3 z-40 flex items-center justify-center w-10 h-10 bg-white rounded-xl border-2 border-gray-100 hover:border-gray-200  hover:bg-gray-100 group"
               >
-
                 <img
                   src="/src/assets/svg_icons/menu.svg"
                   alt="Icon"
@@ -208,13 +208,15 @@ function Navbar({ openChange }) {
                   Search
                 </label>
                 <div className="relative m-1 lg:w-96 group">
-                  <div className="absolute inset-y-0  flex items-center p-3 pointer-events-none
+                  <div
+                    className="absolute inset-y-0  flex items-center p-3 pointer-events-none
                   m-[4px]
                   rounded-l-[2rem]
                
-                  ">
+                  "
+                  >
                     <svg
-                       className="
+                      className="
                         w-7 h-8
                         text-gray-400
                         group-focus-within:text-blue-700
@@ -261,7 +263,7 @@ function Navbar({ openChange }) {
                       flex items-center 
                        rounded-r-[2rem]
                       "
-                      >
+                    >
                       <svg
                         className="w-6 h-6 text-gray-500 
                         hover:text-red-500 
@@ -284,9 +286,24 @@ function Navbar({ openChange }) {
                   {/* Loading indicator */}
                   {isSearching && (
                     <div className="absolute inset-y-0 right-10 flex items-center pr-3">
-                      <svg className="animate-spin h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="animate-spin h-4 w-4 text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                     </div>
                   )}
@@ -294,20 +311,24 @@ function Navbar({ openChange }) {
 
                 {/* Search Results Dropdown */}
                 {showResults && searchResults.length > 0 && (
-                  <div className="absolute top-full mt-2 p-2 w-96 bg-white 
+                  <div
+                    className="absolute top-full mt-2 p-2 w-96 bg-white 
                   rounded-[1.5rem]
                    shadow-2xl border-4 border-gray-200 z-50 max-h-96 overflow-y-auto
                   
-                  ">
-                     <div className="p-4 mb-3 bg-gray-100  border-gray-100
+                  "
+                  >
+                    <div
+                      className="p-4 mb-3 bg-gray-100  border-gray-100
                      rounded-t-[0.8rem]
-                     ">
+                     "
+                    >
                       <p className="text-md font-semibold text-gray-700">
-                        Searched {searchResults.length}  Results 
+                        Searched {searchResults.length} Results
                       </p>
-                    </div> 
+                    </div>
                     {/*
-                    */}
+                     */}
                     <div className="divide-y-2 divide-gray-50">
                       {searchResults.map((video) => (
                         <div
@@ -321,7 +342,8 @@ function Navbar({ openChange }) {
                               alt={video.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.target.src = "http://localhost:8000/placeholders/noThumbnail.png";
+                                e.target.src =
+                                  "http://localhost:8000/placeholders/noThumbnail.png";
                               }}
                             />
                           </div>
@@ -334,20 +356,25 @@ function Navbar({ openChange }) {
                               <span className="mx-1">•</span>
                               <span>{video.views || 0} views</span>
                               <span className="mx-1">•</span>
-                              <span>{formatDuration(video?.duration || 0)}</span>
+                              <span>
+                                {formatDuration(video?.duration || 0)}
+                              </span>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="p-3 border-t border-gray-100
+                    <div
+                      className="p-3 border-t border-gray-100
                     hover:bg-gray-100 
                     rounded-b-[1rem]
                     "
                     >
                       <button
                         onClick={() => {
-                          navigate(`/home?q=${encodeURIComponent(searchQuery)}`);
+                          navigate(
+                            `/home?q=${encodeURIComponent(searchQuery)}`
+                          );
                           setShowResults(false);
                           setSearchQuery("");
                         }}
@@ -360,15 +387,17 @@ function Navbar({ openChange }) {
                 )}
 
                 {/* No results message */}
-                {showResults && !isSearching && searchQuery && searchResults.length === 0 && (
-                  <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-[1rem] shadow-2xl border-4 border-gray-200 z-50 p-4">
-                    <p className="text-sm text-gray-500 text-center">
-                      No videos found for "{searchQuery}"
-                    </p>
-                  </div>
-                )}
+                {showResults &&
+                  !isSearching &&
+                  searchQuery &&
+                  searchResults.length === 0 && (
+                    <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-[1rem] shadow-2xl border-4 border-gray-200 z-50 p-4">
+                      <p className="text-sm text-gray-500 text-center">
+                        No videos found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
               </form>
-
             </div>
 
             {/* Profile dropdown */}
@@ -415,198 +444,174 @@ function Navbar({ openChange }) {
                     </li>
                   )}
                 </button>
-                {dropdownVisible && (
-                  <div
-                    ref = {profileRef}
-                    className="absolute right-0 z-50 mt-2 min-w-80  divide-y divide text-base list-none bg-white  rounded-[1.4rem] shadow-xl-gray-300 border-[0.4rem] border-gray-100 "
-                    id="dropdown-2"
-                  >
-                    {userdata ? (
-                      <>
-                        <div className="p-5 flex  rounded-[1.6rem]">
-                          <img
-                            className="w-14 h-14 rounded-full"
-                            src={userdata.avatar}
-                            alt="User"
-                          />
-                          <div className="flex-1 px-3 mt-1 relative w-full max-w-auto overflow-hidden">
-                            <p className="text-sm text-gray-900 mb-2">
-                              {userdata.name}
-                            </p>
-                            <div className="border-2 m-1 mt-2 border-gray-100 "></div>
-                            <p className="fixed-size text-sm font-nromal text-gray-900 truncate">
-                              {" "}
-                              {userdata.email}
-                            </p>
-                          </div>
+
+                <div
+                  ref={profileRef}
+                  className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white rounded-[1.4rem] shadow-xl-gray-300 border-[0.4rem] border-gray-100 transform transition-all duration-200 ease-out origin-top-right ${
+                    dropdownVisible
+                      ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                      : "opacity-0 scale-[0.9] translate-y-0 pointer-events-none"
+                  }`}
+                  id="dropdown-2"
+                >
+                  {userdata ? (
+                    <>
+                      <div className="p-5 flex  rounded-[1.6rem]">
+                        <img
+                          className="w-14 h-14 rounded-full"
+                          src={userdata.avatar}
+                          alt="User"
+                        />
+                        <div className="flex-1 px-3 mt-1 relative w-full max-w-auto overflow-hidden">
+                          <p className="text-sm text-gray-900 mb-2">
+                            {userdata.name}
+                          </p>
+                          <div className="border-2 m-1 mt-2 border-gray-100 "></div>
+                          <p className="fixed-size text-sm font-nromal text-gray-900 truncate">
+                            {" "}
+                            {userdata.email}
+                          </p>
                         </div>
-                      </>
-                    ) : (
-                      <div>Loading user data...</div>
-                    )}
-                    <ul className="border-4 border-gray-100"></ul>
-                    <ul className="flex-1 align-items py-1 text-sm font-medium text-gray-700">
-                      <li>
-                        <Link
-                          to={"/customize_channel"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/customize_account.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Account
-                          </span>
-                        </Link>
-                      </li>
-                      <li
-                        className="hover:bg-gray-100"
+                      </div>
+                    </>
+                  ) : (
+                    <div>Loading user data...</div>
+                  )}
+                  <ul className="border-4 border-gray-100"></ul>
+                  <ul className="flex-1 align-items py-1 text-sm font-medium text-gray-700">
+                    <li>
+                      <Link
+                        to={"/customize_channel"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 "
                       >
-                        <Link
-                          to={"/videoStudio"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/videostudio.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Video Studio
-                          </span>
-                        </Link>
-                      </li>
+                        <img
+                          src="/src/assets/svg_icons/customize_account.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">Account</span>
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-100">
+                      <Link
+                        to={"/videoStudio"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                      >
+                        <img
+                          src="/src/assets/svg_icons/videostudio.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">
+                          Video Studio
+                        </span>
+                      </Link>
+                    </li>
 
-                      <li
-                        className="hover:bg-gray-100"
+                    <li className="hover:bg-gray-100">
+                      <Link
+                        to={"/dashboard"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
-                        <Link
-                          to={"/dashboard"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/dashboard.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Dashboard
-                          </span>
-                        </Link>
-                      </li>
+                        <img
+                          src="/src/assets/svg_icons/dashboard.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">
+                          Dashboard
+                        </span>
+                      </Link>
+                    </li>
 
-                      <li className="my-1 border-2 border-gray-100"></li>
-                      <li
-                        className="hover:bg-gray-100"
+                    <li className="my-1 border-2 border-gray-100"></li>
+                    <li className="hover:bg-gray-100">
+                      <Link
+                        to={"/keyboardShortcut"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
-                        <Link
-                          to={"/keyboardShortcut"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/keyboard.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Keyboard Shortcuts
-                          </span>
-                        </Link>
-                      </li>
-                      <li
-                        className="hover:bg-gray-100"
+                        <img
+                          src="/src/assets/svg_icons/keyboard.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">
+                          Keyboard Shortcuts
+                        </span>
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-100">
+                      <Link
+                        to={"/settings"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
-                        <Link
-                          to={"/settings"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/settings.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Settings
-                          </span>
-                        </Link>
-                      </li>
-                      <li className="my-1 border-2 border-gray-100"></li>
-                      <li
-                        className="hover:bg-gray-100"
+                        <img
+                          src="/src/assets/svg_icons/settings.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">Settings</span>
+                      </Link>
+                    </li>
+                    <li className="my-1 border-2 border-gray-100"></li>
+                    <li className="hover:bg-gray-100">
+                      <Link
+                        to={"/help"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
-                        <Link
-                          to={"/help"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/help.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">Help</span>
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to={"/feedback"}
-                          className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95 "
-
-                        >
-                          <img
-                            src="/src/assets/svg_icons/feedback.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Feedback
-                          </span>
-                        </Link>
-                      </li>
-                      <li className="my-1 border-2 border-gray-100"></li>
-                      <li
-                        className=" focus:bg-red-100 hover:text-red-500 "
+                        <img
+                          src="/src/assets/svg_icons/help.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">Help</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to={"/feedback"}
+                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95 "
                       >
-                        <button
-                          onClick={handleSignOut}
-                          className="block flex items-center p-3 px-3 w-full hover:bg-gray-100 focus:scale-95"
-                        >
-                          <img
-                            src="/src/assets/svg_icons/signout.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-5 h-5"
-                          />
-                          <span className="flex items-center ml-3">
-                            Sign out
-                          </span>
-                        </button>
-                      </li>
-                      <li
-                        className="hover:bg-red-50 focus:bg-red-100 hover:text-red-500 "
+                        <img
+                          src="/src/assets/svg_icons/feedback.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">Feedback</span>
+                      </Link>
+                    </li>
+                    <li className="my-1 border-2 border-gray-100"></li>
+                    <li className=" focus:bg-red-100 hover:text-red-500 ">
+                      <button
+                        onClick={handleSignOut}
+                        className="block flex items-center p-3 px-3 w-full hover:bg-gray-100 focus:scale-95"
                       >
-                        <button
-                          onClick={toggleDropdown}
-                          className="group block flex items-center p-3 px-3 rounded-b-md w-full hover:text-red-600 focus:scale-95 focus:bg-red-100 transition-all duration-100 "
-                        >
-                          <img
-                            src="/src/assets/svg_icons/close.svg"
-                            alt="Icon"
-                            className="fixed-size-icon w-4 h-4"
-                          />
-                          <span className="flex items-center ml-4 group-focus:text-red-600 group-focus:bg-red-100 ">
-                            Close
-                          </span>
-                        </button>
-                      </li>
-                      <li
-                        className="m-2"
+                        <img
+                          src="/src/assets/svg_icons/signout.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-5 h-5"
+                        />
+                        <span className="flex items-center ml-3">Sign out</span>
+                      </button>
+                    </li>
+                    <li className="hover:bg-red-50 focus:bg-red-100 hover:text-red-500 ">
+                      <button
+                        onClick={toggleDropdown}
+                        className="group block flex items-center p-3 px-3 rounded-b-md w-full hover:text-red-600 focus:scale-95 focus:bg-red-100 transition-all duration-100 "
                       >
-
-                      </li>
-                    </ul>
-                  </div>
-                )}
+                        <img
+                          src="/src/assets/svg_icons/close.svg"
+                          alt="Icon"
+                          className="fixed-size-icon w-4 h-4"
+                        />
+                        <span className="flex items-center ml-4 group-focus:text-red-600 group-focus:bg-red-100 ">
+                          Close
+                        </span>
+                      </button>
+                    </li>
+                    <li className="m-2"></li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>

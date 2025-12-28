@@ -28,12 +28,12 @@ function App() {
        <Navbar 
            openChange={() => setIsOpen(prev => !prev)}
         />
-       <div className={`flex pt-8  overflow-hidden bg-gray-50 `}>
+       <div className={`flex pt-8  overflow-hidden bg-gray-50 transition-all duration-500 `}>
               {/* {{ sidebar }} */}
               <Sidebar
                 hidden={isOpen}
               />
-                <div id="main-content" className={`relative w-full h-full overflow-y-auto bg-gray-50 ${isOpen ? "lg:ml-52" : "ml-0"} `}>
+                <div id="main-content" className={`relative w-full h-full overflow-y-auto bg-gray-50   transition-[margin-left] duration-300 ease-in-out ${isOpen ? "lg:ml-52" : "ml-0 "} `}>
                     <main>
                     {/* {{ Content }} */}
                        <Outlet/>

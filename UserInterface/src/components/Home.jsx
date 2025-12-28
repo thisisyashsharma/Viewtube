@@ -344,37 +344,44 @@ export default function Home() {
                             />
                           </button>
 
-                          {openMenuFor === video._id && (
-                            <div
-                              ref={menuRef}
-                              className={`absolute text-gray-900 right-0 top-10 mt-2 w-40 p-1 flex flex-col rounded-2xl z-10 bg-gray-100 border-4 border-gray-50
-  ${me?.role === "admin" ? "justify-between" : "justify-center"}`}
-                            >
-                              <div>
-                                <Link
-                                  to={`/reportForm/${video._id}`}
-                                  onClick={() => setOpenMenuFor(null)}
-                                  className="block w-full text-left  px-4 py-2 hover:bg-gray-200 transition rounded-[0.6rem] "
-                                >
-                                  ⚠️ Report
-                                </Link>
-                              </div>
-                              <div>
-                                {(me?.role === "admin" ||
-                                  video?.owner?._id === me?._id) && (
-                                  <button
-                                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-b-xl"
-                                    onClick={() => {
-                                      setOpenMenuFor(null);
-                                      setConfirmDeleteFor(video._id);
-                                    }}
-                                  >
-                                    ❌ Delete
-                                  </button>
-                                )}
-                              </div>
+                          <div
+                            ref={menuRef}
+                            className={` absolute text-gray-900 right-0 top-10 mt-2 w-40 p-1 flex flex-col rounded-[0.7rem] z-10 bg-gray-100 border-4 border-gray-50 
+                                ${
+                                  me?.role === "admin"
+                                    ? "justify-between"
+                                    : "justify-center"
+                                } transform transition-all duration-200 ease-out origin-top-right 
+                                ${
+                                  openMenuFor === video._id
+                                    ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                                }`}
+                          >
+                            <div>
+                              <Link
+                                to={`/reportForm/${video._id}`}
+                                onClick={() => setOpenMenuFor(null)}
+                                className="block w-full text-left  px-4 py-2 hover:bg-gray-200 transition rounded-[0.5rem] "
+                              >
+                                ⚠️ Report
+                              </Link>
                             </div>
-                          )}
+                            <div>
+                              {(me?.role === "admin" ||
+                                video?.owner?._id === me?._id) && (
+                                <button
+                                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-[0.5rem]"
+                                  onClick={() => {
+                                    setOpenMenuFor(null);
+                                    setConfirmDeleteFor(video._id);
+                                  }}
+                                >
+                                  ❌ Delete
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
