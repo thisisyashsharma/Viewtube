@@ -20,6 +20,9 @@ function getThumbnailUrl(video) {
     if (typeof t === "object") t = t.url || t.path || t.filename || "";
 
     t = String(t).trim();
+    
+    // Strip old hardcoded localhost URLs from old database entries
+    t = t.replace(/^https?:\/\/localhost:\d+/i, "");
 
     if (!t) {
       return getPosterFromVideo(video);
