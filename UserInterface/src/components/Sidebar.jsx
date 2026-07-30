@@ -23,7 +23,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
       path: "home",
       svg: (
         <img
-          src="/src/assets/svg_icons/home.svg"
+          src="/svg_icons/home.svg"
           alt="Icon"
           className="fixed-size-icon w-6 h-6"
         />
@@ -35,7 +35,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
       path: "/your_channel",
       svg: (
         <img
-          src="/src/assets/svg_icons/shorts.svg"
+          src="/svg_icons/shorts.svg"
           alt="Icon"
           className="fixed-size-icon w-6 h-6"
         />
@@ -138,7 +138,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                            
                           <img
-                            src="/src/assets/svg_icons/subscription.svg"
+                            src="/svg_icons/subscription.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -154,7 +154,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                         
                           <img
-                            src="/src/assets/svg_icons/your_channel.svg"
+                            src="/svg_icons/your_channel.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -170,7 +170,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                           
                           <img
-                            src="/src/assets/svg_icons/history.svg"
+                            src="/svg_icons/history.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                             />
@@ -186,7 +186,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                          
                           <img
-                            src="/src/assets/svg_icons/playlist.svg"
+                            src="/svg_icons/playlist.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -203,7 +203,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                         
                           <img
-                            src="/src/assets/svg_icons/likes.svg"
+                            src="/svg_icons/likes.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -220,7 +220,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                         
                           <img
-                            src="/src/assets/svg_icons/trending.svg"
+                            src="/svg_icons/trending.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -237,7 +237,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                           
                           <img
-                            src="/src/assets/svg_icons/music.svg"
+                            src="/svg_icons/music.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -253,7 +253,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                           className="flex items-center p-2 px-3  rounded-xl hover:bg-gray-100 group focus:scale-[0.95]"
                         >
                           <img
-                            src="/src/assets/svg_icons/longForm.svg"
+                            src="/svg_icons/longForm.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -270,7 +270,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                         >
                           
                           <img
-                            src="/src/assets/svg_icons/settings.svg"
+                            src="/svg_icons/settings.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -286,7 +286,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                           className="flex items-center p-2 px-3  rounded-xl hover:bg-gray-100 group focus:scale-[0.95]"
                         >
                           <img
-                            src="/src/assets/svg_icons/customize_account.svg"
+                            src="/svg_icons/customize_account.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -302,7 +302,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                           className="flex items-center p-2 px-3  rounded-xl hover:bg-gray-100 group focus:scale-[0.95]"
                         >
                           <img
-                            src="/src/assets/svg_icons/flag.svg"
+                            src="/svg_icons/flag.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -317,7 +317,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                           className="flex items-center p-2 px-3   rounded-xl hover:bg-gray-100 group"
                         >
                           <img
-                            src="/src/assets/svg_icons/help.svg"
+                            src="/svg_icons/help.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
@@ -330,7 +330,7 @@ function Sidebar({ isOpen, onClose, hidden }) {
                           className="flex items-center p-2 px-3    rounded-xl hover:bg-gray-100 group"
                         >
                           <img
-                            src="/src/assets/svg_icons/feedback.svg"
+                            src="/svg_icons/feedback.svg"
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />

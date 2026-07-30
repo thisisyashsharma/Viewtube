@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getThumbnailUrl, formatDuration } from "../utils/thumbnail.utils";
 import ChannelFilter from "./ChannelFilter";
-import logo from "../assets/svg_icons/project.svg";
+const logo = "/svg_icons/project.svg";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
@@ -333,7 +333,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 aria-label="Toggle navigation menu"
               >
                 <img
-                  src="/src/assets/svg_icons/menu.svg"
+                  src="/svg_icons/menu.svg"
                   alt="Menu"
                   className="w-6 h-6"
                 />
@@ -555,7 +555,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 "
                       >
                         <img
-                          src="/src/assets/svg_icons/customize_account.svg"
+                          src="/svg_icons/customize_account.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -568,7 +568,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
                         <img
-                          src="/src/assets/svg_icons/videostudio.svg"
+                          src="/svg_icons/videostudio.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -584,7 +584,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
                         <img
-                          src="/src/assets/svg_icons/dashboard.svg"
+                          src="/svg_icons/dashboard.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -601,7 +601,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
                         <img
-                          src="/src/assets/svg_icons/keyboard.svg"
+                          src="/svg_icons/keyboard.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -616,7 +616,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
                         <img
-                          src="/src/assets/svg_icons/settings.svg"
+                          src="/svg_icons/settings.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -630,7 +630,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
                       >
                         <img
-                          src="/src/assets/svg_icons/help.svg"
+                          src="/svg_icons/help.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -643,7 +643,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95 "
                       >
                         <img
-                          src="/src/assets/svg_icons/feedback.svg"
+                          src="/svg_icons/feedback.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -657,7 +657,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="block flex items-center p-3 px-3 w-full hover:bg-gray-100 focus:scale-95"
                       >
                         <img
-                          src="/src/assets/svg_icons/signout.svg"
+                          src="/svg_icons/signout.svg"
                           alt="Icon"
                           className="fixed-size-icon w-5 h-5"
                         />
@@ -670,7 +670,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         className="group block flex items-center p-3 px-3 rounded-b-md w-full hover:text-red-600 focus:scale-95 focus:bg-red-100 transition-all duration-100 "
                       >
                         <img
-                          src="/src/assets/svg_icons/close.svg"
+                          src="/svg_icons/close.svg"
                           alt="Icon"
                           className="fixed-size-icon w-4 h-4"
                         />
