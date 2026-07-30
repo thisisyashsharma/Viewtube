@@ -9,16 +9,26 @@ import { logout } from "../store/slice/authSlice";
 import { useSelector } from "react-redux";
 import axios from "axios";
 
-function Navbar({ openChange }) {
+function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
   const [userdata, setUserData] = useState(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleToggleSidebar = () => {
+    if (onToggleDrawer) {
+      onToggleDrawer();
+    } else if (openChange) {
+      openChange();
+    }
+  };
+
 
   useEffect(() => {
     const handleClickOutsideProfile = (e) => {
@@ -153,102 +163,219 @@ function Navbar({ openChange }) {
   const data = useSelector((state) => state.auth.user);
 
   useEffect(() => {
-    // if (data._id) {
-    const fetchUser = async () => {
-      try {
-        // setLoader(true);
-        const response = await axios.get(
-          `/api/v1/account/userData/${data._id}`
-        );
-        const userData = response.data.data;
-        setUserData(userData);
-        // setLoader(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+    if (data?._id) {
+      const fetchUser = async () => {
+        try {
+          const response = await axios.get(
+            `/api/v1/account/userData/${data._id}`
+          );
+          const userData = response.data.data;
+          setUserData(userData);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      };
+
+      fetchUser();
+    }
+  }, [data]);
+
+  const inputRef = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
       }
     };
-
-    fetchUser();
-    // }
-  }, [data]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <>
-      <nav className="fixed z-30 w-full bg-white border-b-4 border-gray-100 ">
-        <div className="px-3 py-3 lg:px-5 lg:pl-3 ">
-          <div className="flex items-center justify-between ">
-            <div className="flex items-center justify-start ">
+      <nav className="fixed top-0 left-0 z-[var(--z-nav,30)] w-full h-14 bg-white border-b border-gray-200 px-3 flex items-center justify-between">
+        {/* ── Always-Mounted Morphing Mobile Search Bar (sm:hidden) ── */}
+        {/* This element is always in the DOM. Clicking the search icon adds
+            the .expanded class which CSS transitions smoothly animate.       */}
+        <div className={`mobile-search-bar sm:!hidden ${isMobileSearchOpen ? "expanded" : ""}`}>
+          {/* Search icon trigger (visible when collapsed) */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileSearchOpen(true);
+              setTimeout(() => inputRef.current?.focus(), 150);
+            }}
+            className="mobile-search-trigger text-gray-600 rounded-full hover:bg-gray-100 active:scale-90 transition-transform"
+            aria-label="Open search"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
+          {/* Back arrow (slides in when expanded) */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileSearchOpen(false);
+              setShowResults(false);
+            }}
+            className="mobile-search-back flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-200/60 active:scale-90 transition-transform"
+            aria-label="Close search"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Input + clear + submit (fades in when expanded) */}
+          <form onSubmit={handleSearchSubmit} className="mobile-search-input-wrap relative flex items-center" ref={searchRef}>
+            <input
+              ref={inputRef}
+              type="text"
+              className="w-full h-9 pl-2 pr-12 bg-transparent text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none"
+              placeholder="Search ViewTube..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              tabIndex={isMobileSearchOpen ? 0 : -1}
+            />
+
+            {/* Clear button */}
+            {searchQuery && (
               <button
-                onClick={toggleSidebar}
-                className="fixed top-1 lg:top-2 left-3 z-40 flex items-center justify-center w-10 h-10 bg-white rounded-xl border-2 border-gray-100 hover:border-gray-200  hover:bg-gray-100 group"
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setShowResults(false);
+                }}
+                className="absolute right-10 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/70 rounded-full transition-all duration-200 active:scale-90"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+
+            {/* Submit arrow */}
+            <button
+              type="submit"
+              className="mobile-search-submit absolute right-1 bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center transition-transform"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+
+            {/* Live suggestions dropdown */}
+            {isMobileSearchOpen && showResults && (
+              <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-gray-200/80 rounded-2xl max-h-80 overflow-y-auto divide-y divide-gray-100">
+                {isSearching ? (
+                  <div className="p-4 text-center text-xs font-medium text-gray-500 flex items-center justify-center space-x-2">
+                    <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Searching...</span>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((video) => (
+                    <div
+                      key={video._id}
+                      onClick={() => {
+                        handleResultClick(video._id);
+                        setIsMobileSearchOpen(false);
+                      }}
+                      className="p-2.5 flex items-center space-x-3 hover:bg-blue-50/60 active:bg-blue-100/80 cursor-pointer transition-colors group"
+                    >
+                      <img
+                        src={getThumbnailUrl(video)}
+                        alt={video.title}
+                        className="w-12 h-8 object-cover rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
+                      />
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                          {video.title}
+                        </h4>
+                        <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                          {video?.owner?.name || "Channel"}
+                        </p>
+                      </div>
+                      <div className="text-gray-300 group-hover:text-blue-500 transition-colors">
+                        <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-xs font-medium text-gray-500">
+                    No video suggestions found
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+        </div>
+
+        {isMobileSearchOpen ? null : (
+
+
+          <>
+            {/* Left section: Drawer toggle & logo */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleToggleSidebar}
+                className="flex items-center justify-center w-11 h-11 bg-white rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
+                aria-label="Toggle navigation menu"
               >
                 <img
                   src="/src/assets/svg_icons/menu.svg"
-                  alt="Icon"
-                  className="fixed-size-icon w-6 h-6"
+                  alt="Menu"
+                  className="w-6 h-6"
                 />
               </button>
 
-              <a
-                className="flex items-center justify-center ml-14 md:mr-24 text-2xl font-bold text-gray-700"
-                href="/"
-              >
-                <img src={logo} className="mr-2.5 h-6" alt="Project Logo" />
-                <span>Video Management</span>
-              </a>
+              <Link to="/home" className="flex items-center text-lg sm:text-xl font-bold text-gray-800">
+                <img src={logo} className="mr-2 h-6 w-auto" alt="Project Logo" />
+                <span className="hidden sm:inline truncate max-w-[160px] md:max-w-none">ViewTube</span>
+              </Link>
+            </div>
 
-              <form
-                onSubmit={handleSearchSubmit}
-                method="get"
-                className="hidden lg:block relative"
-                style={{ marginLeft: 200 }}
-                ref={searchRef}
-              >
-                <label htmlFor="topbar-search" className="sr-only">
-                  Search
-                </label>
-                <div className="relative m-1 lg:w-96 group">
-                  <div
-                    className="absolute inset-y-0  flex items-center p-3 pointer-events-none
-                  m-[4px]
-                  rounded-l-[2rem]
-               
-                  "
-                  >
-                    <svg
-                      className="
-                        w-7 h-8
-                        text-gray-400
-                        group-focus-within:text-blue-700
-                        transition-colors
-                      "
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    style={{ height: 34 }}
-                    name="search"
-                    id="topbar-search"
-                    className="bg-gray-50 border-4 border-color-[#F2F2F2]  text-gray-500 focus:text-black font-medium  sm:text-lg rounded-[3rem]  focus:border-blue-500  w-full px-11 pl-[2.9rem] p-5 
-                    
-                    focus:outline-none 
-                    "
-                    placeholder="Search videos..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    autoComplete="off"
-                  />
+            {/* Center section: Highly Interactive & Aesthetic Search input bar */}
+            <div
+              className={`hidden sm:flex flex-1 mx-4 relative transition-all duration-300 ease-out ${
+                isFocused ? "max-w-2xl" : "max-w-lg"
+              }`}
+              ref={searchRef}
+            >
+              <form onSubmit={handleSearchSubmit} className="w-full relative flex items-center group">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  name="search"
+                  id="topbar-search"
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  className="w-full h-12 pl-12 pr-24 bg-gray-100/90 hover:bg-gray-100 border-[4px] border-gray-200/80 hover:border-gray-400/90 rounded-full text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-blue-200 focus:border-[1px] focus:ring-4 focus:ring-blue-600/50 shadow-sm focus:shadow-lg transition-all duration-300"
+                  placeholder="Search videos..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  autoComplete="off"
+                />
+                
+                {/* Interactive Left Search Icon */}
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400 group-hover:text-gray-600 group-focus-within:text-blue-600 group-focus-within:scale-110 transition-all duration-200">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
 
-                  {/* Clear button when there's text */}
+                {/* Right Action Elements inside the Input Bar */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1.5">
                   {searchQuery && (
                     <button
                       type="button"
@@ -257,148 +384,91 @@ function Navbar({ openChange }) {
                         setSearchResults([]);
                         setShowResults(false);
                       }}
-                      className="absolute inset-y-0 right-1 w-11
-                      pl-2
-                      my-1
-                      flex items-center 
-                       rounded-r-[2rem]
-                      "
+                      className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 hover:rotate-90 hover:scale-110 rounded-full transition-all active:scale-95"
+                      title="Clear search"
                     >
-                      <svg
-                        className="w-6 h-6 text-gray-500 
-                        hover:text-red-500 
-
-                         "
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
 
-                  {/* Loading indicator */}
-                  {isSearching && (
-                    <div className="absolute inset-y-0 right-10 flex items-center pr-3">
-                      <svg
-                        className="animate-spin h-4 w-4 text-gray-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
+                  {!isFocused && !searchQuery && (
+                    <kbd className="hidden md:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold text-gray-400 bg-gray-200/70 border border-gray-300/60 rounded-md shadow-2xs pointer-events-none transition-opacity">
+                      <span>Ctrl</span>
+                      <span>K</span>
+                    </kbd>
+                  )}
+
+                  <button
+                    type="submit"
+                    className={`w-12 h-9 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-xs transition-all duration-200 flex-shrink-0 ${
+                      isFocused || searchQuery ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
+                    }`}
+                    title="Search"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+
+                </div>
+              </form>
+
+
+
+              {/* Desktop Floating Search Results Suggestions Dropdown */}
+              {showResults && (
+                <div className="absolute left-0 right-0 top-12 z-50 bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-glass max-h-96 overflow-y-auto divide-y divide-gray-100 transition-all duration-200 animate-fadeIn">
+                  {isSearching ? (
+                    <div className="p-4 text-center text-xs font-medium text-gray-500 flex items-center justify-center space-x-2">
+                      <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
+                      <span>Searching suggestions...</span>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((video) => (
+                      <div
+                        key={video._id}
+                        onClick={() => handleResultClick(video._id)}
+                        className="p-2.5 flex items-center space-x-3 hover:bg-blue-50/60 cursor-pointer transition-colors group"
+                      >
+                        <img
+                          src={getThumbnailUrl(video)}
+                          alt={video.title}
+                          className="w-14 h-9 object-cover rounded-lg flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="flex-1 min-w-0 pr-2">
+                          <h4 className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                            {video.title}
+                          </h4>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                            {video?.owner?.name || "Channel"} • {video.views || 0} views • {formatDuration(video?.duration ?? 0)}
+                          </p>
+                        </div>
+                        <div className="text-gray-300 group-hover:text-blue-500 transition-colors">
+                          <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-xs font-medium text-gray-500">
+                      No video suggestions found for "{searchQuery}"
                     </div>
                   )}
                 </div>
-
-                {/* Search Results Dropdown */}
-                {showResults && searchResults.length > 0 && (
-                  <div
-                    className="absolute top-full mt-2 p-2 w-96 bg-white 
-                  rounded-[1.5rem]
-                   shadow-2xl border-4 border-gray-200 z-50 max-h-96 overflow-y-auto
-                  
-                  "
-                  >
-                    <div
-                      className="p-4 mb-3 bg-gray-100  border-gray-100
-                     rounded-t-[0.8rem]
-                     "
-                    >
-                      <p className="text-md font-semibold text-gray-700">
-                        Searched {searchResults.length} Results
-                      </p>
-                    </div>
-                    {/*
-                     */}
-                    <div className="divide-y-2 divide-gray-50">
-                      {searchResults.map((video) => (
-                        <div
-                          key={video._id}
-                          className="flex items-center p-3 hover:bg-gray-100 m-1 rounded-[0.8rem] cursor-pointer transition-colors"
-                          onClick={() => handleResultClick(video._id)}
-                        >
-                          <div className="w-16 h-12 flex-shrink-0 rounded-[0.6rem] overflow-hidden bg-gray-100">
-                            <img
-                              src={getThumbnailUrl(video)}
-                              alt={video.title}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.src =
-                                  "http://localhost:8000/placeholders/noThumbnail.png";
-                              }}
-                            />
-                          </div>
-                          <div className="ml-3 flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {video.title}
-                            </p>
-                            <div className="flex items-center mt-1 text-xs text-gray-500">
-                              <span>{video.owner?.name || "Unknown"}</span>
-                              <span className="mx-1">•</span>
-                              <span>{video.views || 0} views</span>
-                              <span className="mx-1">•</span>
-                              <span>
-                                {formatDuration(video?.duration || 0)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div
-                      className="p-3 border-t border-gray-100
-                    hover:bg-gray-100 
-                    rounded-b-[1rem]
-                    "
-                    >
-                      <button
-                        onClick={() => {
-                          navigate(
-                            `/home?q=${encodeURIComponent(searchQuery)}`
-                          );
-                          setShowResults(false);
-                          setSearchQuery("");
-                        }}
-                        className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-800 "
-                      >
-                        View all results for "{searchQuery}"
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* No results message */}
-                {showResults &&
-                  !isSearching &&
-                  searchQuery &&
-                  searchResults.length === 0 && (
-                    <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-[1rem] shadow-2xl border-4 border-gray-200 z-50 p-4">
-                      <p className="text-sm text-gray-500 text-center">
-                        No videos found for "{searchQuery}"
-                      </p>
-                    </div>
-                  )}
-              </form>
+              )}
             </div>
+
+
+
+            {/* Right section: User profile */}
+            <div className="flex items-center space-x-2">
+
 
             {/* Profile dropdown */}
             {authStatus && (
@@ -447,7 +517,7 @@ function Navbar({ openChange }) {
 
                 <div
                   ref={profileRef}
-                  className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white rounded-[1.4rem] shadow-xl-gray-300 border-[0.4rem] border-gray-100 transform transition-all duration-200 ease-out origin-top-right ${
+                  className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white/80 backdrop-blur-xl rounded-[1.4rem] shadow-glass border-[0.4rem] border-white/30 transform transition-all duration-200 ease-out origin-top-right ${
                     dropdownVisible
                       ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                       : "opacity-0 scale-[0.9] translate-y-0 pointer-events-none"
@@ -615,7 +685,8 @@ function Navbar({ openChange }) {
               </div>
             )}
           </div>
-        </div>
+        </>
+      )}
       </nav>
     </>
   );

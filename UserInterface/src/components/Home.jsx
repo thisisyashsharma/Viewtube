@@ -1,10 +1,17 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { formatDistanceToNowStrict } from "date-fns";
 import { getThumbnailUrl, formatDuration } from "../utils/thumbnail.utils";
+import PageContainer from "./layout/PageContainer";
+import VideoGrid from "./layout/VideoGrid";
+import VideoCard from "./VideoCard";
+import SkeletonLoader from "./common/SkeletonLoader";
+import EmptyState from "./common/EmptyState";
+
 
 axios.defaults.withCredentials = true;
+
 
 function ShimmerCard() {
   return (
@@ -200,8 +207,8 @@ export default function Home() {
 
   return (
     <>
-      <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
-        <div className="mb-4 col-span-full xl:mb-2">
+      <div className="lg:mt-8 bg-white grid grid-cols-1 px-0 sm:px-8 pt-4 sm:pt-6 xl:grid-cols-3 xl:gap-4">
+        <div className="mb-4 col-span-full xl:mb-2 px-4 sm:px-0">
           {/* Search Results Header */}
           {isSearchMode && (
             <div className="mb-6">
@@ -266,124 +273,17 @@ export default function Home() {
               )}
 
               {!error && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+
                   {/* Render revealed videos first */}
                   {displayed.map((video) => (
                     <div key={video._id}>
-                      <div className="relative">
-                        <Link to={`/watch/${video._id}`}>
-                          <div
-                            className="w-full rounded-lg bg-gray-100 overflow-hidden"
-                            style={{
-                              paddingTop: "56.25%",
-                              position: "relative",
-                            }}
-                          >
-                            <img
-                              src={getThumbnailUrl(video)}
-                              alt={video?.title || "video thumbnail"}
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                              }}
-                              onError={(e) => {
-                                if (!e.currentTarget.dataset.fallbackApplied) {
-                                  e.currentTarget.src =
-                                    "http://localhost:8000/placeholders/noThumbnail.png";
-                                  e.currentTarget.dataset.fallbackApplied =
-                                    "true";
-                                }
-                              }}
-                            />
-                            <span className="absolute bottom-1 right-1 bg-black text-white text-xs px-1 rounded">
-                              {formatDuration(video?.duration ?? 0)}
-                            </span>
-                          </div>
-                        </Link>
-                      </div>
-
-                      <div className="flex items-start justify-between w-full md:mt-0 text-[0.9rem] font-medium text-gray-500 ">
-                        <div className="px-1 py-2 flex items-start gap-2">
-                          <img
-                            src={video?.owner?.avatar}
-                            alt={video?.owner?.name}
-                            className="w-8 h-8 rounded-full flex-shrink-0"
-                          />
-                          <div className="flex flex-col overflow-hidden">
-                            <h3 className="font-semibold text-[1rem] truncate">
-                              <Link to={`/watch/${video._id}`}>
-                                {video.title}
-                              </Link>
-                            </h3>
-                            <p className="text-sm text-gray-600 truncate">
-                              {video?.owner?.name ?? ""}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {video.views ?? 0} views •{" "}
-                              {formatDate(video.createdAt)}
-                            </p>
-                          </div>
-                        </div>
-                        {/* THREE DOT MENU */}
-                        <div className="relative">
-                          <button
-                            onClick={() =>
-                              setOpenMenuFor(
-                                openMenuFor === video._id ? null : video._id
-                              )
-                            }
-                            className="focus:bg-gray-200 p-2 rounded-full  focus:scale-[0.8] transition-all duration-200"
-                          >
-                            <img
-                              src="/src/assets/svg_icons/threeDots.svg"
-                              className="w-6 h-6"
-                            />
-                          </button>
-
-                          <div
-                            ref={menuRef}
-                            className={` absolute text-gray-900 right-0 top-10 mt-2 w-40 p-1 flex flex-col rounded-[0.7rem] z-10 bg-gray-100 border-4 border-gray-50 
-                                ${
-                                  me?.role === "admin"
-                                    ? "justify-between"
-                                    : "justify-center"
-                                } transform transition-all duration-200 ease-out origin-top-right 
-                                ${
-                                  openMenuFor === video._id
-                                    ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-                                }`}
-                          >
-                            <div>
-                              <Link
-                                to={`/reportForm/${video._id}`}
-                                onClick={() => setOpenMenuFor(null)}
-                                className="block w-full text-left  px-4 py-2 hover:bg-gray-200 transition rounded-[0.5rem] "
-                              >
-                                ⚠️ Report
-                              </Link>
-                            </div>
-                            <div>
-                              {(me?.role === "admin" ||
-                                video?.owner?._id === me?._id) && (
-                                <button
-                                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-[0.5rem]"
-                                  onClick={() => {
-                                    setOpenMenuFor(null);
-                                    setConfirmDeleteFor(video._id);
-                                  }}
-                                >
-                                  ❌ Delete
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <VideoCard 
+                        video={video}
+                        isOwner={me?.role === "admin" || video?.owner?._id === me?._id}
+                        onDelete={setConfirmDeleteFor}
+                        onReport={(id) => navigate(`/reportForm/${id}`)}
+                      />
                     </div>
                   ))}
 

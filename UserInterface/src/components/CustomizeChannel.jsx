@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import PageContainer from "./layout/PageContainer";
+
 
 function CustomizeChannel() {
   const data = useSelector((state) => state.auth.user);
@@ -14,8 +16,11 @@ function CustomizeChannel() {
   const [email, setEmail] = useState("");
   const [about, setAbout] = useState("");
 
-  // do NOT prefill password (prevents weird autofill/hashed values showing)
   const [password, setPassword] = useState("");
+
+  const [editState, setEditState] = useState({ name: false, email: false, about: false, password: false });
+
+  const toggleEdit = (field) => setEditState(prev => ({ ...prev, [field]: !prev[field] }));
 
   useEffect(() => {
     if (!data?._id) return;
@@ -59,126 +64,124 @@ function CustomizeChannel() {
   const saveName = () => updateField({ name });
   const saveEmail = () => updateField({ email });
   const saveAbout = () => updateField({ about });
-  const savePassword = () => {
+  const savePassword = async () => {
     if (!password || password.length < 6) {
       alert("Password must be at least 6 characters.");
       return;
     }
-    updateField({ password }).then(() => setPassword(""));
+    await updateField({ password });
+    setPassword("");
   };
-  const saveAvatar = () => {
+  const saveAvatar = async () => {
     if (!file) {
       alert("Choose an image first.");
       return;
     }
-    updateField({ avatar: file }).then(() => setFile(null));
+    await updateField({ avatar: file });
+    setFile(null);
   };
 
-  const inputBase =
-    "p-2 border-b-2 text-gray-400 focus:text-gray-900 focus:border-blue-500 hover:border-gray-800 focus:bg-gray-100 outline-none transition-all duration-500 rounded-t-md";
+  const InlineEditField = ({ label, value, type = "text", field, onChange, onSave, placeholder }) => {
+    const isEditing = editState[field];
+    return (
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 group relative">
+        <label className="sm:w-32 text-sm font-semibold text-gray-900">{label}</label>
+        {isEditing || field === 'password' || field === 'avatar' ? (
+          <div className="flex-1 flex gap-3">
+            <input
+              type={type}
+              className="flex-1 p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              value={value}
+              onChange={onChange}
+              placeholder={placeholder}
+            />
+            <button className={saveBtnBase} onClick={() => { onSave(); if (field !== 'password' && field !== 'avatar') toggleEdit(field); }}>
+              Save
+            </button>
+            {field !== 'password' && field !== 'avatar' && (
+              <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200" onClick={() => toggleEdit(field)}>
+                Cancel
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-between p-2.5 bg-transparent border border-transparent hover:bg-gray-50 hover:border-gray-200 rounded-xl transition-colors cursor-pointer" onClick={() => toggleEdit(field)}>
+            <span className="text-gray-900 text-sm">{value || <span className="text-gray-400 italic">Not set</span>}</span>
+            <button className="text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const saveBtnBase =
     "px-5 py-2.5 rounded-[0.5rem] text-white font-semibold bg-blue-500 hover:bg-blue-600 transition-all duration-100 disabled:opacity-60 focus:scale-95 focus:bg-blue-800";
 
   return loader ? (
-    <div className="text-center my-72">
-      <div className="p-4 text-center">
-        <div role="status">
-          <svg
-            aria-hidden="true"
-            className="inline w-8 h-8 text-gray-200 animate-spin fill-black"
-            viewBox="0 0 100 101"
-          >
-            <path
-              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908Z"
-              fill="currentColor"
-            />
-            <path
-              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-              fill="currentFill"
-            />
-          </svg>
-        </div>
+    <PageContainer>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
-    </div>
+    </PageContainer>
   ) : (
-    <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4">
-      <div className="mb-4 col-span-full xl:mb-2">
-        <div className="text-lg mb-8">
-          <h1 className="text-4xl font-semibold">Customize Channel</h1>
+    <PageContainer>
+      <div className="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Customize Channel</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your channel details and profile</p>
         </div>
 
         {/* Name */}
-        <div className="mb-6 flex items-center gap-2 max-w-3xl">
-          <label className="w-40 text-sm font-medium text-gray-900">Name</label>
-          <input
-            type="text"
-            className={`${inputBase} flex-1`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your channel name"
-          />
-          <button className={saveBtnBase} onClick={saveName}>
-            Save
-          </button>
-        </div>
+        <InlineEditField label="Name" value={name} field="name" onChange={(e) => setName(e.target.value)} onSave={saveName} placeholder="Your channel name" />
 
         {/* Email */}
-        <div className="mb-6 flex items-center gap-2 max-w-3xl">
-          <label className="w-40 text-sm font-medium text-gray-900">Email</label>
-          <input
-            type="email"
-            className={`${inputBase} flex-1`}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
-          />
-          <button className={saveBtnBase} onClick={saveEmail}>
-            Save
-          </button>
-        </div>
+        <InlineEditField label="Email" value={email} type="email" field="email" onChange={(e) => setEmail(e.target.value)} onSave={saveEmail} placeholder="name@example.com" />
 
         {/* Password */}
-        <div className="mb-6 flex items-center gap-2 max-w-3xl">
-          <label className="w-40 text-sm font-medium text-gray-900">
-            New Password
-          </label>
-          <input
-            type="password"
-            className={`${inputBase} flex-1`}
-            value={password}
-            autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-          />
-          <button className={saveBtnBase} onClick={savePassword}>
-            Save
-          </button>
-        </div>
+        <InlineEditField label="New Password" value={password} type="password" field="password" onChange={(e) => setPassword(e.target.value)} onSave={savePassword} placeholder="••••••••" />
 
         {/* About */}
-        <div className="mb-6 max-w-3xl">
-          <label className="block mb-1 text-sm font-medium text-gray-900">
+        <div className="mb-6 group relative">
+          <label className="block mb-2 text-sm font-semibold text-gray-900">
             About (Channel description)
           </label>
-          <textarea
-            className="mb-2 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            rows={4}
-            maxLength={1000}
-            value={about}
-            onChange={(e) => setAbout(e.target.value)}
-            placeholder="Tell viewers about your channel…"
-          />
-          <button className={saveBtnBase} onClick={saveAbout}>
-            Save
-          </button>
+          {editState.about ? (
+            <div>
+              <textarea
+                className="mb-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none block w-full p-3"
+                rows={4}
+                maxLength={1000}
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                placeholder="Tell viewers about your channel…"
+              />
+              <div className="flex justify-end gap-3">
+                <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200" onClick={() => toggleEdit('about')}>
+                  Cancel
+                </button>
+                <button className={saveBtnBase} onClick={() => { saveAbout(); toggleEdit('about'); }}>
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full p-4 bg-transparent border border-transparent hover:bg-gray-50 hover:border-gray-200 rounded-xl transition-colors cursor-pointer relative" onClick={() => toggleEdit('about')}>
+              <p className="text-gray-900 text-sm whitespace-pre-wrap">{about || <span className="text-gray-400 italic">No description provided.</span>}</p>
+              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Avatar */}
-        <div className="mb-6 flex items-center gap-2 max-w-3xl">
-          <label className="w-40 text-sm font-medium text-gray-900">Avatar</label>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="sm:w-32 text-sm font-semibold text-gray-900">Avatar</label>
           <input
             type="file"
-            className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5"
+            className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl p-2.5"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             accept="image/*"
           />
@@ -187,16 +190,16 @@ function CustomizeChannel() {
           </button>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
           <button
             onClick={() => history("/your_channel")}
-            className="px-5 py-2.5 rounded-lg text-white bg-gray-600 hover:bg-gray-800 focus:bg-black focus:scale-95 transition-all duration-100"
+            className="px-6 py-2.5 rounded-xl text-white font-medium bg-gray-900 hover:bg-black transition-colors"
           >
             Done
           </button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

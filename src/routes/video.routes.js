@@ -1,3 +1,5 @@
+//video.routes.js
+
 import { Router } from "express";
 import {
   publishAVideo,
@@ -9,44 +11,43 @@ import {
   streamVideo,
   getMyLikedVideos,
   searchVideos,
+  getVideoPlayback,
+  updateVideoDetails,
+  toggleVideoLike,
+  getVideoLikeStatus,
+  getSubscribedVideos,
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import {
-  toggleVideoLike,
-  getVideoLikeStatus,
-} from "../controllers/video.controller.js"; //EU6u2.p1.a1.1ln - Like feature
-
-//EU5u1.p1.2ln - updated file - added two imports
-import fs from "fs";
-import path from "path";
+import { uploadLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { validate, videoPublishValidation } from "../middlewares/validate.middleware.js";
 
 const router = Router();
 
 const videoUpload = upload.fields([
   { name: "thumbnail", maxCount: 1 },
   { name: "videoFile", maxCount: 1 },
-  // { name: 'avatar', maxCount: 1 } // Add this if you are uploading avatar
 ]);
-//EU5u1.p1.1ln - added Stream route for local video playback
+
 router.get("/stream/:filename", streamVideo);
 router.route("/allVideo").get(getAllVideos);
 router.route("/allUserVideo/:owner").get(getAllUserVideos);
 router.route("/videoData/:id").get(VideoDataById);
 
-router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+router.use(verifyJWT); // Apply verifyJWT middleware to all routes below this line
+
+router.get("/subscribedFeed", getSubscribedVideos);
 router.route("/search").get(searchVideos);
 
-
-router.route("/publish").post(videoUpload, publishAVideo);
+router.route("/publish").post(uploadLimiter, videoUpload, validate(videoPublishValidation), publishAVideo);
 router.route("/delete/:id").delete(deleteVideoById);
+router.route("/update/:id").put(upload.fields([{ name: "thumbnail", maxCount: 1 }]), updateVideoDetails);
 router.route("/incrementView/:id").put(viewsIncrement);
 
-//EU6u2.p1.a1.2ln - Like feature
-router.put("/:id/like", verifyJWT, toggleVideoLike);
-router.get("/:id/like/status", verifyJWT, getVideoLikeStatus);
-router.get("/api/v1/likes", verifyJWT, getMyLikedVideos);                  //EU12u1.p4 - Liked Page
-// 🔧 ONE-TIME ADMIN MIGRATION
-
+// Like feature
+router.put("/:id/like", toggleVideoLike);
+router.get("/:id/like/status", getVideoLikeStatus);
+router.get("/likes", getMyLikedVideos);
+router.get("/:id/playback", getVideoPlayback);
 
 export default router;

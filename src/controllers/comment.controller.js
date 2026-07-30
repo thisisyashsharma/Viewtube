@@ -6,10 +6,14 @@ import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
 import mongoose from "mongoose";
 
+import { sanitizeText } from "../utils/sanitize.utils.js";
+
 // POST /api/v1/comments/:videoId
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { content } = req.body;
+  let { content } = req.body;
+
+  content = sanitizeText(content);
 
   if (!content?.trim()) throw new ApiError(400, "Content is required");
 
@@ -108,7 +112,9 @@ const deleteComment = asyncHandler(async (req, res) => {
 // POST /api/v1/comments/:id/replies
 const addReply = asyncHandler(async (req, res) => {
   const { id } = req.params; // comment id
-  const { content, parentReplyId } = req.body;
+  let { content, parentReplyId } = req.body;
+
+  content = sanitizeText(content);
 
   if (!content?.trim()) throw new ApiError(400, "Content is required");
 

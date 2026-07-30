@@ -13,7 +13,7 @@ import { sendMail } from "../utils/mailer.utils.js";
 import { Preverify } from "../models/preverify.model.js";
 import { SubscriptionEvent } from "../models/subscriptionEvent.model.js";
 import { DailyChannelStats } from "../models/dailyChannelStats.modal.js";
-
+import { auth } from "../utils/firebaseAdmin.js";
 const normalizeDay = () => {
   const d = new Date();
   d.setUTCHours(0, 0, 0, 0);
@@ -43,7 +43,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, about, preVerifiedToken } = req.body;
 
-  if (!name || !email || !password) {
+  if (!name?.trim() || !email?.trim() || !password?.trim()) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -98,10 +98,10 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     avatar,
     username: candidate,
-    isVerified,
+    isVerified: true,
     role: isAdminEmail ? "admin" : "user",
-
   });
+
 
   return res
     .status(201)
@@ -142,7 +142,7 @@ const updateUsername = asyncHandler(async (req, res) => {
 
   const user = await newUser
     .findByIdAndUpdate(uid, { $set: { username: desired } }, { new: true })
-    .select("name email avatar username");
+    .select("name email avatar coverImage username");
 
   return res.status(200).json(new ApiResponse(200, user, "Username updated"));
 });
@@ -150,6 +150,37 @@ const updateUsername = asyncHandler(async (req, res) => {
 // {------------------------ register user---------------------------}
 
 // {*****------------------------ login user---------------------------******}
+
+export const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? (process.env.COOKIE_SAME_SITE || "none") : "lax",
+  };
+};
+
+const sendTokensAndRespond = async (res, user, statusCode = 200, message = "User logged in successfully") => {
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+  const loggedInUser = await newUser
+    .findById(user._id)
+    .select("-password -refreshToken -emailOtpHash -emailOtpExpires -emailOtpAttempts");
+
+  const options = getCookieOptions();
+
+  return res
+    .status(statusCode)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        statusCode,
+        { user: loggedInUser, accessToken },
+        message
+      )
+    );
+};
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -170,70 +201,88 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid password");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    userfind._id
-  );
-
-  const loggedInUser = await newUser
-    .findById(userfind._id)
-    .select("-refreshToken");
-
-  const options = {
-    httpOnly: true,
-    secure: false, // <— false for http://localhost in dev      //3.ERROR - Token Error - step3
-    sameSite: "lax", // <- added this line                        //3.Error - Token Error - step4
-  };
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "User logged in successfully"
-      )
-    );
+  return sendTokensAndRespond(res, userfind);
 });
-// {------------------------ login user---------------------------}
 
-// {**********-------------------logout user-------------------**********}
+const googleAuth = asyncHandler(async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) throw new ApiError(400, "idToken is required");
+
+  let decoded;
+  try {
+    decoded = await auth.verifyIdToken(idToken, true); // true = check revoked
+  } catch {
+    throw new ApiError(401, "Invalid or expired Google token");
+  }
+
+  const { uid, email, email_verified, name, picture } = decoded;
+
+  if (!email || !email_verified) {
+    throw new ApiError(401, "Google account email is not verified");
+  }
+  const normalizedEmail = email.toLowerCase().trim();
+
+  let user = await newUser.findOne({ $or: [{ googleUid: uid }, { email: normalizedEmail }] });
+
+  if (!user) {
+    const base = (name || normalizedEmail.split("@")[0] || "user")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "");
+    let candidate = base || "user";
+    let suffix = 0;
+    while (await newUser.findOne({ username: candidate })) {
+      suffix += 1;
+      candidate = `${base}${suffix}`;
+    }
+
+    user = await newUser.create({
+      email: normalizedEmail,
+      name: name || normalizedEmail.split("@")[0],
+      avatar: picture,
+      googleUid: uid,
+      authProviders: ["google"],
+      username: candidate,
+      isVerified: true
+    });
+  } else if (!user.googleUid) {
+    // Existing password account, same verified email → link the providers.
+    user.googleUid = uid;
+    if (!user.authProviders.includes("google")) user.authProviders.push("google");
+    if (!user.avatar && picture) user.avatar = picture;
+    await user.save({ validateBeforeSave: false });
+  }
+
+  return sendTokensAndRespond(res, user);
+});
 
 const logoutUser = asyncHandler(async (req, res) => {
   await newUser.findByIdAndUpdate(req.user._id, {
-    $set: {
-      refreshToken: undefined,
+    $unset: {
+      refreshToken: 1,
     },
   });
 
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
+  const options = getCookieOptions();
 
   return res
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged out"));
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
-// {**********-------------------logout user-------------------**********}
-
-// {**********-------------------refrese  token-------------------**********}
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
     const incomingRefreshToken =
-      Refreq.cookies.refreshToken || req.body.refreshToken;
+      req.cookies?.refreshToken || req.body?.refreshToken;
 
-    if (incomingRefreshToken) {
-      throw new ApiError(401, "unauthorized requrest");
+    if (!incomingRefreshToken) {
+      throw new ApiError(401, "Unauthorized request: Refresh token is required");
     }
 
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.JWT_REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET
     );
 
     const user = await newUser.findById(decodedToken?._id);
@@ -243,47 +292,43 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or used or rotated");
+      throw new ApiError(401, "Refresh token is expired, revoked, or already used");
     }
 
-    const options = {
-      httpOnly: true,
-      secure: false, // <— false for http://localhost in dev      //3.ERROR - Token Error - step5
-      sameSite: "lax", // <- added this line                        //3.ERROR - Token Error - step6
-    };
+    const options = getCookieOptions();
 
-    const {
-      accessToken,
-      refreshToken,
-    } = //3.ERROR - Token Error = step7 - "rewrefreshToken" to "refreshToken"
+    const { accessToken, refreshToken } =
       await generateAccessAndRefreshTokens(user._id);
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken)
-      .cookie("refreshToken", refreshToken)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refresh: newrefreshToken },
-          "Refresh token generated"
+          { accessToken },
+          "Refresh token regenerated successfully"
         )
       );
   } catch (error) {
-    throw new ApiError(401, "Invalid refresh token");
+    throw new ApiError(401, error?.message || "Invalid refresh token");
   }
 });
 
-// {**********-------------------refrese  token-------------------**********}
-
-// {**********-------------------Update user-------------------**********}
-
 const updateAccount = asyncHandler(async (req, res) => {
+  const targetId = req.params.id;
+  const isOwner = req.user?._id?.toString() === targetId?.toString();
+  const isAdmin = req.user?.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ApiError(403, "Forbidden: You are not authorized to update this account");
+  }
+
   const { name, email, password, about } = req.body;
 
-  // allow partial updates; only error if literally nothing was sent
   if (
-    !req.file &&
+    (!req.files || Object.keys(req.files).length === 0) &&
     name === undefined &&
     email === undefined &&
     password === undefined &&
@@ -293,9 +338,14 @@ const updateAccount = asyncHandler(async (req, res) => {
   }
 
   let avatarName;
-  if (req.file) {
-    const avatarLocalPath = req.file.path;
-    avatarName = await uploadOnCloudinary(avatarLocalPath);
+  let coverImageName;
+  
+  if (req.files?.avatar && req.files.avatar[0]) {
+    avatarName = await uploadOnCloudinary(req.files.avatar[0].path);
+  }
+  
+  if (req.files?.coverImage && req.files.coverImage[0]) {
+    coverImageName = await uploadOnCloudinary(req.files.coverImage[0].path);
   }
 
   const updateData = {};
@@ -308,41 +358,45 @@ const updateAccount = asyncHandler(async (req, res) => {
   if (avatarName) {
     updateData.avatar = avatarName.url;
   }
+  if (coverImageName) {
+    updateData.coverImage = coverImageName.url;
+  }
 
-  const user = await newUser.findByIdAndUpdate(
-    req.params.id,
-    { $set: updateData },
-    { new: true }
-  );
+  const user = await newUser
+    .findByIdAndUpdate(targetId, { $set: updateData }, { new: true })
+    .select("-password -refreshToken -emailOtpHash -emailOtpExpires -emailOtpAttempts");
 
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
-// {-----------------------------Update user-----------------------------}
-
-// {----------------------------Delete user-------------------------------}
 
 const deleteAccount = asyncHandler(async (req, res) => {
-  const user = await newUser.findByIdAndDelete(req.params.id);
+  const targetId = req.params.id;
+  const isOwner = req.user?._id?.toString() === targetId?.toString();
+  const isAdmin = req.user?.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ApiError(403, "Forbidden: You are not authorized to delete this account");
+  }
+
+  const user = await newUser.findByIdAndDelete(targetId);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  res.status(200).json({
-    success: true,
-    message: "Account deleted successfully",
-  });
+  res.status(200).json(
+    new ApiResponse(200, {}, "Account deleted successfully")
+  );
 });
-// {----------------------------Delete user-------------------------------}
-// {----------------------------User Data By Id-------------------------------}
 
 const getUserById = asyncHandler(async (req, res) => {
   const userId = req.params.id;
-  // console.log(userId);
 
-  const user = await newUser.findById(userId);
+  const user = await newUser
+    .findById(userId)
+    .select("-password -refreshToken -emailOtpHash -emailOtpExpires -emailOtpAttempts");
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -381,6 +435,7 @@ const GetWatchHistory = asyncHandler(async (req, res) => {
                   $project: {
                     name: 1,
                     avatar: 1,
+                    coverImage: 1,
                   },
                 },
               ],
@@ -546,13 +601,14 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
     .select("subscribedTo")
     .populate({
       path: "subscribedTo",
-      select: "name avatar subscribers username about ",
+      select: "name avatar coverImage subscribers username about ",
     });
 
   const channels = (me?.subscribedTo || []).map((ch) => ({
     _id: ch._id,
     name: ch.name,
     avatar: ch.avatar,
+    coverImage: ch.coverImage,
     username: ch.username ?? null,
     about: ch.about ?? "",
     subscribersCount: Array.isArray(ch.subscribers) ? ch.subscribers.length : 0,
@@ -565,7 +621,7 @@ const getMySubscriptions = asyncHandler(async (req, res) => {
 // GET /api/v1/account/me
 //EU9u1.p4.a1.6ln - Comment + Username
 const getMe = asyncHandler(async (req, res) => {
-  const me = await newUser.findById(req.user._id).select("_id username avatar role");
+  const me = await newUser.findById(req.user._id).select("_id username avatar coverImage role");
   return res.status(200).json(new ApiResponse(200, me, "OK"));
 });
 
@@ -898,6 +954,7 @@ export {
   updateAccount,
   deleteAccount,
   login,
+  googleAuth,
   logoutUser,
   refreshAccessToken,
   getUserById,

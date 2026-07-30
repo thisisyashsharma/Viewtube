@@ -77,96 +77,81 @@ function ActivityItem() {
   );
 }
 
+import PageContainer from "./layout/PageContainer";
+
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gray-50 mt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-1">Overview</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/mnt/data/VideoStudio.jsx" className="text-sm text-blue-600 hover:underline">Open Studio</Link>
-            <button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm">New</button>
-          </div>
-        </header>
+    <PageContainer>
+      <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Channel overview and analytics</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link to="/video_studio" className="text-sm font-semibold text-blue-600 hover:underline">
+            Open Studio
+          </Link>
+          <Link to="/upload_video" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+            Upload Video
+          </Link>
+        </div>
+      </header>
 
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: compact tiles + charts */}
-          <section className="lg:col-span-8 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Views" />
-              <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Watch time" />
-              <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5"/><path d="M5 12h14" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Subs" />
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: compact tiles + charts */}
+        <section className="lg:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Views" />
+            <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Watch time" />
+            <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5"/><path d="M5 12h14" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Subscribers" />
+            <Tile icon={<svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" strokeWidth="1.5"/></svg>} label="Revenue" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative h-64 sm:h-80">
+              <MiniChart />
+            </div>
+            <div className="relative h-64 sm:h-80">
+              <MiniChart />
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-gray-900">Latest Content</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative">
-                <MiniChart />
-              </div>
-              <div className="relative">
-                <MiniChart />
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium text-gray-800">Latest</h2>
-                <div className="text-xs text-gray-500">—</div>
-              </div>
-
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="relative overflow-hidden">
+            <div className="overflow-x-auto">
+              <div className="space-y-3 min-w-[500px]">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="relative overflow-hidden p-3 bg-gray-50 rounded-xl flex items-center justify-between">
                     <Shimmer />
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-10 bg-gray-100 rounded-sm" />
-                      <div className="flex-1">
-                        <div className="h-3 bg-gray-100 rounded w-3/5 mb-2" />
-                        <div className="h-2 bg-gray-100 rounded w-2/5" />
+                      <div className="w-16 h-10 bg-gray-200 rounded-lg flex-shrink-0" />
+                      <div>
+                        <div className="h-3.5 bg-gray-200 rounded w-44 mb-1.5" />
+                        <div className="h-2.5 bg-gray-200 rounded w-24" />
                       </div>
-                      <div className="text-xs text-gray-400">—</div>
                     </div>
+                    <div className="text-xs text-gray-500 font-medium">Published</div>
                   </div>
                 ))}
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* Right: vertical activity feed */}
-          <aside className="lg:col-span-4 space-y-6">
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-800 mb-3">Activity</h3>
-              <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, i) => <ActivityItem key={i} />)}
-              </div>
+        {/* Right: vertical activity feed */}
+        <aside className="lg:col-span-4 space-y-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <h3 className="text-base font-bold text-gray-900 mb-4">Recent Activity</h3>
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <ActivityItem key={i} />)}
             </div>
-
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-800 mb-3">Quick</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative bg-gray-100 rounded-lg h-10 overflow-hidden">
-                  <Shimmer />
-                </div>
-                <div className="relative bg-gray-100 rounded-lg h-10 overflow-hidden">
-                  <Shimmer />
-                </div>
-                <div className="relative bg-gray-100 rounded-lg h-10 overflow-hidden">
-                  <Shimmer />
-                </div>
-                <div className="relative bg-gray-100 rounded-lg h-10 overflow-hidden">
-                  <Shimmer />
-                </div>
-              </div>
-            </div>
-          </aside>
-        </main>
-
-        <footer className="mt-8 text-sm text-gray-500 text-center">
-          Permanent shimmer — no data.
-        </footer>
-      </div>
-    </div>
+          </div>
+        </aside>
+      </main>
+    </PageContainer>
   );
 }
+

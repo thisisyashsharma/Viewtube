@@ -1,0 +1,12 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "ignore": [
+    "UserInterface/**",
+    "public/**",
+    "docs/**",
+    "tests/**",
+    "node_modules/**"
+  ],
+  "delay": "500"
+}

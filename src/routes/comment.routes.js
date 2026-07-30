@@ -12,6 +12,9 @@ import {
   deleteReply,
 } from "../controllers/comment.controller.js";
 
+import { commentLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { validate, commentValidation } from "../middlewares/validate.middleware.js";
+
 const router = Router();
 
 // READ routes can be public if you want; for now we keep all behind auth (like your /watch page).
@@ -19,14 +22,13 @@ router.use(verifyJWT);
 
 // comments on a video
 router.route("/:videoId")
-  .post(addComment)
+  .post(commentLimiter, validate(commentValidation), addComment)
   .get(getCommentsByVideo);
 
 router.get("/:videoId/count", getCommentCount);
 router.delete("/:id", deleteComment);
 
-
-router.post("/:id/replies", addReply);
+router.post("/:id/replies", commentLimiter, validate(commentValidation), addReply);
 router.patch("/:commentId/replies/:replyId/like", toggleLikeReply);
 router.delete("/:commentId/replies/:replyId", deleteReply);
 

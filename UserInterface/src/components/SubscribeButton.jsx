@@ -102,14 +102,17 @@ const toggle = async () => {
       >
         {subscribed ? "Subscribed" : "Subscribe"}
       </span>
-      <span
-        className={`relative z-10 rounded-full px-2 py-0.5 ${
-          subscribed ? "text-white bg-white/0 " : "text-gray-600 px-3"
-        }`}
-      >
-        {/* {typeof count === "number" ? count : ""} */}
-      </span>
+      {typeof count === "number" && count >= 0 && (
+        <span
+          className={`relative z-10 text-xs font-semibold px-2 py-0.5 rounded-full ${
+            subscribed ? "text-white/90 bg-white/20" : "text-gray-600 bg-gray-200/80"
+          }`}
+        >
+          {count}
+        </span>
+      )}
     </button>
+
   );
 }
 

@@ -1,0 +1,60 @@
+# Server
+PORT=8000
+NODE_ENV=development
+
+# MongoDB (Atlas SRV or local)
+MONGODB_URI=mongodb+srv://testing_db:testing_db@cluster0.bvvssur.mongodb.net/
+DB_NAME=viewtube
+
+# CORS
+CORS_ORIGIN=http://localhost:5173
+
+# JWT — use the same names your model/middleware expect
+ACCESS_TOKEN_SECRET=supersecretkey
+ACCESS_TOKEN_EXPIRY=7d
+REFRESH_TOKEN_SECRET=anothersecretkey
+REFRESH_TOKEN_EXPIRY=30d
+
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_FOLDER=viewtube
+
+USE_CLOUDINARY=false
+
+DEFAULT_STORAGE=local   # or local
+
+
+# EU7u1.a3.4ln - Auth toggle firebase/mongo
+# pick one of:
+AUTH_PROVIDER=mongodb      # recommended (tries Firebase when available, else Mongo - or can directly save as firebase or mongo)
+ 
+
+# only needed when Firebase enabled:
+FIREBASE_PROJECT_ID=viewtubex
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@viewtubex.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDMK8G0Y5sX4zFd\nEoOXG9A6hKs9Ubtf2rBtldjmM20qKB/bPt/1du/RAnkgYL9+9CtrL9orH123vzpZ\n+/U1j5YSM2wvWYoNuZ+DddHCQpcG5zxorXlzi7sZXQN8cUFzTXRd8nUiYUPyNcaf\nX90fQIWNyIMHjmNCnW2CI19cCWXaXUkCmi6uKF7BLXV7luf/ecQpGLpziorPprTJ\n8cp18oYW+Vmmsz8j91XiHuHDtdXscfUKNnvFwlfF6FX2t1x+UJT6MEMlcLHKFhqD\npa0L/4epxCcZK1b9+xTRLJZaqxrgG0QDC6LeIrWMtmTsS6kw61nVNKjA3ApEPdZ9\n3hX5i9BBAgMBAAECggEACEv051GENsB0O+h/MW+faBQGaLZUC21LGGuWRfssAfe3\nHQUykPqAJ08BlhJoZbkitIyGwemDOO7L6REx4eHPrYtVEkgssdRrtNS1ApRgfRbT\ndRuA4R75/5SwihOIydiJadyVlvaQjhynpsf8p9hK37vuBdYVlto9M3nK1mYes0oJ\ni25dPRQMyVVAlcq75wdieK6n802BilCHjk+Fm5/RgEqvyUF4RpiwTZGYyLBYOHsU\nmYLJAseU7C1QZNaxlUDHBQ/4S0rdREA7fligzj8hcrGZgUnug78S5FbQuR0dvaGN\nlfFBag5dDiVDmGfnqXkPSBdQrnXnb//T8rXJ6QPuUwKBgQDyJfqrqkJk3fmP50MO\nyrsXooLcm9iHwbcb8DbFdryGyAPdhZJUlqhIn5xWMxvUoCuobnfioTGUOlHUBRDA\nNzaST7msOVv34RyXAVnvkRCsi1Wg6HgpnepsGGlf3jEqV5PUq8uge3TPOKGdfONo\ng+2ITspqPEAeU41j+uRgaMr5dwKBgQDX2aLLuWOLwRL/Wl1k8r4c+Iv4Bl5pzGtS\n6waZObX2EdpKKlUDeW4cNvfp0jYbTQPBlcu3pAD83BIiknYja5QxTW4cuHpfu44e\nBjOIp6diKTWVFaFlk2+eUQGoJW76qrjCRB7DcOEXm7ZodlQLKUb+e0mAyVjZ9Ta1\nZVBSyFhyBwKBgG7JMYaYvwenBybvh56c4jxN/dEw/EAgQMZngKeXS2ne2OXg1rIc\nu6F+ZOiLOZBuN4s3/2GQnj5S8F0wdBl9KVqHX0uMcqdWNt5fn+YbWKWYmfSkZ1Wj\nCj2qbYuO/K+CogALGX6y/R5Rqp+DJAgNU/+pDLLOHgfB8k5r21DAoRzBAoGAWUdQ\neZk1nmF+nRXgWVe54LvBERZ5SKNfpM1HTms7YwshUdnOjgBU1eC6jAEBlis1qYVu\n3Ic+TVgtPBV+PcpKYlYXfFOlciFed/ayrAxERGqtGfv3ZM8ltMLmv4i0LYQdpWSN\noOL4h05FlVGUE4XAMpQF4/nkAUrWlRLRtVvekVMCgYEAvANJ9vroaoSf06wY9V6A\nCqUv920rP7s9M8LVORWAlaSIZK7fUAab6lG+AP1Ykr0Z2diEcVE60xfqUSaOZuwD\n9VcBVJio/p6auqWTZRosHERh8bximvlmD++LMOo0EnCFTarQBNNgZo27NblQfPE2\ngpujWl8toIzv9hzLqzfA5nI=\n-----END PRIVATE KEY-----\n
+
+# EU10u2.p2.7ln - Email verification level 2 - some additions 
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=verify.emailsotp@gmail.com
+SMTP_PASS=wuly vwfr dvlx javk
+MAIL_FROM="no-reply <verify.emailsotp@gmail.com>"
+OTP_VALID_MINUTES=5
+OTP_LENGTH=6
+ 
+
+
+ADMIN_EMAIL=yashkarma7410@gmail.com
+
+# EU13 - GCS 
+GCS_PROJECT_ID=viewtube-backend0
+GCS_BUCKET_NAME=viewtube2-videos
+GCS_KEY_FILE=./secrets/gcs-key.json
+
+USER_STORAGE_LIMIT_MB=100
+ENABLE_VIDEO_COMPRESSION=false

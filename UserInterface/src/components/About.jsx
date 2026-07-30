@@ -21,7 +21,7 @@ export default function About() {
         <div>{(channel?.subscribers || 0) + " subscribers"}</div>
       </div>
 
-      <section className="bg-white border-4 border-gray-100 rounded-2xl p-4">
+      <section className="bg-gray-50 border-2 border-gray-100 rounded-2xl p-4">
         <h3 className="font-medium mb-2">About</h3>
         <p className="text-gray-700 whitespace-pre-line">
           {channel?.about || "No description provided."}

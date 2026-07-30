@@ -10,9 +10,10 @@ function formatDuration(seconds) {
 }
 
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
 function getPosterFromVideo(video) {
-  // Minimal stub fallback — use a "no-thumbnail" image you place in public/placeholders
-  return "http://localhost:8000/placeholders/no-thumbnail.png";
+  return `${BASE_URL}/placeholders/no-thumbnail.png`;
 }
 
 function getThumbnailUrl(video) {
@@ -24,7 +25,7 @@ function getThumbnailUrl(video) {
 
     if (!t) {
       const poster = getPosterFromVideo(video);
-      return poster || "http://localhost:8000/placeholders/loading1.gif";
+      return poster || `${BASE_URL}/placeholders/loading1.gif`;
     }
 
     // remove stray '/public' if present
@@ -34,18 +35,18 @@ function getThumbnailUrl(video) {
     if (/^https?:\/\//i.test(t)) return t;
 
     // leading slash -> prefix backend host
-    if (t.startsWith("/")) return `http://localhost:8000${t}`;
+    if (t.startsWith("/")) return `${BASE_URL}${t}`;
 
     // bare filename like "thumbnail-..." -> public/temp/<file>
-    if (/^thumbnail-/i.test(t)) return `http://localhost:8000/temp/${t}`;
+    if (/^thumbnail-/i.test(t)) return `${BASE_URL}/temp/${t}`;
 
     // if starts with temp/ -> prefix host
-    if (/^temp\//i.test(t)) return `http://localhost:8000/${t}`;
+    if (/^temp\//i.test(t)) return `${BASE_URL}/${t}`;
 
     // fallback: prefix host
-    return `http://localhost:8000/${t}`;
+    return `${BASE_URL}/${t}`;
   } catch (err) {
-    return "http://localhost:8000/placeholders/loading1.gif";
+    return `${BASE_URL}/placeholders/loading1.gif`;
   }
 }
 

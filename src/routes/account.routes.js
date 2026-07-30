@@ -6,6 +6,7 @@ import {
   deleteAccount,
   registerUser,
   login,
+  googleAuth,
   updateAccount,
   logoutUser,
   refreshAccessToken,
@@ -26,7 +27,14 @@ import {
   preOtpVerify,
 } from "../controllers/account.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, verifyOwnerOrAdmin } from "../middlewares/auth.middleware.js";
+import { authLimiter, otpLimiter } from "../middlewares/rateLimiter.middleware.js";
+import {
+  validate,
+  signupValidation,
+  loginValidation,
+  mongoIdValidation,
+} from "../middlewares/validate.middleware.js";
 
 const router = Router();
 
@@ -34,38 +42,40 @@ const router = Router();
 router.route("/username/availability").get(checkUsernameAvailability);
 router.route("/username").put(verifyJWT, updateUsername);
 
-router.route("/signup").post(registerUser);
+router.route("/signup").post(authLimiter, validate(signupValidation), registerUser);
 
-router.route("/login").post(login);
-router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/refreshtoken").post(refreshAccessToken);
+router.route("/login").post(authLimiter, validate(loginValidation), login);
+router.route("/google-auth").post(authLimiter, googleAuth);
+router.route("/logout").post(authLimiter, verifyJWT, logoutUser);
+router.route("/refreshtoken").post(authLimiter, refreshAccessToken);
 
-router.route("/delete/:id").delete(deleteAccount);
-router.route("/update/:id").put(upload.single("avatar"), updateAccount);
+router
+  .route("/delete/:id")
+  .delete(authLimiter, verifyJWT, validate(mongoIdValidation("id")), verifyOwnerOrAdmin("id"), deleteAccount);
+router
+  .route("/update/:id")
+  .put(verifyJWT, validate(mongoIdValidation("id")), verifyOwnerOrAdmin("id"), upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateAccount);
 
-router.route("/userData/:id").get(getUserById);
+router.route("/userData/:id").get(validate(mongoIdValidation("id")), getUserById);
 router.route("/history").get(verifyJWT, GetWatchHistory);
-router.route("/addToHistory/:id").put(verifyJWT, addToWatchHistory);
+router.route("/addToHistory/:id").put(verifyJWT, validate(mongoIdValidation("id")), addToWatchHistory);
 
-
-//EU10u1.p2.a1.1ln - Email verification level 2 - route
+// Email verification routes
 router.route("/validate-email").get(validateEmailRealtime);
-
-//EU10u2.p4.a1.3ln - Email verification level 2 - send, verify, resend routes
-router.route("/send-email-otp").post(sendEmailOtp);
+router.route("/send-email-otp").post(otpLimiter, sendEmailOtp);
 router.route("/verify-email-otp").post(verifyEmailOtp);
-router.route("/resend-email-otp").post(resendEmailOtp);
+router.route("/resend-email-otp").post(otpLimiter, resendEmailOtp);
 
-//EU6u3.p3.a2.2ln - Subscribe feature - routed both features
-router.put("/subscribe/:channelId", verifyJWT, toggleSubscribe);
-router.get("/subscribe/status/:channelId", verifyJWT, getSubscribeStatus);
+// Subscribe feature
+router.put("/subscribe/:channelId", verifyJWT, validate(mongoIdValidation("channelId")), toggleSubscribe);
+router.get("/subscribe/status/:channelId", verifyJWT, validate(mongoIdValidation("channelId")), getSubscribeStatus);
 
-//EU6u4.p2.a2.1ln -  Subscribed Channels - routed for subscribed page
+// Subscribed Channels
 router.get("/subscriptions", verifyJWT, getMySubscriptions);
 
-//EU10u2.p7.a1.2ln - Email verification level 2 - otp send & verify routes
-router.post("/pre-otp/send", preOtpSend);
-router.post("/pre-otp/verify",preOtpVerify);
+// Pre-OTP send & verify routes
+router.post("/pre-otp/send", otpLimiter, preOtpSend);
+router.post("/pre-otp/verify", preOtpVerify);
 
 router.get("/me", verifyJWT, getMe);
 

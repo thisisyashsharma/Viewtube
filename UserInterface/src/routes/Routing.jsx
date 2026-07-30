@@ -39,202 +39,193 @@ import Trending from "../components/Trending.jsx";
 function Routing() {
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />}>
-            <Route index element={<Main />} />
-            <Route
-              path="home"
-              element={
-                <AuthLayout>
-                  <Home />
-                </AuthLayout>
-              }
-            />
-
-            <Route
-              path="your_channel/*"
-              element={
-                <AuthLayout>
-                  <YourChannel />
-                </AuthLayout>
-              }
-            >
+      <SearchProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<App />}>
+              <Route index element={<Main />} />
+              <Route path="home" element={<Home />} />
 
               <Route
-                index
+                path="your_channel/*"
                 element={
                   <AuthLayout>
-                    <AllVideo />
+                    <YourChannel />
+                  </AuthLayout>
+                }
+              >
+                <Route
+                  index
+                  element={
+                    <AuthLayout>
+                      <AllVideo />
+                    </AuthLayout>
+                  }
+                />
+                <Route
+                  path="upload_video"
+                  element={
+                    <AuthLayout>
+                      <UploadVideo />
+                    </AuthLayout>
+                  }
+                />
+                <Route
+                  path="about"
+                  element={
+                    <AuthLayout>
+                      <About />
+                    </AuthLayout>
+                  }
+                />
+              </Route>
+
+              <Route
+                path="history"
+                element={
+                  <AuthLayout>
+                    <History />
                   </AuthLayout>
                 }
               />
               <Route
-                path="upload_video"
+                path="playlist"
                 element={
                   <AuthLayout>
-                    <UploadVideo />
+                    <Playlist />
                   </AuthLayout>
                 }
               />
               <Route
-                path="about"
+                path="like"
                 element={
                   <AuthLayout>
-                    <About />
+                    <Like />
                   </AuthLayout>
                 }
+              />
+              <Route
+                path="likes"
+                element={
+                  <AuthLayout>
+                    <Like />
+                  </AuthLayout>
+                }
+              />
+
+
+              <Route
+                path="shorts"
+                element={<Shorts />}
+              />
+              <Route
+                path="watch/:id"
+                element={<Video />}
+              />
+              <Route
+                path="customize_channel"
+                element={
+                  <AuthLayout>
+                    <CustomizeChannel />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="customize_page"
+                element={
+                  <AuthLayout>
+                    <CustomizeChannel />
+                  </AuthLayout>
+                }
+              />
+
+              <Route
+                path="settings"
+                element={
+                  <AuthLayout>
+                    <Settings />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="reportHistory"
+                element={
+                  <AuthLayout>
+                    <ReportHistory />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="help"
+                element={
+                  <AuthLayout>
+                    <Help />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="feedback"
+                element={
+                  <AuthLayout>
+                    <Feedback />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="subscriptions"
+                element={
+                  <AuthLayout>
+                    <Subscriptions />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="keyboardShortcut"
+                element={
+                  <AuthLayout>
+                    <KeyboardShortcut />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="reportForm/:id"
+                element={
+                  <AuthLayout>
+                    <ReportForm />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="videoStudio"
+                element={
+                  <AuthLayout>
+                    <VideoStudio />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="dashboard"
+                element={
+                  <AuthLayout>
+                    <Dashboard />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="trending"
+                element={<Trending />}
               />
             </Route>
 
-            <Route
-              path="history"
-              element={
-                <AuthLayout>
-                  <History />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="playlist"
-              element={
-                <AuthLayout>
-                  <Playlist />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="like"
-              element={
-                <AuthLayout>
-                  <Like />
-                </AuthLayout>
-              }
-            />
-
-            <Route
-              path="shorts"
-              element={
-                <AuthLayout>
-                  <Shorts />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="watch/:id"
-              element={
-                <AuthLayout>
-                  <Video />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="customize_channel"
-              element={
-                <AuthLayout>
-                  <CustomizeChannel />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <AuthLayout>
-                  <Settings />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="reportHistory"
-              element={
-                <AuthLayout>
-                  <ReportHistory />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="help"
-              element={
-                <AuthLayout>
-                  <Help />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="feedback"
-              element={
-                <AuthLayout>
-                  <Feedback />
-                </AuthLayout>
-              }
-            />
-            {/* EU6u4.p4.a2.5ln -  Subscribed Channels: routed the subscription page */}
-            <Route
-              path="subscriptions"
-              element={
-                <AuthLayout>
-                  <Subscriptions />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="keyboardShortcut"
-              element={
-                <AuthLayout>
-                  <KeyboardShortcut />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="/reportForm/:id"
-              element={
-                <AuthLayout>
-                  <ReportForm />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="videoStudio"
-              element={
-                <AuthLayout>
-                  <VideoStudio />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="dashboard"
-              element={
-                <AuthLayout>
-                  <Dashboard />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="trending"
-              element={
-                <AuthLayout>
-                  <Trending />
-                </AuthLayout>
-              }
-            />
-          </Route>
-          <Route
-            path="search"
-            element={
-              <AuthLayout>
-                <SearchProvider />
-              </AuthLayout>
-            }
-          />
-
-          <Route path="/channels/search" element={<ChannelSearchPage />} />
-
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="/channels/search" element={<ChannelSearchPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+          </Routes>
+        </BrowserRouter>
+      </SearchProvider>
     </Provider>
   );
 }
+
 
 export default Routing;

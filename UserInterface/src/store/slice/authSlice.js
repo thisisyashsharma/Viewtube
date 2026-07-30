@@ -29,6 +29,34 @@ export const login = createAsyncThunk('/api/v1/account/login', async (userData, 
     }
 });
 
+export const googleLogin = createAsyncThunk(
+  "auth/googleLogin",
+  async ({ idToken }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `/api/v1/account/google-auth`,
+        { idToken },
+        { withCredentials: true }
+      );
+      return response.data.data;
+    } catch (e) {
+      return rejectWithValue(e.response?.data?.message || "Google login failed");
+    }
+  }
+);
+
+export const getCurrentUser = createAsyncThunk(
+  '/api/v1/account/me',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('/api/v1/account/me');
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch current user");
+    }
+  }
+);
+
 export const logout = createAsyncThunk('/api/v1/account/logout', async (_, { rejectWithValue }) => {
     try {
         await axios.post('/api/v1/account/logout');
@@ -74,15 +102,33 @@ const authSlice = createSlice({
                 state.status =  false;
                 state.error = action.payload;
             })
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action) => {
+                state.loading = false;
+                state.status = true;
+                state.user = action.payload.user;
+                state.accessToken = action.payload.accessToken;
+                state.refreshToken = action.payload.refreshToken;
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
+                state.loading = false;
+                state.status = false;
+                state.error = action.payload;
+            })
             .addCase(logout.fulfilled, (state) => {
                 return {
                     ...state,
                     status: false
                 };
             })
-            
             .addCase(logout.rejected, (state, action) => {
                 state.error = action.payload;
+            })
+            .addCase(getCurrentUser.fulfilled, (state, action) => {
+                state.user = action.payload;
             });
     },
 });

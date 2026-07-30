@@ -96,115 +96,84 @@ function VideoRowPlaceholder() {
   );
 }
 
+import PageContainer from "./layout/PageContainer";
+
 export default function VideoStudio() {
-  // This page intentionally never "loads" real data — it's a permanent shimmer.
   return (
-    <div className="min-h-screen bg-gray-50 mt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <header className="mb-6">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">Studio</h1>
-              <p className="mt-1 text-sm text-gray-600 max-w-2xl">
-                 Video Management
-              </p>
+    <PageContainer>
+      <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Studio</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage channel videos and analytics</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link to="/help" className="text-sm font-semibold text-blue-600 hover:underline">Help</Link>
+        </div>
+      </header>
+
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left column: Main analytics */}
+        <section className="lg:col-span-9 space-y-6">
+          {/* Metrics row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <MetricCard title="Views" value="—" subtitle="Loading..." />
+            <MetricCard title="Watch Time" value="—" subtitle="Loading..." />
+            <MetricCard title="Subscribers" value="—" subtitle="Loading..." />
+            <MetricCard title="Videos" value="—" subtitle="Loading..." />
+          </div>
+
+          {/* Chart */}
+          <ChartPlaceholder />
+
+          {/* Table: Recent uploads */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-gray-900">Recent Uploads</h2>
+              <div className="text-xs text-gray-500">Loading...</div>
             </div>
-            <div className="flex gap-3 items-center">
-              <Link to="/help" className="text-sm text-blue-600 hover:underline">Help</Link>
+
+            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full min-w-[640px] bg-white text-left">
+                <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3">Thumbnail</th>
+                    <th className="px-4 py-3">Title</th>
+                    <th className="px-4 py-3">Views</th>
+                    <th className="px-4 py-3">Comments</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <VideoRowPlaceholder key={idx} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </header>
+        </section>
 
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left column: Main analytics */}
-          <section className="lg:col-span-9 space-y-6">
-            {/* Metrics row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricCard title="Views " value="—" subtitle="Loading..." />
-              <MetricCard title="Watch Time" value="—" subtitle="Loading..." />
-              <MetricCard title="Subscribers" value="—" subtitle="Loading..." />
-              <MetricCard title="Videos" value="—" subtitle="Loading..." />
+        {/* Right column: Sidebar */}
+        <aside className="lg:col-span-3 space-y-6">
+          <div className="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden">
+            <ShimmerOverlay />
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Channel Stats</h3>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-100 rounded w-3/4" />
+              <div className="h-3 bg-gray-100 rounded w-1/2" />
             </div>
+          </div>
 
-            {/* Chart */}
-            <ChartPlaceholder />
-
-            {/* Table: Recent uploads */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm overflow-x-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-800">Recent uploads</h2>
-                <div className="text-sm text-gray-500"> loading...</div>
-              </div>
-
-              <div className="overflow-hidden rounded-md border border-gray-100">
-                <table className="min-w-full bg-white">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-2 text-xs text-gray-500">Thumbnail</th>
-                      <th className="text-left px-4 py-2 text-xs text-gray-500">Title</th>
-                      <th className="text-left px-4 py-2 text-xs text-gray-500">Views</th>
-                      <th className="text-left px-4 py-2 text-xs text-gray-500">Comments</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 6 }).map((_, idx) => (
-                      <VideoRowPlaceholder key={idx} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <div className="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden">
+            <ShimmerOverlay />
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Audience</h3>
+            <div className="space-y-2">
+              <div className="h-8 bg-gray-100 rounded" />
+              <div className="h-8 bg-gray-100 rounded" />
             </div>
-          </section>
-
-          {/* Right column: Sidebar */}
-          <aside className="lg:col-span-3 space-y-6">
-            <div className="relative bg-white border border-gray-100 rounded-2xl p-4 shadow-sm overflow-hidden">
-              <ShimmerOverlay />
-              <h3 className="text-sm font-semibold text-gray-800"></h3>
-              <ul className="mt-3 space-y-2 text-sm text-gray-600">
-                <li className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gray-100 rounded-md" />
-                  <div className="w-full">
-                    <div className="h-3 bg-gray-100 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  </div>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gray-100 rounded-md" />
-                  <div className="w-full">
-                    <div className="h-3 bg-gray-100 rounded w-3/4 mb-2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <div className="relative bg-white border border-gray-100 rounded-2xl p-4 shadow-sm overflow-hidden">
-              <ShimmerOverlay />
-              <h3 className="text-sm font-semibold text-gray-800">Audience</h3>
-              <div className="mt-3 grid grid-cols-1 gap-3">
-                <div className="h-10 bg-gray-100 rounded" />
-                <div className="h-10 bg-gray-100 rounded" />
-                <div className="h-10 bg-gray-100 rounded" />
-              </div>
-            </div>
-
-            <div className="relative bg-white border border-gray-100 rounded-2xl p-4 shadow-sm overflow-hidden">
-              <ShimmerOverlay />
-              <h3 className="text-sm font-semibold text-gray-800">Tips</h3>
-              <div className="mt-3 text-sm text-gray-600 space-y-2">
-                <div className="h-3 bg-gray-100 rounded w-full" />
-                <div className="h-3 bg-gray-100 rounded w-5/6" />
-                <div className="h-3 bg-gray-100 rounded w-4/6" />
-              </div>
-            </div>
-          </aside>
-        </main>
-
-        <footer className="mt-8 text-sm text-gray-500">
- 
-        </footer>
-      </div>
-    </div>
+          </div>
+        </aside>
+      </main>
+    </PageContainer>
   );
 }
+

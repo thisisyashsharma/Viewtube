@@ -9,7 +9,7 @@ function UploadVideo() {
   const [thumbnail, setThumbnail] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
   const [loader, setLoader] = useState(false);
-  const [useLocal, setUseLocal] = useState(true); // <-- NEW
+  const [useLocal, setUseLocal] = useState("local");
 
   const handleToggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -31,9 +31,10 @@ function UploadVideo() {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
+    formData.append("storage", useLocal  ); // <— NEW: toggle
+    
     formData.append("thumbnail", thumbnail);
     formData.append("videoFile", videoFile);
-    formData.append("storage", useLocal ? "local" : "cloud"); // <— NEW: toggle
 
     // debug print FormData entries (works in modern browsers)
     for (const pair of formData.entries()) {
@@ -100,21 +101,23 @@ function UploadVideo() {
       {isModalOpen && (
         <div
           id="crud-modal"
-          className="fixed inset-0 z-50 flex justify-center items-center w-full h-full
-             bg-black/5 backdrop-blur-sm p-6 "
+          onClick={(e) => {
+            if (e.target.id === "crud-modal") handleToggleModal();
+          }}
+          className="fixed inset-0 z-50 flex justify-center items-center w-full h-full bg-black/50 backdrop-blur-sm p-3 sm:p-6"
         >
-          <div className="relative w-full max-w-xl max-h-full bg-white border-[0.6rem] border-gray-50 rounded-[2.5rem] shadow m-6 ">
-            <div className="bg-gray-100 flex items-center justify-between p-8 md:p-7 border-b-4 border-gray-100 rounded-t-[2rem]">
-              <h3 className="text-4xl font-medium text-gray-700">
+          <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="bg-gray-100 flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Upload Video
               </h3>
               <button
                 type="button"
                 onClick={handleToggleModal}
-                className="text-gray-400 hover:bg-gray-50 focus:scale-95 transition-all duration-200 hover:text-red-500 rounded-xl text-sm w-10 h-10 ms-auto inline-flex justify-center items-center"
+                className="text-gray-500 hover:bg-gray-200 focus:scale-95 transition-all rounded-full p-2"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -132,7 +135,8 @@ function UploadVideo() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 md:p-5 m-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4">
+
               <div className="grid gap-4 mb-4 grid-cols-2 text-[0.9rem]">
                 <div className="col-span-2">
                   <label
@@ -154,7 +158,7 @@ function UploadVideo() {
                   />
                 </div>
 
-                 {/* DESCRIPTION of the video  */}
+                {/* DESCRIPTION of the video  */}
                 <div className="col-span-2">
                   <label
                     htmlFor="description"
@@ -181,7 +185,6 @@ function UploadVideo() {
                     Thumbnail
                   </label>
                   <div className="flex flex-row gap-9 items-center">
-            
                     <label
                       htmlFor="thumbnail"
                       className="flex flex-col items-center justify-center w-full h-[7rem]
@@ -192,9 +195,7 @@ function UploadVideo() {
                       focus-within:ring-2 focus-within:ring-blue-300
                       transition"
                     >
-                      <div>
-                        
-                      </div>
+                      <div></div>
                       <div className="flex flex-col items-center justify-center pt-4 pb-5">
                         <svg
                           className="w-8 h-8 mb-2 text-gray-400"
@@ -367,21 +368,19 @@ function UploadVideo() {
                   </div>
                 </div>
 
-               
-
                 {/* STORAGE TOGGLE */}
                 <div className="col-span-2 flex items-center gap-3">
-                  {/* <input
-                    id="useLocal"
-                    type="checkbox"
-                    checked={useLocal}
-                    //Just for now -  onChange={() => setUseLocal((prev) => !prev)}
-                    className="w-4 h-4"
-                    /> */}
-                  <label htmlFor="useLocal" className="  text-gray-700">
-                    {/* Use local storage */}
-                    {/* (skip Cloudinary) */}
-                  </label>
+                  <select
+                    value={useLocal}
+                    onChange={(e) => setUseLocal(e.target.value)}
+                    className="border rounded-lg p-2"
+                  >
+                    <option value="local">Local</option>
+                    <option value="cloud">Cloudinary</option>
+                    <option value="gcs">Google Cloud</option>
+                  </select>
+
+                  <label htmlFor="useLocal" className="  text-gray-700"></label>
                 </div>
               </div>
 
@@ -403,7 +402,7 @@ function UploadVideo() {
                     clipRule="evenodd"
                   ></path>
                 </svg>
-                Upload 
+                Upload
               </button>
             </form>
           </div>

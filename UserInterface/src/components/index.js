@@ -31,9 +31,10 @@ import About from "./About";
 import { SearchProvider, useSearch } from './SearchContext';
 import ChannelFilter from "./ChannelFilter";
 import ChannelSearchPage from "./ChannelSearchPage";
+import EditVideoModal from "./EditVideoModal";
+import MobileBottomNav from "./MobileBottomNav";
 
 export {
-
     Home,
     Navbar,
     Sidebar,
@@ -67,6 +68,7 @@ export {
     SearchProvider,
     useSearch,
     ChannelFilter,
-    ChannelSearchPage
-
+    ChannelSearchPage,
+    EditVideoModal,
+    MobileBottomNav
 };

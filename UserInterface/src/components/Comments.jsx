@@ -4,7 +4,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 
-export default function Comments({ videoId }) {
+export default function Comments({ videoId, onRequireAuth }) {
   const { id } = useParams();
   const [items, setItems] = useState([]);
   const [text, setText] = useState("");
@@ -47,6 +47,7 @@ export default function Comments({ videoId }) {
 
   // top-level comment
   const post = async () => {
+    if (!me) return onRequireAuth?.();
     if (!text.trim()) return;
     await axios.post(
       `/api/v1/comments/${videoId}`,
@@ -58,6 +59,7 @@ export default function Comments({ videoId }) {
   };
 
   const likeComment = async (id) => {
+    if (!me) return onRequireAuth?.();
     await axios.patch(
       `/api/v1/comments/${id}/like`,
       {},
@@ -70,6 +72,7 @@ export default function Comments({ videoId }) {
     !reply ? null : reply.parentReply ? reply.parentReply : reply._id;
 
   const addReply = async (commentId, content, parentReplyId = null) => {
+    if (!me) return onRequireAuth?.();
     if (!content.trim()) return;
     const payload = parentReplyId ? { content, parentReplyId } : { content };
     await axios.post(`/api/v1/comments/${commentId}/replies`, payload, {
@@ -190,6 +193,7 @@ export default function Comments({ videoId }) {
           className="pl-3 px-1 p-2 flex-1 border-b-2 border-gray-300 text-gray-400 focus:text-gray-900 rounded-tl-xl focus:border-gray-900 focus:bg-gray-100 outline-none transition-all duration-500"
           placeholder={`Add a comment...`}
           value={text}
+          onClick={() => { if (!me) onRequireAuth?.(); }}
           onChange={(e) => setText(e.target.value)}
         />
         <button
@@ -212,28 +216,27 @@ export default function Comments({ videoId }) {
           return (
             <li key={c._id} className="m-0 p-0">
               {/* comment header — AVATAR + @username (no real name) + date */}
-              <div className="flex items-center gap-2 ">
+              <div className="flex items-center gap-2">
                 <img
                   src={c.owner?.avatar}
-                  className="w-10 h-10 rounded-full transform translate-y-2.5"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
                 />
-                <div className="text-[0.85rem] text-gray-700 font-semibold">
+                <div className="text-[0.85rem] text-gray-700 font-semibold truncate">
                   @{c.owner?.username}
                 </div>
-                <div className="text-[0.75rem] text-gray-500">
+                <div className="text-[0.75rem] text-gray-500 flex-shrink-0">
                   {fmt(c.createdAt)}
                 </div>
               </div>
 
               {/* comment content */}
-              <div className="ml-12 mt-1 text-[0.90rem]  m-0 p-0">
+              <div className="ml-10 sm:ml-12 mt-1 text-[0.90rem] m-0 p-0">
                 {renderWithMentions(c.content)}
               </div>
 
-              {/* actions */}
               {/* actions row (Like • Reply • Delete) */}
-              <div className="ml-10 mt-2 flex items-center gap-1 text-xs">
-                {/* Like (styled like Video.jsx) */}
+              <div className="ml-8 sm:ml-10 mt-2 flex items-center gap-1 text-xs">
+                {/* Like */}
                 <button
                   onClick={() => likeComment(c._id)}
                   className={[
@@ -270,7 +273,10 @@ export default function Comments({ videoId }) {
                 {/* Reply */}
                 <button
                   className="inline-flex items-center text-[0.80rem] gap-1 px-2.5 py-1.5 font-semibold rounded-lg text-blue-600 text-base hover:bg-gray-100 focus:bg-gray-200 transition duration-200"
-                  onClick={() => openReplyForComment(c._id)}
+                  onClick={() => {
+                    if (!me) return onRequireAuth?.();
+                    openReplyForComment(c._id);
+                  }}
                   aria-label="Reply to comment"
                   title="Reply"
                 >
@@ -305,7 +311,7 @@ export default function Comments({ videoId }) {
 
               {/* inline box for replying to the comment */}
               {openReplyBox[c._id]?.openOn === "comment" && (
-                <div className="ml-10 mt-2">
+                <div className="ml-8 sm:ml-10 mt-2">
                   <ReplyInline
                     autoFocus
                     initialText={openReplyBox[c._id].initialText}
@@ -315,8 +321,8 @@ export default function Comments({ videoId }) {
                 </div>
               )}
 
-              {/* FLAT replies */}
-              <div className="ml-14 mt-3 space-y-3">
+              {/* FLAT replies capped indentation on mobile */}
+              <div className="ml-4 sm:ml-10 mt-3 space-y-3">
                 {flatReplies.map((r) => {
                   const target = r.parentReply
                     ? replyById[r.parentReply]

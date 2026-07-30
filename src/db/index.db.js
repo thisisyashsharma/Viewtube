@@ -1,17 +1,16 @@
-// import express from 'express';
 import mongoose from "mongoose";
 import { DB_NAME } from '../constants.js';
-const url = process.env.MONGODB_URI;
 
 const connectDB = async () => {
     try {
+        let uri = (process.env.MONGODB_URI || "").trim().replace(/\/+$/, "");
+        const dbName = process.env.DB_NAME || DB_NAME || "viewtube";
 
-        const connectionInstance = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
-        // console.log("this is a connectionInstance : ",connectionInstance);
-        console.log(`\n MongoDB connected !! DB HOST : ${connectionInstance.connection.host} \n`);
+        const connectionInstance = await mongoose.connect(`${uri}/${dbName}`);
+        console.log(`\n MongoDB connected !! DB HOST : ${connectionInstance.connection.host} | DB NAME : ${connectionInstance.connection.name} \n`);
         
     } catch (error) {
-        console.log(error);
+        console.log("MongoDB Connection Error:", error);
         process.exit(1);
     }
 }

@@ -1,31 +1,27 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-function Sidebar({ hidden }) {
+function Sidebar({ isOpen, onClose, hidden }) {
   const authStatus = useSelector((state) => state.auth.status);
-  // console.log(authStatus);
+  const activeState = isOpen !== undefined ? isOpen : hidden;
+
+  // Handle Escape key press to close mobile drawer
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && activeState && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeState, onClose]);
 
   const navItems = [
     {
       name: "Home",
       path: "home",
       svg: (
-        /* <svg
-           xmlns="http://www.w3.org/2000/svg"
-           fill="none"
-           viewBox="0 0 24 24"
-           strokeWidth={1.5}
-           stroke="currentColor"
-           className="w-6 h-6"
-         >
-           <path
-             strokeLinecap="round"
-             strokeLinejoin="round"
-             d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-           />
-         </svg>
-        */
         <img
           src="/src/assets/svg_icons/home.svg"
           alt="Icon"
@@ -38,22 +34,6 @@ function Sidebar({ hidden }) {
       name: "Short Form",
       path: "/your_channel",
       svg: (
-        /*
-        <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-        className="w-6 h-6"
-        >
-        <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0 1 18 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0 1 18 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 0 1 6 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M19.125 12h1.5m0 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h1.5m14.25 0h1.5"
-        />
-        </svg>
-        */
         <img
           src="/src/assets/svg_icons/shorts.svg"
           alt="Icon"
@@ -66,7 +46,6 @@ function Sidebar({ hidden }) {
       name: "Signup",
       path: "/signup",
       svg: (
-        /**/
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -106,31 +85,32 @@ function Sidebar({ hidden }) {
       active: !authStatus,
     },
   ];
-  // console.log(hidden);
+
   return (
     <>
-      {/* {{ sidebar }} */}
-     
-        <aside
-          id="sidebar"
-        className={`
-  fixed top-0 lg:top-5 left-0 z-20
-  flex flex-col flex-shrink-0 w-57 h-full pt-10
-  font-semibold text-[1rem] text-gray-900 lg:flex
+      {/* Mobile backdrop overlay */}
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/50 transition-opacity duration-300 lg:hidden ${
+          activeState
+            ? "opacity-100 pointer-events-auto z-[var(--z-backdrop,40)]"
+            : "opacity-0 pointer-events-none -z-10"
+        }`}
+        aria-hidden="true"
+      />
 
-  transform
-  transition-transform transition-opacity
-  duration-900 ease-in-out
+      {/* Sidebar drawer */}
+      <aside
+        id="sidebar"
+        className={`fixed top-0 left-0 z-[var(--z-drawer,50)] lg:z-20 flex flex-col flex-shrink-0 w-52 h-full pt-14 font-semibold text-[1rem] text-gray-900 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-glass transition-transform duration-300 ease-in-out ${
+          activeState ? "translate-x-0" : "-translate-x-full"
+        }`}
+        aria-label="Sidebar"
+      >
 
-  ${hidden ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}
-`}
-
-       
-          aria-label="Sidebar"
-        >
-          <div className="relative flex flex-col flex-1 pt-5 pt-0 bg-white border-4 border-gray-100  ">
+          <div className="relative flex flex-col flex-1 pt-5 pt-0 bg-transparent border-4 border-transparent">
             <div className="flex flex-col flex-1 pt-2 pb-4 overflow-y-auto">
-              <div className="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-200 ">
+              <div className="flex-1 px-3 space-y-1 bg-transparent divide-y divide-gray-200/50">
                 <ul className="">
                   {navItems.map((item, index) =>
                     item.active ? (
@@ -140,7 +120,7 @@ function Sidebar({ hidden }) {
                           className="flex items-center p-2 px-3    rounded-xl hover:bg-gray-100 group "
                         >
                           {item.svg}
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             {item.name}
                           </span>
                         </Link>
@@ -162,7 +142,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Subscriptions
                           </span>
                         </Link>
@@ -178,7 +158,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Your Channel
                           </span>
                         </Link>
@@ -194,7 +174,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                             />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             History
                           </span>
                         </Link>
@@ -210,7 +190,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Playlist
                           </span>
                         </Link>
@@ -227,7 +207,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Likes
                           </span>
                         </Link>
@@ -244,7 +224,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Trending
                           </span>
                         </Link>
@@ -261,7 +241,7 @@ function Sidebar({ hidden }) {
                             alt="Icon"
                             className="fixed-size-icon w-6 h-6"
                           />
-                          <span className="ml-4" sidebar-toggle-item>
+                          <span className="ml-4">
                             Music
                           </span>
                         </Link>

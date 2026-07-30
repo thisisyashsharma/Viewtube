@@ -18,7 +18,9 @@ dotenv.config({
   path: path.resolve(__dirname, "../../.env"),
 });
 
-await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
+let uri = (process.env.MONGODB_URI || "").trim().replace(/\/+$/, "");
+const dbName = process.env.DB_NAME || DB_NAME || "viewtube";
+await mongoose.connect(`${uri}/${dbName}`);
 
 console.log("MONGODB_URI =", process.env.MONGODB_URI);
 console.log("DB_NAME =", DB_NAME);

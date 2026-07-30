@@ -12,7 +12,6 @@ function normalizeDay(date = new Date()) {
 
 // POST /api/v1/analytics/watch
 const recordWatchEvent = asyncHandler(async (req, res) => {
-  console.log("ANALYTICS HIT", req.user?._id, req.body);
   const userId = req.user._id;
   const { videoId, watchedSeconds, sessionId } = req.body;
 

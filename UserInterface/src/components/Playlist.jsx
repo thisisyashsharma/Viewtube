@@ -1,17 +1,21 @@
-import React from 'react'
+import React from "react";
+import PageContainer from "./layout/PageContainer";
+import EmptyState from "./common/EmptyState";
 
 function Playlist() {
   return (
-    <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4  ">
-     <div className="mb-4 col-span-full xl:mb-2"> 
-       {/*-------------------content---------------------  */}
-       <div className="text-lg mb-8 ">
-          <h1 className="text-4xl font-semibold mb-4">Playlist</h1>
-        </div>
-       {/*-------------------content---------------------  */}
-    </div>
-    </div>
-  )
+    <PageContainer>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Playlists</h1>
+        <p className="text-sm text-gray-500 mt-1">Your saved video playlists</p>
+      </div>
+
+      <EmptyState
+        title="No playlists created"
+        description="Save your favorite videos into custom playlists to watch them later."
+      />
+    </PageContainer>
+  );
 }
 
-export default Playlist
+export default Playlist;

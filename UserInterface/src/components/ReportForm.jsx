@@ -1,6 +1,7 @@
-// src/components/ReportForm.jsx
 import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import PageContainer from "./layout/PageContainer";
+
 
 export default function ReportForm() {
   const { id: videoId } = useParams(); // video id from route /report/:id
@@ -88,41 +89,41 @@ const handleSubmit = (e) => {
   }, 600);
 };
 
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center mt-6">
-      <div className="w-full max-w-3xl">
-        <div className="bg-white rounded-3xl shadow p-6 border-4 border-gray-100">
-          <div className="flex items-center justify-between mb-3">
+
+    <PageContainer>
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-3xl shadow-sm p-4 sm:p-8 border border-gray-200">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-semibold my-2">Report video</h1>
-              <p className="text-sm text-gray-500">Video id: <span className="font-mono text-xs">{videoId}</span></p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Report video</h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Video ID: <span className="font-mono text-xs">{videoId}</span></p>
             </div>
             <button
               onClick={() => navigate(-1)}
-              className="px-4 py-2 rounded-md bg-gray-100 text-sm"
+              className="px-4 py-2 rounded-xl bg-gray-100 text-xs sm:text-sm font-semibold hover:bg-gray-200 transition-colors"
             >
               Back
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="text-sm font-medium block mb-1">Title</label>
+              <label className="text-sm font-semibold block mb-2 text-gray-900">Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Brief title of the issue"
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-xl text-base text-gray-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 maxLength={140}
               />
               <div className="text-xs text-gray-400 mt-1">{title.length}/140</div>
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1">Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 border rounded-xl">
+              <label className="text-sm font-semibold block mb-2 text-gray-900">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 border border-gray-300 rounded-xl text-base text-gray-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                 <option value="inappropriate">Inappropriate content</option>
                 <option value="copyright">Copyright</option>
                 <option value="spam">Spam / Misleading</option>
@@ -132,25 +133,25 @@ const handleSubmit = (e) => {
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1 ">Description</label>
+              <label className="text-sm font-semibold block mb-2 text-gray-900">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what's wrong with the video. Include timestamps if helpful."
-                rows={6}
-                className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
+                rows={5}
+                className="w-full p-3 border border-gray-300 rounded-xl text-base text-gray-900 resize-none focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 maxLength={4000}
               />
               <div className="text-xs text-gray-400 mt-1">{description.length}/4000</div>
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1">Attach photos (optional)</label>
+              <label className="text-sm font-semibold block mb-2 text-gray-900">Attach photos (optional)</label>
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={onDrop}
                 onClick={() => fileRef.current && fileRef.current.click()}
-                className="p-4 border-2 border-dashed rounded-xl text-center cursor-pointer bg-white"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-2xl text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
               >
                 <input
                   ref={fileRef}
@@ -160,11 +161,11 @@ const handleSubmit = (e) => {
                   onChange={(e) => onFiles(e.target.files)}
                   className="hidden"
                 />
-                <div className="text-gray-500">Drag & drop images here or click to choose</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium">Drag & drop images here or click to choose</div>
               </div>
 
               {previews.length > 0 && (
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {previews.map((p, i) => (
                     <div key={p.id} className="relative">
                       <img src={p.url} alt={p.name} className="w-full h-24 object-cover rounded-xl" />
@@ -176,8 +177,9 @@ const handleSubmit = (e) => {
               )}
             </div>
 
-            {error && <div className="text-sm text-red-600">{error}</div>}
-            {success && <div className="text-sm text-green-600">{success}</div>}
+            {error && <div className="text-sm font-medium text-red-600">{error}</div>}
+            {success && <div className="text-sm font-medium text-green-600">{success}</div>}
+
 
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
@@ -202,6 +204,7 @@ const handleSubmit = (e) => {
           </form>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
+

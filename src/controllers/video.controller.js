@@ -1,12 +1,17 @@
+//video.controller.js
+
 import fs from "fs";
 import path from "path";
 
 import { Video } from "../models/video.model.js";
+import { newUser } from "../models/account.model.js";
 import { asyncHandler } from "../utils/asyncHandler.utils.js";
+
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Like } from "../models/like.model.js"; // EU6u1.p2.a1.1ln - Like feature
+import { runUploadPipeline } from "../video/upload/upload.pipeline.js";
 
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
@@ -15,20 +20,6 @@ import ffprobePath from "ffprobe-static";
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath.path);
 
- 
- 
-
-// const localUrlFromAbsPath = (req, absPath) => {
-//   // EU4u2.p0.10l- added this function
-//   if (!absPath) return null;
-//   const normalized = absPath.replace(/\\/g, "/");
-//   const idx = normalized.lastIndexOf("/public"); // EU8u1.p3.a1.1wd - Thumbnail fixing : indexOf -> lastIndexOf
-//   const relative =
-//     idx >= 0 ? normalized.slice(idx + "/public".length) : normalized;
-//   const path = relative.startsWith("/") ? relative : `/${relative}`;
-//   const proto = req.get("x-forwarded-proto") || req.protocol;
-//   return `${proto}://${req.get("host")}${path}`;
-// };
 //EU12u2.p1  - Thumbnail Fix
 const localUrlFromAbsPath = (req, absPath) => {
   if (!absPath) return null;
@@ -46,18 +37,32 @@ const localUrlFromAbsPath = (req, absPath) => {
   return `${proto}://${req.get("host")}${relative}`;
 };
 
-// ********------------------video upload-------------------********
+import { sanitizeText } from "../utils/sanitize.utils.js";
+
+// ********------------------VIDEO UPLOAD-------------------********
 
 const publishAVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
-  const storage = (
+  let { title, description } = req.body;
+  
+  title = sanitizeText(title);
+  description = sanitizeText(description);
+
+  let storage = (
     req.body?.storage ||
     process.env.DEFAULT_STORAGE ||
-    "cloud"
-  ).toLowerCase();
+    "local"
+  ).toString().toLowerCase().trim();
+
+  if (storage === "true" || storage === "false" || storage === "1" || storage === "0") {
+    storage = (process.env.DEFAULT_STORAGE || "local").toString().toLowerCase().trim();
+  }
 
   const thumbnailFile = req.files?.thumbnail?.[0];
   const videoFile = req.files?.videoFile?.[0];
+
+  if (!req.user || !req.user._id) {
+    throw new ApiError(401, "User not authenticated");
+  }
 
   if (!title || !description || !thumbnailFile || !videoFile) {
     throw new ApiError(
@@ -67,14 +72,33 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 
   let thumbnailUrl, videoUrl;
+
+  // ---------------- LOCAL STORAGE (UNCHANGED) ----------------
   if (storage === "local") {
-    // Use local files as-is (Multer already wrote to public/temp)
     thumbnailUrl = localUrlFromAbsPath(req, thumbnailFile.path);
     videoUrl = localUrlFromAbsPath(req, videoFile.path);
-  } else {
-    // Default: Cloudinary
+  }
+
+  // ---------------- GOOGLE CLOUD STORAGE (NEW) ----------------
+  else if (storage === "gcs") {
+    const ctx = await runUploadPipeline({
+      user: req.user,
+      title,
+      fileSize: videoFile.size,
+      mimeType: videoFile.mimetype,
+      fileStream: fs.createReadStream(videoFile.path),
+      thumbnailFile,
+    });
+
+    videoUrl = ctx.gcsVideoPath;
+    thumbnailUrl = ctx.gcsThumbnailPath;
+  }
+
+  // ---------------- CLOUDINARY (UNCHANGED DEFAULT) ----------------
+  else {
     const thumbUpload = await uploadOnCloudinary(thumbnailFile.path);
     const videoUpload = await uploadOnCloudinary(videoFile.path);
+
     if (
       !thumbUpload?.url ||
       !videoUpload?.url ||
@@ -82,18 +106,20 @@ const publishAVideo = asyncHandler(async (req, res) => {
     ) {
       throw new ApiError(400, "File upload problem");
     }
-    thumbnailUrl = thumbUpload.url || thumbUpload.url;
-    videoUrl = videoUpload.url || videoUpload.url;
+
+    thumbnailUrl = thumbUpload.url;
+    videoUrl = videoUpload.secure_url || videoUpload.url;
   }
 
-  // ⬇️ ADD THIS
+  // ---------------- DURATION (UNCHANGED) ----------------
   let duration = 0;
   try {
     duration = await getVideoDurationSeconds(videoFile.path);
   } catch (e) {
-    console.error("Failed to read video duration", e);
+    // duration fallback
   }
 
+  // ---------------- DB SAVE (UNCHANGED) ----------------
   const video = await Video.create({
     title,
     description,
@@ -101,7 +127,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     videoFile: videoUrl,
     duration,
     owner: req.user._id,
-    views: 0, // Initialize views to 0
+    views: 0,
   });
 
   return res
@@ -149,26 +175,34 @@ const getAllUserVideos = asyncHandler(async (req, res) => {
 
 // ********------------------delete video by id-------------------********
 
+import { deleteFromGCS } from "../video/storage/gcs.client.js";
+import { decrementUserStorage } from "../video/services/quota.service.js";
+
 const deleteVideoById = asyncHandler(async (req, res) => {
-  const { id } = req.params; // Extract the video ID from the request parameters
-  const userId = req.user._id; // Get the ID of the logged-in user
+  const { id } = req.params;
 
   const video = await Video.findById(id);
+  if (!video) throw new ApiError(404, "Video not found");
 
-  if (!video) {
-    throw new ApiError(404, "Video not found");
+  const isOwner = video.owner.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === "admin";
+  if (!isOwner && !isAdmin) throw new ApiError(403, "Not authorized");
+
+  // ---------- NEW PART ----------
+  if (video.videoFile?.startsWith("videos/")) {
+    await deleteFromGCS(video.videoFile);
   }
 
-  // Check if the logged-in user is the owner of the video
-const isOwner = video.owner.toString() === req.user._id.toString();
-const isAdmin = req.user.role === "admin";
+  if (video.thumbnail?.startsWith("thumbnails/")) {
+    await deleteFromGCS(video.thumbnail);
+  }
 
-if (!isOwner && !isAdmin) {
-  throw new ApiError(403, "Not authorized");
-}
+  if (video.size) {
+    await decrementUserStorage(video.owner, video.size);
+  }
+  // ---------- NEW PART ----------
 
-
-  await Video.findByIdAndDelete(id); // Delete the video from the database
+  await Video.findByIdAndDelete(id);
 
   return res
     .status(200)
@@ -178,7 +212,7 @@ if (!isOwner && !isAdmin) {
 // ********------------------video data by id-------------------********
 
 const VideoDataById = asyncHandler(async (req, res) => {
-  const { id } = req.params; // Extract the video ID from the request parameters
+  const { id } = req.params;
   const video = await Video.findById(id)
     .select("title description views createdAt thumbnail videoFile owner")
     .populate("owner", "name avatar username")
@@ -194,18 +228,42 @@ const VideoDataById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video fetched successfully"));
 });
 
-// -------------------------views increment---------------------------
+// In-memory cache for view deduplication (5 minute cooldown per user/IP per video)
+const viewDeduplicationCache = new Map();
+const VIEW_COOLDOWN_MS = 5 * 60 * 1000;
+
+// Periodic cleanup of stale cache entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of viewDeduplicationCache.entries()) {
+    if (now - timestamp > VIEW_COOLDOWN_MS) {
+      viewDeduplicationCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000).unref();
 
 const viewsIncrement = asyncHandler(async (req, res) => {
-  const { id } = req.params; // Extract the video ID from the request parameters
+  const { id } = req.params;
+  const clientIdentifier = req.user?._id?.toString() || req.ip || "anonymous";
+  const cacheKey = `${clientIdentifier}:${id}`;
+  const now = Date.now();
 
-  const video = await Video.findById(id); // Find the video by ID
+  const lastViewTime = viewDeduplicationCache.get(cacheKey);
+  if (lastViewTime && now - lastViewTime < VIEW_COOLDOWN_MS) {
+    const video = await Video.findById(id).select("views title");
+    return res
+      .status(200)
+      .json(new ApiResponse(200, video, "View cooldown active (deduplicated)"));
+  }
+
+  const video = await Video.findById(id);
 
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
 
   await video.incrementViews();
+  viewDeduplicationCache.set(cacheKey, now);
 
   return res
     .status(200)
@@ -217,11 +275,17 @@ const viewsIncrement = asyncHandler(async (req, res) => {
 const streamVideo = async (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(process.cwd(), "public", "temp", filename);
+    let filePath = path.join(process.cwd(), "public", "temp", filename);
 
     if (!fs.existsSync(filePath)) {
-      return res.status(404).send("File not found");
+      const altPath = path.join(process.cwd(), "src", "public", "temp", filename);
+      if (fs.existsSync(altPath)) {
+        filePath = altPath;
+      } else {
+        return res.status(404).send("File not found");
+      }
     }
+
 
     const stat = fs.statSync(filePath);
     const fileSize = stat.size;
@@ -434,9 +498,85 @@ const searchVideos = asyncHandler(async (req, res) => {
     )
   );
 });
- 
 
- 
+import { getVideoPlaybackUrl } from "../video/playback/playback.service.js";
+
+const getVideoPlayback = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const url = await getVideoPlaybackUrl(id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { url }, "Playback URL generated"));
+});
+
+const updateVideoDetails = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, description } = req.body;
+  const userId = req.user._id;
+
+  const video = await Video.findById(id);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  if (video.owner.toString() !== userId.toString() && req.user.role !== "admin") {
+    throw new ApiError(403, "You do not have permission to edit this video");
+  }
+
+  const updateFields = {};
+  if (title && title.trim()) updateFields.title = title.trim();
+  if (description !== undefined) updateFields.description = description.trim();
+
+  let thumbnailPath = "";
+  if (req.files && req.files.thumbnail && req.files.thumbnail[0]) {
+    thumbnailPath = req.files.thumbnail[0].path;
+  } else if (req.file) {
+    thumbnailPath = req.file.path;
+  }
+
+  if (thumbnailPath) {
+    const thumbnailUrl = localUrlFromAbsPath(req, thumbnailPath);
+    if (thumbnailUrl) {
+      updateFields.thumbnail = thumbnailUrl;
+    }
+  }
+
+
+  const updatedVideo = await Video.findByIdAndUpdate(
+    id,
+    { $set: updateFields },
+    { new: true }
+  ).populate("owner", "name avatar email username");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
+
+});
+
+const getSubscribedVideos = asyncHandler(async (req, res) => {
+  let me = null;
+  if (req.user?._id) {
+    me = await newUser.findById(req.user._id).select("subscribedTo").lean();
+  }
+  const subscribedIds = me?.subscribedTo || [];
+
+  let query = {};
+  if (subscribedIds.length > 0) {
+    query = { owner: { $in: subscribedIds } };
+  }
+
+  const videos = await Video.find(query)
+    .select("title views createdAt thumbnail owner duration likesCount likes")
+    .populate("owner", "name avatar username")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, videos, "Subscribed feed fetched successfully"));
+});
 
 export {
   publishAVideo,
@@ -451,4 +591,9 @@ export {
   getMyLikedVideos,
   getVideoDurationSeconds,
   searchVideos,
+  getVideoPlayback,
+  updateVideoDetails,
+  getSubscribedVideos,
 };
+
+

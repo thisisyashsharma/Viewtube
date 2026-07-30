@@ -20,9 +20,14 @@ const userSignUp = new Schema(
     },
     password: {
       type: String,
-      requiered: true,
+      required: function () { return this.authProviders.includes("local"); },
     },
+    googleUid: { type: String, index: true, sparse: true, unique: true },
+    authProviders: { type: [String], enum: ["local", "google"], default: ["local"] },
     avatar: {
+      type: String,
+    },
+    coverImage: {
       type: String,
     },
     watchHistory: [
@@ -78,6 +83,7 @@ userSignUp.pre("save", async function (next) {
 });
 
 userSignUp.methods.isPasswordCorrect = async function (password) {
+  if (!this.password) return false;
   return bcrypt.compare(password, this.password);
 };
 

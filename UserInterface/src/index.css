@@ -1,3 +1,200 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Z-index scale to prevent overlay collisions across components */
+    --z-nav: 30;
+    --z-backdrop: 40;
+    --z-drawer: 50;
+    --z-modal: 60;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Eliminate 300ms tap delay on touch devices */
+    touch-action: manipulation;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  /* Hide scrollbar globally on responsive (mobile/tablet) screens */
+  @media (max-width: 1024px) {
+    html, body {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbars while preserving scrolling capability */
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
+
+/* ── Mobile Search Bar Morphing Transition ── */
+/* The search bar is always in the DOM. We transition between a collapsed
+   (icon-sized) state and an expanded (full-width input) state using only
+   CSS so the browser can GPU-accelerate the animation.                   */
+
+.mobile-search-bar {
+  position: absolute;
+  right: 52px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 38px;
+  width: 38px;
+  border-radius: 9999px;
+  background: transparent;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  transition:
+    width 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    right 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 400ms ease,
+    border-color 400ms ease;
+  z-index: 50;
+  border: 1px solid transparent;
+}
+
+.mobile-search-bar.expanded {
+  left: 24px;
+  right: 24px;
+  width: auto;
+  background: #f9fafb;
+  border-color: rgba(209, 213, 219, 0.8);
+}
+
+/* Back arrow — hidden when collapsed, slides in when expanded */
+.mobile-search-back {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  transform: translateX(-15px);
+  transition:
+    width 500ms cubic-bezier(0.16, 1, 0.3, 1) 50ms,
+    min-width 500ms cubic-bezier(0.16, 1, 0.3, 1) 50ms,
+    opacity 300ms ease 100ms,
+    transform 500ms cubic-bezier(0.16, 1, 0.3, 1) 50ms;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.expanded .mobile-search-back {
+  width: 36px;
+  min-width: 36px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Input — invisible when collapsed, fades & slides in when expanded (parallax right-to-left) */
+.mobile-search-input-wrap {
+  flex: 1;
+  opacity: 0;
+  transform: translateX(45px); /* Stronger parallax slide from right */
+  transition:
+    opacity 300ms ease 100ms,
+    transform 550ms cubic-bezier(0.16, 1, 0.3, 1) 60ms;
+  pointer-events: none;
+  min-width: 0;
+}
+
+.expanded .mobile-search-input-wrap {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Search icon trigger — visible when collapsed, hidden when expanded */
+.mobile-search-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 200ms ease,
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.expanded .mobile-search-trigger {
+  width: 0;
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Submit arrow — horizontal pill shape when expanded */
+.mobile-search-submit {
+  width: 0;
+  min-width: 0;
+  height: 32px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    width 400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms,
+    min-width 400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms,
+    opacity 200ms ease 200ms,
+    transform 400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 9999px;
+}
+
+.expanded .mobile-search-submit {
+  width: 48px;
+  min-width: 48px;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Premium Skeleton Shimmer */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: #f3f4f6; /* Tailwind gray-100 */
+  }
+  
+  .animate-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 20%,
+      rgba(255, 255, 255, 0.8) 60%,
+      transparent 100%
+    );
+    animation: shimmer 2s infinite ease-in-out;
+  }
+}

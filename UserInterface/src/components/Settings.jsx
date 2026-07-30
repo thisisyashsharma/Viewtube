@@ -3,8 +3,10 @@ import img from "../assets/gde-najti-ssylku-na-svoj-kanal-youtube.jpg";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import PageContainer from "./layout/PageContainer";
 
 function Settings() {
+
   const [loader, setLoader] = useState(false);
   const userdata = useSelector((state) => state.auth.user);
 
@@ -115,173 +117,113 @@ function Settings() {
 
   // ---------------- UI ----------------
   return loader ? (
-    <div className="text-center  my-72 ">
-      <div className="p-4 text-center">
-        <div role="status">
-          <svg
-            aria-hidden="true"
-            className="inline w-8 h-8 text-gray-200 animate-spin  fill-black"
-            viewBox="0 0 100 101"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-              fill="currentColor"
-            />
-            <path
-              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-              fill="currentFill"
-            />
-          </svg>
-          <span className="sr-only">Loading...</span>
-        </div>
+
+    <PageContainer>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
-    </div>
+    </PageContainer>
   ) : (
-    <div className="lg:mt-8 bg-white grid grid-cols-1 px-8 pt-6 xl:grid-cols-3 xl:gap-4  ">
-      <div className="mb-4 col-span-full xl:mb-2">
-        {/*-------------------content---------------------  */}
-        <div className="text-lg mb-8 ">
-          <h1 className="text-4xl font-semibold mb-4">Settings</h1>
+    <PageContainer>
+      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6 px-1 sm:px-0">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage account preferences and channel options</p>
         </div>
 
-        <div className="mb-16 flex flex-col items-center bg-white border-4 border-gray-100 rounded-3xl md:flex-row max-w-6xl">
-          <div className="flex flex-col justify-between p-4 leading-normal">
-            <h5 className="ml-6 text-xl font-bold tracking-tight text-gray-500  ">
-              Set up YouTube exactly how you want it
-            </h5>
+        {/* Settings Card */}
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 sm:p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Set up ViewTube your way</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Customize channel layout, branding, and handle</p>
+            </div>
+            <img src={img} className="h-16 w-24 object-cover rounded-xl flex-shrink-0" alt="Settings" />
           </div>
-          <img
-            className="ms-auto object-cover rounded-t-lg  md:h-auto md:w-48 md:rounded-none md:rounded-r-3xl"
-            src={img}
-            alt=""
-          />
-        </div>
-        {/* ----------table---------- */}
 
-        <div className="relative overflow-x-auto text-[1rem] sm:rounded-lg">
-          <table className="w-1/2 text-left rtl:text-right text-gray-700 ">
-            <tbody>
-              <tr className="bg-white   ">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium  whitespace-nowrap  "
-                >
-                  Edit channel
-                </th>
-                <td className="px-6 py-4">
-                  <Link
-                    to={"/customize_channel"}
-                    className="px-5 py-2 font-medium  rounded-lg hover:bg-gray-100 outline-none active:scale-95 text-purple-600 transition-all duration-100 ease-in-out focus:text-green-700"
-                  >
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-              <tr className="bg-white   ">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium  whitespace-nowrap"
-                >
-                  Delete channel
-                </th>
-                <td className="px-6 py-4">
+          <div className="divide-y divide-gray-100">
+            {/* Edit channel */}
+            <div className="py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Edit Channel</div>
+                <div className="text-xs text-gray-500">Update name, avatar, and description</div>
+              </div>
+              <Link
+                to="/customize_channel"
+                className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-full bg-gray-100 hover:bg-gray-200 text-gray-900 transition-colors"
+              >
+                Edit
+              </Link>
+            </div>
+
+            {/* Current username */}
+            <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Current Handle</div>
+                <div className="text-xs text-gray-500">Your unique channel identifier</div>
+              </div>
+              <span className="font-mono text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full self-start sm:self-auto">
+                @{currentUsername}
+              </span>
+            </div>
+
+            {/* New username */}
+            <div className="py-4 space-y-3">
+              <div className="text-sm font-semibold text-gray-900">Change Handle</div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 flex-1 focus-within:ring-2 focus-within:ring-blue-600">
+                  <span className="text-blue-600 font-semibold mr-1">@</span>
+                  <input
+                    className="bg-transparent text-base text-gray-900 w-full focus:outline-none"
+                    value={username}
+                    onChange={handleChange}
+                    placeholder="new_handle"
+                  />
+                </div>
+                {checkState === true && usernameOk(username) && (
                   <button
-                    onClick={handleDeleteClick}
-                    className="px-5 py-2 font-medium  rounded-lg hover:bg-gray-100 outline-none active:scale-95 text-red-500 transition-all duration-100 ease-in-out focus:text-red-700
-                    focus:bg-gray-300"
+                    type="button"
+                    onClick={saveUsername}
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                   >
-                    Delete
+                    Update
                   </button>
-                </td>
-              </tr>
-              <tr className="bg-white">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium  whitespace-nowrap"
+                )}
+              </div>
+              {!!uMsg && (
+                <div
+                  className={`text-xs font-semibold ${
+                    checkState === true
+                      ? "text-green-600"
+                      : checkState === "checking"
+                      ? "text-gray-500"
+                      : "text-red-600"
+                  }`}
                 >
-                  Current Username
-                </th>
-                <td className="px-6 py-4">
-                  {userdata?.username && (
-                    <div className="font-semibold text-gray-500 m-2 pl-3 ">
-                      <span className="text-gray-800 bg-gray-100 px-1 py-0.5">
-                        @{currentUsername}
-                      </span>
-                    </div>
-                  )}
-                </td>
-              </tr>
+                  {checkState === "checking" ? "Checking availability..." : uMsg}
+                </div>
+              )}
+            </div>
 
-              {/* ---------- Username row (fixed) ---------- */}
-
-              <tr className=" bg-white">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium  whitespace-nowrap"
-                >
-                  New Username
-                </th>
-                <td className="px-9 py-3">
-                  <div className="flex items-center">
-                    <span className="text-blue-700 px-2 border-gray-300 font-semibold">@</span>
-                    <input
-                      className={`p-2 border-b-2 text-gray-400 focus:text-gray-900  focus:border-blue-500 hover:border-gray-800 focus:bg-gray-100 outline-none transition-all duration-500 
-                        ${
-                          checkState === true
-                            ? "border-green-500 rounded-tl-xl"
-                            : checkState === false
-                            ? "border-red-500 rounded-t-md"
-                            : "border-gray-300 rounded-t-md"
-                        }`}
-                      value={username}
-                      onChange={handleChange}
-                      placeholder="new_username"
-                    />
-
-                    {/* Only show Save when available */}
-                    {checkState === true && usernameOk(username) && (
-                      <button
-                        type="button"
-                        onClick={saveUsername}
-                        className="px-5 py-2.5  rounded-tr-xl text-[1rem] text-white font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-500"
-                      >
-                        Update
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-              <tr className="bg-white">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-                ></th>
-                <td className="px-6 py-4">
-                  {!!uMsg && (
-                    <div
-                      className={`text-sm pl-3 font-semibold ${
-                        checkState === true
-                          ? "text-green-600 border-green-500"
-                          : checkState === "checking"
-                          ? "text-gray-500 border-red-500"
-                          : "text-red-600 border-red-500"
-                      }`}
-                    >
-                      {checkState === "checking" ? "Checking..." : uMsg}
-                    </div>
-                  )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            {/* Delete channel */}
+            <div className="py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
+              <div>
+                <div className="text-sm font-semibold text-red-600">Delete Channel</div>
+                <div className="text-xs text-gray-500">Permanently delete your channel and all videos</div>
+              </div>
+              <button
+                onClick={handleDeleteClick}
+                className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
-
-        {/*-------------------content---------------------  */}
       </div>
-    </div>
+    </PageContainer>
   );
 }
+
 
 export default Settings;

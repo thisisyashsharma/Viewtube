@@ -28,12 +28,11 @@ const  videoSchema = new Schema(
             type:Number,
             default:0
         },
-        owner: {                                                                        //It could be named as User!?
+        owner: {                                                                         
             type: Schema.Types.ObjectId,
             ref: "newUser",
             required: true
         }
-
     },
     {
         timestamps: true
@@ -51,8 +50,10 @@ videoSchema.plugin(mongooseAggregatePaginate)
 
 // Add this after schema definition, before model creation
 videoSchema.index({ title: "text", description: "text" });
-// Or for regular regex search (faster than text search for simple queries)
 videoSchema.index({ title: 1 });
 videoSchema.index({ description: 1 });
+videoSchema.index({ owner: 1, createdAt: -1 });
+
+ 
 
 export const Video = mongoose.model("Video" , videoSchema)

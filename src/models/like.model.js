@@ -11,7 +11,10 @@ const likeSchema = new Schema({
         // ref: "User"     EU12u1.p1  - Liked Page
         ref: "newUser"
     },
-    
-}, {timestamps: true})
+  },
+  { timestamps: true }
+);
 
-export const Like = mongoose.model("Like", likeSchema)
+likeSchema.index({ video: 1, likedBy: 1 }, { unique: true });
+
+export const Like = mongoose.model("Like", likeSchema);
