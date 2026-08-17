@@ -2,8 +2,11 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 
-function UploadVideo() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+function UploadVideo({ isOpen: controlledIsOpen, onClose: controlledOnClose, onUploadSuccess }) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = typeof controlledIsOpen === "boolean";
+  const isModalOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState(null);
@@ -12,7 +15,11 @@ function UploadVideo() {
   const [useLocal, setUseLocal] = useState("local");
 
   const handleToggleModal = () => {
-    setIsModalOpen(!isModalOpen);
+    if (isControlled) {
+      if (controlledOnClose) controlledOnClose();
+    } else {
+      setInternalIsOpen(!internalIsOpen);
+    }
   };
 
   const history = useNavigate();
@@ -31,15 +38,9 @@ function UploadVideo() {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
-    formData.append("storage", useLocal  ); // <— NEW: toggle
-    
+    formData.append("storage", useLocal);
     formData.append("thumbnail", thumbnail);
     formData.append("videoFile", videoFile);
-
-    // debug print FormData entries (works in modern browsers)
-    for (const pair of formData.entries()) {
-      console.log("FormData:", pair[0], pair[1]);
-    }
 
     try {
       setLoader(true);
@@ -47,56 +48,42 @@ function UploadVideo() {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        withCredentials: true, // send cookies (accessToken/refreshToken) to backend
-        timeout: 120000, // allow longer time for big uploads
+        withCredentials: true,
+        timeout: 120000,
       });
 
       alert("Successfully Video Uploaded");
       setLoader(false);
-      history("/your_channel");
-      // console.log(res.data);
+      setTitle("");
+      setDescription("");
+      setThumbnail(null);
+      setVideoFile(null);
+      handleToggleModal();
+      if (onUploadSuccess) {
+        onUploadSuccess(res.data);
+      } else {
+        history("/your_channel/videos");
+      }
     } catch (error) {
       console.log("Video Upload error: ", error);
-      alert(" Something went worng ?");
+      alert("Something went wrong with video upload.");
       setLoader(false);
     }
   };
 
-  return loader ? (
-    <div className="text-center  my-44 ">
-      <div className="p-4 text-center">
-        <div role="status">
-          <svg
-            aria-hidden="true"
-            className="inline w-8 h-8 text-gray-200 animate-spin  fill-black"
-            viewBox="0 0 100 101"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-              fill="currentColor"
-            />
-            <path
-              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-              fill="currentFill"
-            />
-          </svg>
-          <span className="sr-only">Loading...</span>
-        </div>
-      </div>
-    </div>
-  ) : (
+  return (
     <>
-      <div className="text-center">
-        <button
-          onClick={handleToggleModal}
-          type="button"
-          className="text-md text-white bg-gray-600 hover:bg-gray-800 focus:outline-none focus:scale-95 transition-all duration-100 font-semibold rounded-xl   px-7 py-3 me-2 my-6"
-        >
-          Upload
-        </button>
-      </div>
+      {!isControlled && (
+        <div className="text-center">
+          <button
+            onClick={handleToggleModal}
+            type="button"
+            className="text-sm text-white dark:text-gray-900 bg-gray-900 dark:bg-gray-100 hover:bg-black dark:hover:bg-white focus:outline-none focus:scale-95 transition-all duration-100 font-semibold rounded-full px-6 py-2.5 my-6 shadow-2xs"
+          >
+            Upload Video
+          </button>
+        </div>
+      )}
 
       {isModalOpen && (
         <div
@@ -106,15 +93,15 @@ function UploadVideo() {
           }}
           className="fixed inset-0 z-50 flex justify-center items-center w-full h-full bg-black/50 backdrop-blur-sm p-3 sm:p-6"
         >
-          <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
-            <div className="bg-gray-100 flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-[#0f0f0f] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+            <div className="bg-gray-100 dark:bg-gray-900 flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Upload Video
               </h3>
               <button
                 type="button"
                 onClick={handleToggleModal}
-                className="text-gray-500 hover:bg-gray-200 focus:scale-95 transition-all rounded-full p-2"
+                className="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 focus:scale-95 transition-all rounded-full p-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -141,7 +128,7 @@ function UploadVideo() {
                 <div className="col-span-2">
                   <label
                     htmlFor="title"
-                    className="block mb-3 font-medium text-gray-900"
+                    className="block mb-3 font-medium text-gray-900 dark:text-gray-100"
                   >
                     Title
                   </label>
@@ -151,7 +138,7 @@ function UploadVideo() {
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="bg-gray-50 border-2 border-gray-300 text-gray-900  rounded-xl focus:border-gray-500
+                    className="bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:border-gray-500 dark:focus:border-gray-400
                      w-full p-2.5"
                     placeholder="Enter video title"
                     required
@@ -162,7 +149,7 @@ function UploadVideo() {
                 <div className="col-span-2">
                   <label
                     htmlFor="description"
-                    className="block mb-2 font-medium text-gray-900"
+                    className="block mb-2 font-medium text-gray-900 dark:text-gray-100"
                   >
                     Description
                   </label>
@@ -171,7 +158,7 @@ function UploadVideo() {
                     rows="3"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="block p-2.5 w-full  text-gray-900 bg-gray-50 rounded-xl border-2 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                    className="block p-2.5 w-full text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-gray-300 dark:border-gray-700 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter video description"
                     required
                   ></textarea>
@@ -180,7 +167,7 @@ function UploadVideo() {
                 <div className="col-span-2 ">
                   <label
                     htmlFor="thumbnail"
-                    className="block mb-2 font-medium text-gray-900"
+                    className="block mb-2 font-medium text-gray-900 dark:text-gray-100"
                   >
                     Thumbnail
                   </label>
@@ -188,9 +175,9 @@ function UploadVideo() {
                     <label
                       htmlFor="thumbnail"
                       className="flex flex-col items-center justify-center w-full h-[7rem]
-                      border-[0.2rem] border-dashed border-gray-120 rounded-[1.4rem]
-                      cursor-pointer bg-gray-50
-                      hover:bg-gray-100
+                      border-[0.2rem] border-dashed border-gray-300 dark:border-gray-700 rounded-[1.4rem]
+                      cursor-pointer bg-gray-50 dark:bg-gray-900
+                      hover:bg-gray-100 dark:hover:bg-gray-800
                       focus-within:border-blue-500
                       focus-within:ring-2 focus-within:ring-blue-300
                       transition"
@@ -211,7 +198,7 @@ function UploadVideo() {
                           />
                         </svg>
 
-                        <p className="text-sm text-gray-500 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                           <span className="font-semibold text-blue-600">
                             Click to upload
                           </span>{" "}
@@ -246,7 +233,7 @@ function UploadVideo() {
                           absolute
                           top-3 right-3
                           p-1
-                           bg-gray-100 bg-opacity-100 rounded-[0.7rem] 
+                           bg-gray-100 dark:bg-gray-800 bg-opacity-100 rounded-[0.7rem] 
                           backdrop-blur-[0.5rem]
                           flex justify-center items-center 
                           "
@@ -274,7 +261,7 @@ function UploadVideo() {
                 <div className="col-span-2">
                   <label
                     htmlFor="videoFile"
-                    className="block mb-2 font-medium text-gray-900"
+                    className="block mb-2 font-medium text-gray-900 dark:text-gray-100"
                   >
                     Video
                   </label>
@@ -283,9 +270,9 @@ function UploadVideo() {
                     <label
                       htmlFor="videoFile"
                       className="flex flex-col items-center justify-center w-full h-[8rem]
-                 border-[0.2rem] border-dashed border-gray-120 rounded-[1.4rem]
-                 cursor-pointer bg-gray-50
-                 hover:bg-gray-100
+                 border-[0.2rem] border-dashed border-gray-300 dark:border-gray-700 rounded-[1.4rem]
+                 cursor-pointer bg-gray-50 dark:bg-gray-900
+                 hover:bg-gray-100 dark:hover:bg-gray-800
                  focus-within:border-blue-500
                  focus-within:ring-2 focus-within:ring-blue-300
                  transition"
@@ -305,13 +292,13 @@ function UploadVideo() {
                           />
                         </svg>
 
-                        <p className="mb-2 text-sm text-gray-500 text-center">
+                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400 text-center">
                           <span className="font-semibold text-blue-600">
                             Click to upload
                           </span>{" "}
                           or drag
                         </p>
-                        <p className="text-xs text-gray-400 text-center">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
                           MP4, MOV (100MB max)
                         </p>
                       </div>
@@ -344,7 +331,7 @@ function UploadVideo() {
                           absolute
                           top-3 right-3
                           p-1
-                           bg-gray-200 bg-opacity-100 rounded-[0.7rem] 
+                           bg-gray-200 dark:bg-gray-800 bg-opacity-100 rounded-[0.7rem] 
                           backdrop-blur-[0.5rem]
                           flex justify-center items-center 
                           "
@@ -373,7 +360,7 @@ function UploadVideo() {
                   <select
                     value={useLocal}
                     onChange={(e) => setUseLocal(e.target.value)}
-                    className="border rounded-lg p-2"
+                    className="border border-gray-300 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100"
                   >
                     <option value="local">Local</option>
                     <option value="cloud">Cloudinary</option>

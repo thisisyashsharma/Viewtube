@@ -21,6 +21,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { uploadLimiter } from "../middlewares/rateLimiter.middleware.js";
 import { validate, videoPublishValidation } from "../middlewares/validate.middleware.js";
+import { moderateContent } from "../middlewares/contentModerator.middleware.js";
 
 const router = Router();
 
@@ -39,9 +40,9 @@ router.use(verifyJWT); // Apply verifyJWT middleware to all routes below this li
 router.get("/subscribedFeed", getSubscribedVideos);
 router.route("/search").get(searchVideos);
 
-router.route("/publish").post(uploadLimiter, videoUpload, validate(videoPublishValidation), publishAVideo);
+router.route("/publish").post(uploadLimiter, videoUpload, validate(videoPublishValidation), moderateContent, publishAVideo);
 router.route("/delete/:id").delete(deleteVideoById);
-router.route("/update/:id").put(upload.fields([{ name: "thumbnail", maxCount: 1 }]), updateVideoDetails);
+router.route("/update/:id").put(upload.fields([{ name: "thumbnail", maxCount: 1 }]), moderateContent, updateVideoDetails);
 router.route("/incrementView/:id").put(viewsIncrement);
 
 // Like feature

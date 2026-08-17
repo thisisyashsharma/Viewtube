@@ -38,13 +38,13 @@ function YourChannel() {
 
   const tabs = [
     { label: "Home", path: "/your_channel" },
-    { label: "Videos", path: "/your_channel/upload_video" },
+    { label: "Videos", path: "/your_channel/videos" },
     { label: "About", path: "/your_channel/about" },
   ];
 
   const activeTabIndex = location.pathname.endsWith("/about")
     ? 2
-    : location.pathname.endsWith("/upload_video")
+    : location.pathname.endsWith("/videos") || location.pathname.endsWith("/upload_video")
     ? 1
     : 0;
 
@@ -145,18 +145,18 @@ function YourChannel() {
   return (
     <PageContainer>
       {/* Mobile Top App Bar for "You" page matching YouTube mobile */}
-      <div className="sm:hidden flex items-center justify-between py-2 px-1 mb-4 border-b border-gray-100">
+      <div className="sm:hidden flex items-center justify-between py-2 px-1 mb-4 border-b border-gray-100 dark:border-gray-800">
         <Link
           to="/login"
-          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-gray-300/80 bg-white text-xs font-semibold text-gray-800 shadow-2xs hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-gray-300/80 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] text-xs font-semibold text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
         >
           <span>Accounts</span>
-          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </Link>
 
-        <div className="flex items-center space-x-3 text-gray-700">
+        <div className="flex items-center space-x-3 text-gray-700 dark:text-gray-300">
           <button className="p-1 hover:text-gray-900" title="Notifications">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -178,12 +178,12 @@ function YourChannel() {
 
       {/* Editing Actions Bar */}
       {isEditing && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white shadow-2xl rounded-full px-6 py-3 flex items-center space-x-4 border border-gray-200 animate-slideUp">
-          <span className="text-sm font-semibold text-gray-800">Unsaved changes</span>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-full px-6 py-3 flex items-center space-x-4 border border-gray-200 dark:border-gray-800 animate-slideUp">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Unsaved changes</span>
           <button 
             onClick={handleCancel}
             disabled={isUploading}
-            className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -222,7 +222,7 @@ function YourChannel() {
       />
 
       {/* Channel Header Banner */}
-      <div className="relative w-full h-32 sm:h-48 md:h-64 rounded-2xl overflow-hidden bg-gray-900 border border-gray-200 shadow-sm group/banner">
+      <div className="relative w-full h-32 sm:h-48 md:h-64 rounded-2xl overflow-hidden bg-gray-900 dark:bg-black border border-gray-200 dark:border-gray-800 shadow-sm group/banner">
         {/* Parallax Banner Image */}
         <div 
           className="absolute inset-0 w-full h-[120%] -top-[10%] bg-cover bg-center transition-transform duration-75 ease-out"
@@ -244,7 +244,7 @@ function YourChannel() {
       </div>
 
       {/* Profile Info Section (Overlaps Banner) */}
-      <div className="px-4 sm:px-6 relative flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 -mt-12 sm:-mt-16 mb-8 z-20">
+      <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 -mt-12 sm:-mt-16 mb-8 z-20">
         {userdata ? (
           <>
             {/* Avatar Container with Hover */}
@@ -254,12 +254,12 @@ function YourChannel() {
             >
               {displayAvatar ? (
                 <img
-                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white bg-white"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-[#0f0f0f] bg-white dark:bg-[#0f0f0f]"
                   src={displayAvatar}
                   alt={userdata.name || "Channel avatar"}
                 />
               ) : (
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-pink-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-sm">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-pink-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-white dark:border-[#0f0f0f] shadow-sm">
                   {userInitial}
                 </div>
               )}
@@ -270,14 +270,14 @@ function YourChannel() {
             </div>
 
             <div className="flex-1 min-w-0 text-center sm:text-left sm:mt-16">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
                 {userdata.name || "Channel Name"}
               </h1>
-              <div className="text-sm text-gray-600 mt-1 font-medium">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">
                 Joined {formatDate(userdata.createdAt)} • {(subsCount ?? 0).toLocaleString()} subscribers
               </div>
               {userdata.about && (
-                <p className="text-sm text-gray-700 mt-2 line-clamp-2 max-w-2xl">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 line-clamp-2 max-w-2xl">
                   {userdata.about}
                 </p>
               )}
@@ -285,13 +285,13 @@ function YourChannel() {
               <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
                 <Link
                   to="/customize_channel"
-                  className="inline-flex items-center justify-center px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-full bg-gray-100 text-gray-900 hover:bg-gray-200 min-h-[40px] transition-colors shadow-2xs"
+                  className="inline-flex items-center justify-center px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 min-h-[40px] transition-colors shadow-2xs"
                 >
                   Customize channel
                 </Link>
                 <button
                   onClick={() => alert("ViewTube Premium features coming soon!")}
-                  className="inline-flex items-center justify-center px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-full bg-gray-900 text-white hover:bg-black min-h-[40px] transition-colors shadow-2xs"
+                  className="inline-flex items-center justify-center px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-black dark:hover:bg-white min-h-[40px] transition-colors shadow-2xs"
                 >
                   Get Premium
                 </button>
@@ -311,8 +311,8 @@ function YourChannel() {
       </div>
 
       {/* Profile Tabs Bar with Smooth Sliding Indicator */}
-      <div className="mt-6 border-b border-gray-200 overflow-x-auto scrollbar-none relative hidden sm:block px-4 sm:px-0">
-        <ul className="flex items-center space-x-6 text-sm font-medium text-gray-600 min-w-max pb-1">
+      <div className="mt-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-none relative hidden sm:block">
+        <ul className="flex items-center space-x-6 text-sm font-medium text-gray-600 dark:text-gray-400 min-w-max pb-1">
           {tabs.map((tab, idx) => {
             const isActive = activeTabIndex === idx;
             return (
@@ -321,8 +321,8 @@ function YourChannel() {
                   to={tab.path}
                   className={`inline-block py-2 px-1 text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? "text-gray-900 font-bold scale-105"
-                      : "text-gray-500 hover:text-gray-800"
+                      ? "text-gray-900 dark:text-gray-100 font-bold scale-105"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                   }`}
                 >
                   {tab.label}
@@ -334,7 +334,7 @@ function YourChannel() {
 
         {/* Smooth Sliding Active Indicator Bar */}
         <div
-          className="absolute bottom-0 h-0.5 bg-gray-900 rounded-full transition-all duration-300 ease-out"
+          className="absolute bottom-0 h-0.5 bg-gray-900 dark:bg-gray-100 rounded-full transition-all duration-300 ease-out"
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,
@@ -342,68 +342,7 @@ function YourChannel() {
         />
       </div>
 
-      {/* Library Section matching screenshot */}
-      <div className="mt-6 mb-8 px-4 sm:px-0">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Library</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <Link
-            to="/likes"
-            className="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-200 hover:bg-gray-50 transition-colors shadow-2xs group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-16 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-white">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Liked videos</h3>
-                <span className="text-xs text-gray-500">Private</span>
-              </div>
-            </div>
-            <div className="text-gray-400">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </div>
-          </Link>
 
-          <Link
-            to="/history"
-            className="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-200 hover:bg-gray-50 transition-colors shadow-2xs group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-16 h-12 bg-blue-900 rounded-xl flex items-center justify-center text-white">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Watch Later</h3>
-                <span className="text-xs text-gray-500">Private</span>
-              </div>
-            </div>
-            <div className="text-gray-400">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </div>
-          </Link>
-
-          <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors cursor-pointer group">
-            <div className="flex items-center space-x-3">
-              <div className="w-16 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 group-hover:bg-gray-200 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Downloads</h3>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Tab Content */}
       <Outlet />

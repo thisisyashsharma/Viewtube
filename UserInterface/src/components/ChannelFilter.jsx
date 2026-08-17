@@ -41,16 +41,16 @@ function ChannelFilter({ searchQuery = "" }) {
     if (loading) return <div className="p-6">Loading…</div>;
 
     return (
-        <div className="w-full bg-white px-3 sm:px-6 py-4">
+        <div className="w-full bg-white dark:bg-[#0f0f0f] px-3 sm:px-6 py-4">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Filtered Channels</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Filtered Channels</h1>
                 </div>
                 <ul className="space-y-4">
                     {filteredChannels.map((ch) => (
                         <li
                             key={ch._id}
-                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full rounded-2xl sm:rounded-full border border-gray-200 bg-gray-50/50 p-4 hover:bg-gray-100 transition-colors"
+                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full rounded-2xl sm:rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                             <Link
                                 to={`/channel/${ch._id}`}
@@ -62,12 +62,12 @@ function ChannelFilter({ searchQuery = "" }) {
                                     className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover flex-shrink-0"
                                 />
                                 <div className="min-w-0 flex-1">
-                                    <div className="font-semibold text-base text-gray-900 truncate">{ch.name}</div>
-                                    <div className="text-xs sm:text-sm text-gray-500 truncate">
+                                    <div className="font-semibold text-base text-gray-900 dark:text-gray-100 truncate">{ch.name}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                                         @{ch.username ?? "-"} <span>{" • "}</span>
                                         {ch.subscribersCount?.toLocaleString() ?? "0"} subscribers
                                     </div>
-                                    <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                                         {ch.about || "-"}
                                     </div>
                                 </div>
@@ -81,7 +81,7 @@ function ChannelFilter({ searchQuery = "" }) {
                         </li>
                     ))}
                     {filteredChannels.length === 0 && (
-                        <li className="text-sm text-gray-500 py-8 text-center bg-gray-50 rounded-xl">
+                        <li className="text-sm text-gray-500 dark:text-gray-400 py-8 text-center bg-gray-50 dark:bg-gray-900 rounded-xl">
                             {searchQuery
                                 ? `No channels found for "${searchQuery}"`
                                 : "You haven't subscribed to any channels yet."}

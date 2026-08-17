@@ -71,3 +71,32 @@ export const commentLimiter = rateLimit({
   handler: limitHandler("Comment limit reached. Please wait before posting more comments."),
 });
 
+// Feedback rate limiter: 10 requests per 15 minutes
+export const feedbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipDevOrTest,
+  handler: limitHandler("Feedback limit reached. Please wait before submitting more feedback."),
+});
+
+// Download rate limiter: 30 requests per 15 minutes
+export const downloadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipDevOrTest,
+  handler: limitHandler("Download limit reached. Please wait before downloading more videos."),
+});
+
+// Like rate limiter: 60 requests per minute
+export const likeLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipDevOrTest,
+  handler: limitHandler("Like action limit reached. Please slow down."),
+});

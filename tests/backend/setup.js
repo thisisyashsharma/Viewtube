@@ -8,6 +8,7 @@ process.env.NODE_ENV = "test";
 process.env.ACCESS_TOKEN_SECRET = "supersecretkey";
 process.env.REFRESH_TOKEN_SECRET = "anothersecretkey";
 process.env.EMAIL_PREVERIFY_SECRET = "supersecretkey";
+process.env.DEFAULT_STORAGE = "local";
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create({

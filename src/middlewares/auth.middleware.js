@@ -20,9 +20,10 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
       throw new ApiError(401, "Unauthorized request");
     }
 
-    const secret =
-      process.env.ACCESS_TOKEN_SECRET ||
-      "test_access_secret_key_super_secret_12345678";
+    const secret = process.env.ACCESS_TOKEN_SECRET;
+    if (!secret) {
+      throw new ApiError(500, "Server configuration error: missing token secret");
+    }
 
     const decodedToken = jwt.verify(token, secret);
 

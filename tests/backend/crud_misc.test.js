@@ -41,7 +41,7 @@ describe("POST /api/v1/feedback", () => {
       .set("Authorization", `Bearer ${token}`)
       .field("title", "Title only without description");
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
     expect(res.body.success).toBe(false);
   });
 });

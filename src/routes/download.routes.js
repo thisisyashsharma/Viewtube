@@ -6,13 +6,14 @@ import { Video } from "../models/video.model.js"
 const router = express.Router();
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { downloadLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 // __dirname replacement for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // GET /api/download/:id  -> find file for id and force download
-router.get("/download/:id", verifyJWT, async (req, res) => {
+router.get("/download/:id", downloadLimiter, verifyJWT, async (req, res) => {
   try {
     const id = req.params.id;
     const videoMeta = await Video.findById(id);

@@ -52,6 +52,53 @@ const BLOCKED_EXTENSIONS = new Set([
   ".jar",
 ]);
 
+// Magic byte signatures for allowed file types
+const MAGIC_BYTES = {
+  "image/jpeg": [Buffer.from([0xFF, 0xD8, 0xFF])],
+  "image/png": [Buffer.from([0x89, 0x50, 0x4E, 0x47])],
+  "image/webp": [], // checked via RIFF header below
+  "video/mp4": [], // checked via ftyp box below
+  "video/webm": [Buffer.from([0x1A, 0x45, 0xDF, 0xA3])],
+};
+
+/**
+ * Validates a file's magic bytes match its claimed MIME type.
+ * Returns true if the file passes validation, false otherwise.
+ */
+export async function validateMagicBytes(filePath, claimedMime) {
+  try {
+    const fd = fs.openSync(filePath, "r");
+    const buf = Buffer.alloc(12);
+    fs.readSync(fd, buf, 0, 12, 0);
+    fs.closeSync(fd);
+
+    // JPEG: starts with FF D8 FF
+    if (claimedMime === "image/jpeg") {
+      return buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF;
+    }
+    // PNG: starts with 89 50 4E 47
+    if (claimedMime === "image/png") {
+      return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
+    }
+    // WebP: starts with RIFF....WEBP
+    if (claimedMime === "image/webp") {
+      return buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP";
+    }
+    // MP4: has ftyp box (usually at byte 4)
+    if (claimedMime === "video/mp4") {
+      return buf.toString("ascii", 4, 8) === "ftyp";
+    }
+    // WebM: starts with 1A 45 DF A3 (EBML header)
+    if (claimedMime === "video/webm") {
+      return buf[0] === 0x1A && buf[1] === 0x45 && buf[2] === 0xDF && buf[3] === 0xA3;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);

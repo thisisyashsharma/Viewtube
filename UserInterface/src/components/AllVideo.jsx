@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import PageContainer from "./layout/PageContainer";
 import VideoGrid from "./layout/VideoGrid";
@@ -15,6 +15,7 @@ function AllVideo() {
   const [videos, setVideos] = useState([]);
   const [loader, setLoader] = useState(true);
   const [editingVideo, setEditingVideo] = useState(null);
+  const [filter, setFilter] = useState("latest"); // "latest" | "popular" | "oldest"
 
   const fetchVideos = async () => {
     if (!userdata?._id) return;
@@ -72,33 +73,76 @@ function AllVideo() {
     fetchVideos();
   };
 
+  // Filtered and sorted videos
+  const sortedVideos = useMemo(() => {
+    if (!videos || videos.length === 0) return [];
+    const list = [...videos];
+    if (filter === "popular") {
+      return list.sort((a, b) => (b.views || 0) - (a.views || 0));
+    }
+    if (filter === "oldest") {
+      return list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    }
+    // "latest"
+    return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [videos, filter]);
+
+  const filterTabs = [
+    { key: "latest", label: "Latest" },
+    { key: "popular", label: "Popular" },
+    { key: "oldest", label: "Oldest" },
+  ];
 
   if (loader) {
     return (
-      <PageContainer>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 px-4 sm:px-0">Your Videos</h1>
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded-lg w-32 animate-shimmer" />
+        </div>
         <SkeletonLoader count={8} />
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
-        <h1 className="text-2xl font-bold text-gray-900">Your Videos</h1>
-        <span className="text-sm font-medium text-gray-500">
-          {videos.length} {videos.length === 1 ? "video" : "videos"}
-        </span>
+    <div className="mt-4">
+      {/* Header and Filter Chips */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Videos</h1>
+          <span className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
+            {videos.length} {videos.length === 1 ? "video" : "videos"}
+          </span>
+        </div>
+
+        {/* Filter Pills */}
+        {videos.length > 0 && (
+          <div className="flex items-center space-x-2 overflow-x-auto scrollbar-none pb-1">
+            {filterTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 active:scale-95 flex-shrink-0 ${
+                  filter === tab.key
+                    ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-2xs"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {videos.length === 0 ? (
+      {sortedVideos.length === 0 ? (
         <EmptyState
           title="No uploaded videos"
           description="You haven't uploaded any videos yet."
         />
       ) : (
         <VideoGrid>
-          {videos.map((video) => (
+          {sortedVideos.map((video) => (
             <VideoCard
               key={video._id}
               video={video}
@@ -116,7 +160,7 @@ function AllVideo() {
         onClose={() => setEditingVideo(null)}
         onUpdateSuccess={handleUpdateSuccess}
       />
-    </PageContainer>
+    </div>
   );
 }
 

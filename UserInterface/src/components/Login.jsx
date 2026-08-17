@@ -58,7 +58,7 @@ function Login() {
       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
     </div>
   ) : (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 bg-gray-50 overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 bg-gray-50 dark:bg-black overflow-hidden">
       <Link 
         to="/" 
         className={`flex items-center justify-center mb-6 transition-all duration-700 ease-out ${
@@ -68,28 +68,28 @@ function Login() {
         <img src={logo} className="h-10 sm:h-12" alt="Logo" />
       </Link>
       <div 
-        className={`w-full max-w-md p-6 sm:p-8 bg-white rounded-3xl border border-gray-200 shadow-sm space-y-6 transform transition-all duration-700 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          animateIn ? "translate-y-0 opacity-100 scale-100" : "translate-y-12 opacity-0 scale-95"
+        className={`w-full max-w-md p-6 sm:p-8 bg-white dark:bg-[#0f0f0f] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-6 transform transition-all duration-700 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          animateIn ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
         }`}
       >
         <div className={`transition-all duration-700 delay-150 ease-out ${animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Sign in</h2>
-          <p className="text-sm sm:text-base text-gray-500 mt-1">to continue to Viewtube</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Sign in</h2>
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">to continue to Viewtube</p>
         </div>
         <form onSubmit={handleFormSubmit} className={`space-y-5 transition-all duration-700 delay-200 ease-out ${animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
           
           <GoogleAuthButton label="Sign in with Google" setError={setError} />
 
           <div className="flex items-center justify-center space-x-2 my-4">
-            <span className="h-px w-full bg-gray-200"></span>
-            <span className="text-sm text-gray-500 font-medium">or</span>
-            <span className="h-px w-full bg-gray-200"></span>
+            <span className="h-px w-full bg-gray-200 dark:bg-gray-800"></span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">or</span>
+            <span className="h-px w-full bg-gray-200 dark:bg-gray-800"></span>
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="block mb-2 text-sm font-semibold text-gray-900"
+              className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100"
             >
               Email
             </label>
@@ -99,7 +99,7 @@ function Login() {
               value={formData.email}
               onChange={handleInputChange}
               id="email"
-              className="bg-gray-50 text-base text-gray-900 rounded-xl block w-full p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              className="bg-gray-50 dark:bg-gray-900 text-base text-gray-900 dark:text-gray-100 rounded-xl block w-full p-3 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
               placeholder="name@company.com"
               required
             />
@@ -107,7 +107,7 @@ function Login() {
           <div>
             <label
               htmlFor="password"
-              className="block mb-2 text-sm font-semibold text-gray-900"
+              className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100"
             >
               Password
             </label>
@@ -118,7 +118,7 @@ function Login() {
               onChange={handleInputChange}
               id="password"
               placeholder="••••••••"
-              className="bg-gray-50 text-base text-gray-900 rounded-xl block w-full p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              className="bg-gray-50 dark:bg-gray-900 text-base text-gray-900 dark:text-gray-100 rounded-xl block w-full p-3 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
               required
             />
           </div>
@@ -130,8 +130,8 @@ function Login() {
           </button>
           {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-            <span className="text-sm text-gray-600">Not registered?</span>
-            <Link to="/signup" className="text-sm font-semibold text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl transition-colors">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Not registered?</span>
+            <Link to="/signup" className="text-sm font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 py-2 rounded-xl transition-colors">
               Create account
             </Link>
           </div>

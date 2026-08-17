@@ -72,16 +72,16 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
       }}
       className="fixed inset-0 z-50 flex justify-center items-center w-full h-full bg-black/50 backdrop-blur-sm p-3 sm:p-6"
     >
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-[#0f0f0f] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
         {/* Modal Header matching UploadVideo */}
-        <div className="bg-gray-100 flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
+        <div className="bg-gray-100 dark:bg-gray-900 flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800">
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
             Edit Video Details
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-500 hover:bg-gray-200 focus:scale-95 transition-all rounded-full p-2"
+            className="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 focus:scale-95 transition-all rounded-full p-2"
           >
             <svg
               className="w-5 h-5"
@@ -109,7 +109,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
             <div className="col-span-2">
               <label
                 htmlFor="title"
-                className="block mb-3 font-medium text-gray-900"
+                className="block mb-3 font-medium text-gray-900 dark:text-gray-100"
               >
                 Title
               </label>
@@ -119,7 +119,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-gray-50 border-2 border-gray-300 text-gray-900 rounded-xl focus:border-gray-500 w-full p-2.5"
+                className="bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:border-gray-500 dark:focus:border-gray-400 w-full p-2.5"
                 placeholder="Enter video title"
                 required
               />
@@ -129,7 +129,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
             <div className="col-span-2">
               <label
                 htmlFor="description"
-                className="block mb-2 font-medium text-gray-900"
+                className="block mb-2 font-medium text-gray-900 dark:text-gray-100"
               >
                 Description
               </label>
@@ -138,7 +138,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
                 rows="3"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="block p-2.5 w-full text-gray-900 bg-gray-50 rounded-xl border-2 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                className="block p-2.5 w-full text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-gray-300 dark:border-gray-700 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter video description"
                 required
               ></textarea>
@@ -148,14 +148,14 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
             <div className="col-span-2">
               <label
                 htmlFor="thumbnail"
-                className="block mb-2 font-medium text-gray-900"
+                className="block mb-2 font-medium text-gray-900 dark:text-gray-100"
               >
                 Update Thumbnail (Optional)
               </label>
               <div className="flex flex-row gap-4 items-center">
                 <label
                   htmlFor="edit-thumbnail-input"
-                  className="flex flex-col items-center justify-center w-full h-[7rem] border-[0.2rem] border-dashed border-gray-300 rounded-[1.4rem] cursor-pointer bg-gray-50 hover:bg-gray-100 focus-within:border-blue-500 transition"
+                  className="flex flex-col items-center justify-center w-full h-[7rem] border-[0.2rem] border-dashed border-gray-300 dark:border-gray-700 rounded-[1.4rem] cursor-pointer bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 focus-within:border-blue-500 transition"
                 >
                   <div className="flex flex-col items-center justify-center pt-4 pb-5">
                     <svg
@@ -171,7 +171,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
-                    <p className="text-xs text-gray-500 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                       <span className="font-semibold text-blue-600">
                         Click to change image
                       </span>
@@ -192,7 +192,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
                     <img
                       src={thumbnailPreview}
                       alt="Thumbnail preview"
-                      className="w-full h-full object-cover rounded-[1.4rem] border-2 border-gray-200"
+                      className="w-full h-full object-cover rounded-[1.4rem] border-2 border-gray-200 dark:border-gray-700"
                     />
                   </div>
                 )}
@@ -205,7 +205,7 @@ function EditVideoModal({ video, isOpen, onClose, onUpdateSuccess }) {
             <button
               type="submit"
               disabled={loader}
-              className="w-full text-md text-white bg-gray-700 hover:bg-gray-900 focus:outline-none focus:scale-95 transition-all duration-100 font-semibold rounded-xl px-7 py-3"
+              className="w-full text-md text-white dark:text-gray-900 bg-gray-700 dark:bg-gray-100 hover:bg-gray-900 dark:hover:bg-white focus:outline-none focus:scale-95 transition-all duration-100 font-semibold rounded-xl px-7 py-3"
             >
               {loader ? "Updating..." : "Save Changes"}
             </button>

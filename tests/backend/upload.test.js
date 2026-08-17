@@ -18,6 +18,11 @@ describe("POST /api/v1/videos/publish", () => {
   const dummyThumbnail = Buffer.from("fake image bytes");
   const dummyVideo = Buffer.from("fake video bytes");
 
+  beforeEach(async () => {
+    const { uploadOnCloudinary } = await import("../../src/utils/cloudinary.js");
+    uploadOnCloudinary.mockClear();
+  });
+
   it("publishes a video successfully with valid video and thumbnail uploads", async () => {
     const user = await createUser();
     const token = generateToken(user);

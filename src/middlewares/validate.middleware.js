@@ -100,3 +100,18 @@ export const mongoIdValidation = (paramName = "id") => [
     .isMongoId()
     .withMessage(`Invalid ${paramName} parameter format`),
 ];
+
+export const feedbackValidation = [
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Feedback title is required")
+    .isLength({ max: 200 })
+    .withMessage("Title cannot exceed 200 characters"),
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Feedback description is required")
+    .isLength({ max: 5000 })
+    .withMessage("Description cannot exceed 5000 characters"),
+];

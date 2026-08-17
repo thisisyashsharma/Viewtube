@@ -715,7 +715,7 @@ function renderHelpContent(text) {
     return (
       <p
         key={index}
-        className="text-gray-700 text-sm sm:text-base whitespace-pre-line"
+        className="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-line"
       >
         {part.split(/(`[^`]+`)/g).map((chunk, i) => {
           // inline `fileOrFunction`
@@ -723,7 +723,7 @@ function renderHelpContent(text) {
             return (
               <span
                 key={i}
-                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-gray-200 text-gray-800 font-mono text-xs sm:text-sm "
+                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs sm:text-sm "
               >
                 {chunk.slice(1, -1)}
               </span>
@@ -740,22 +740,22 @@ function StepItem({ step, index }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-4 border-gray-100  rounded-2xl overflow-hidden ">
+    <div className="border-4 border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden ">
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}
         aria-expanded={open}
-        className="w-full flex  items-start justify-between gap-4 px-4 py-3 sm:px-5 sm:py-3 bg-gray-50 hover:bg-gray-100 focus:outline-none"
+        className="w-full flex  items-start justify-between gap-4 px-4 py-3 sm:px-5 sm:py-3 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
       >
         <div className="flex-1 text-left">
-          <div className="text-sm sm:text-base font-medium text-gray-800">
+          <div className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200">
             <span className="inline-block mr-2 text-blue-600">
               Step {index + 1}
             </span>
             {step.title}
           </div>
           {step.content ? (
-            <div className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2">
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
               {/* preview line */}
               {step.content.split("\n")[0]}
               {step.content.includes("\n") ? " ..." : ""}
@@ -797,7 +797,7 @@ function StepItem({ step, index }) {
         style={{ willChange: "max-height, opacity" }}
         aria-hidden={!open}
       >
-        <div className="pt-3 text-gray-700 text-sm sm:text-base whitespace-pre-line">
+        <div className="pt-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-line">
           {renderHelpContent(step.content)}
         </div>
       </div>
@@ -820,10 +820,10 @@ export default function Help() {
     }
   }, [openIndex]);
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12 mt-10 mx-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-black py-6 sm:py-8 lg:py-12 mt-10 mx-6">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-6 sm:mb-8 lg:mb-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-4xl font-semibold text-gray-900">
+          <h1 className="text-3xl sm:text-4xl lg:text-4xl font-semibold text-gray-900 dark:text-gray-100">
             Help
           </h1>
         </header>
@@ -836,7 +836,7 @@ export default function Help() {
               return (
                 <article
                   key={i}
-                  className="bg-white border-4 border-gray-100 rounded-3xl shadow-sm overflow-hidden  "
+                  className="bg-white dark:bg-[#0f0f0f] border-4 border-gray-100 dark:border-gray-800 rounded-3xl shadow-sm overflow-hidden  "
                 >
                   <button
                     onClick={() =>
@@ -847,12 +847,12 @@ export default function Help() {
                   >
                     <div className="flex-1 ">
                       <div className="flex items-center justify-between gap-4 ">
-                        <h2 className="text-base sm:text-lg font-medium text-gray-800">
+                        <h2 className="text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200">
                           {faq.q}
                         </h2>
                         {/* optional small meta on desktop */}
                       </div>
-                      <p className="mt-1 text-sm sm:text-sm text-gray-500 line-clamp-2">
+                      <p className="mt-1 text-sm sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                         {faq.steps?.[0]?.content?.split("\n")[0] ?? ""}
                         {faq.steps?.[0]?.content?.includes("\n") ? " ..." : ""}
                       </p>
@@ -907,22 +907,22 @@ export default function Help() {
           {/* Right: Helper column (visible on tablet/desktop) */}
           <aside className="hidden lg:block lg:col-span-4">
             <div className="sticky top-20 space-y-4">
-              <div className="bg-white border-4 border-gray-100 rounded-3xl p-4 shadow-sm bg-red-500     ">
-                <h3 className="text-sm font-semibold text-gray-800">
+              <div className="bg-white dark:bg-[#0f0f0f] border-4 border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   Quick actions
                 </h3>
-                <ul className="mt-3 text-sm text-gray-600 space-y-2">
+                <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li>Search the FAQ (coming soon)</li>
                   <li>Open feedback form from the sidebar</li>
                   <li>Visit your Account settings to manage profile</li>
                 </ul>
               </div>
 
-              <div className="bg-white border-4 border-gray-100 rounded-3xl p-4 shadow-sm   ">
-                <h3 className="text-sm font-semibold text-gray-800 ">
+              <div className="bg-white dark:bg-[#0f0f0f] border-4 border-gray-100 dark:border-gray-800 rounded-3xl p-4 shadow-sm   ">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   Tips for mobile
                 </h3>
-                <ul className="mt-3 text-sm text-gray-600 space-y-2">
+                <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <li>Tap a question to expand steps.</li>
                   <li>Tap a step to read full details and substeps.</li>
                   <li>

@@ -8,15 +8,20 @@ import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import UploadVideo from "./UploadVideo";
+import { useTheme } from "../context/ThemeContext";
+import { LineDrawIcon } from "./common";
 
 function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
+  const { theme, toggleTheme } = useTheme();
   const [userdata, setUserData] = useState(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const searchRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
@@ -84,9 +89,8 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
         });
 
         const videos = response.data.data?.videos || [];
-        // Sort by relevance (you can implement more sophisticated ranking)
+        // Sort by relevance: exact match in title first
         const sortedVideos = videos.sort((a, b) => {
-          // Simple relevance: exact match in title first
           const aTitleMatch = a.title
             .toLowerCase()
             .includes(query.toLowerCase());
@@ -96,8 +100,6 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
 
           if (aTitleMatch && !bTitleMatch) return -1;
           if (!aTitleMatch && bTitleMatch) return 1;
-
-          // Then by views
           return b.views - a.views;
         });
 
@@ -108,9 +110,10 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
       } finally {
         setIsSearching(false);
       }
-    }, 300), // 300ms debounce delay
+    }, 300),
     []
   );
+
   // Handle search form submission
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -187,452 +190,609 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        inputRef.current?.focus();
+        setIsSearchOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+      if (e.key === "Escape" && isSearchOpen) {
+        setIsSearchOpen(false);
+        setShowResults(false);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isSearchOpen]);
+
+
+
 
   return (
     <>
-      <nav className="fixed top-0 left-0 z-[var(--z-nav,30)] w-full h-14 bg-white border-b border-gray-200 px-3 flex items-center justify-between">
-        {/* ── Always-Mounted Morphing Mobile Search Bar (sm:hidden) ── */}
-        {/* This element is always in the DOM. Clicking the search icon adds
-            the .expanded class which CSS transitions smoothly animate.       */}
-        <div className={`mobile-search-bar sm:!hidden ${isMobileSearchOpen ? "expanded" : ""}`}>
-          {/* Search icon trigger (visible when collapsed) */}
+      <nav className="fixed top-0 left-0 z-[var(--z-nav,30)] w-full h-16 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md border-b-[0.35rem] border-gray-200/80 dark:border-gray-800/80 px-3 flex items-center justify-between transition-colors duration-200">
+        
+        {/* Left section: Drawer toggle & logo */}
+        <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
           <button
-            type="button"
-            onClick={() => {
-              setIsMobileSearchOpen(true);
-              setTimeout(() => inputRef.current?.focus(), 150);
-            }}
-            className="mobile-search-trigger text-gray-600 rounded-full hover:bg-gray-100 active:scale-90 transition-transform"
-            aria-label="Open search"
+            onClick={handleToggleSidebar}
+            className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-white dark:bg-[#0f0f0f] rounded-xl border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+            aria-label={isDrawerOpen ? "Close navigation menu" : "Open navigation menu"}
+            title={isDrawerOpen ? "Close menu" : "Open menu"}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-
-          {/* Back arrow (slides in when expanded) */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsMobileSearchOpen(false);
-              setShowResults(false);
-            }}
-            className="mobile-search-back flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-200/60 active:scale-90 transition-transform"
-            aria-label="Close search"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          {/* Input + clear + submit (fades in when expanded) */}
-          <form onSubmit={handleSearchSubmit} className="mobile-search-input-wrap relative flex items-center" ref={searchRef}>
-            <input
-              ref={inputRef}
-              type="text"
-              className="w-full h-9 pl-2 pr-12 bg-transparent text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none"
-              placeholder="Search ViewTube..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              tabIndex={isMobileSearchOpen ? 0 : -1}
+            <LineDrawIcon
+              path={isDrawerOpen ? "M19 12H5m7 7l-7-7 7-7" : "M4 6h16M4 12h16M4 18h16"}
+              className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
+              baseColor="text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+              activeColor="text-gray-900 dark:text-gray-100"
+              strokeWidth={2}
             />
+          </button>
 
-            {/* Clear button */}
-            {searchQuery && (
+          <Link 
+            to="/home" 
+            className={`items-center text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 ${
+              isSearchOpen ? "hidden md:flex" : "flex"
+            }`}
+          >
+            <img src={logo} className="mr-2 h-6 w-auto" alt="Project Logo" />
+            <span className="hidden sm:inline truncate max-w-[160px] md:max-w-none">ViewTube</span>
+          </Link>
+        </div>
+
+        {/* ── Unified Morphing Search Bar (Mobile & Desktop) ── */}
+        <div 
+          ref={searchRef}
+          className={`relative flex-1 ${
+            isSearchOpen 
+              ? "mx-1 sm:mx-4 max-w-full sm:max-w-2xl" 
+              : "mx-1 sm:mx-4 max-w-[40px] sm:max-w-[44px]"
+          } flex justify-end items-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+        >
+          <div 
+            className={`relative flex items-center h-10 sm:h-11 w-full rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden group ${
+              isSearchOpen 
+                ? "bg-gray-100/80 dark:bg-[#1a1a1a] backdrop-blur-md border border-gray-200/80 dark:border-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-[#222222] focus-within:bg-white dark:focus-within:bg-[#0f0f0f] focus-within:border-gray-300 dark:focus-within:border-gray-700 focus-within:ring-[3px] focus-within:ring-gray-200/50 dark:focus-within:ring-gray-800/50 shadow-sm" 
+                : "p-[1px] bg-gray-200/80 dark:bg-gray-700 cursor-pointer"
+            }`}
+          >
+            {/* Border Light Beam (Neutral Pure Light Beam on Search Icon) */}
+            {!isSearchOpen && (
+              <>
+                <div 
+                  className="absolute -inset-[200%] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-border-beam"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(75, 85, 99, 0.75) 320deg, transparent 360deg)'
+                  }}
+                />
+                <div 
+                  className="absolute -inset-[200%] pointer-events-none opacity-0 dark:group-hover:opacity-100 transition-opacity duration-500 animate-border-beam hidden dark:block"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(255, 255, 255, 0.95) 325deg, transparent 360deg)'
+                  }}
+                />
+              </>
+            )}
+
+            {/* Search Icon Trigger (Visible when closed) */}
+            <button 
+              type="button"
+              onClick={() => {
+                if (!isSearchOpen) {
+                  setIsSearchOpen(true);
+                  setTimeout(() => inputRef.current?.focus(), 100);
+                }
+              }}
+              className={`flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-[#0f0f0f] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors z-10 [perspective:600px] ${
+                isSearchOpen ? "pointer-events-none opacity-0 hidden" : "cursor-pointer opacity-100"
+              }`}
+            >
+              <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] flex items-center justify-center group-hover:animate-lens-flip transition-transform">
+                <LineDrawIcon
+                  path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  className="w-full h-full"
+                  baseColor="text-gray-400 dark:text-gray-600"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                  strokeWidth={2}
+                />
+              </div>
+            </button>
+
+            {/* Search Loading Light Beam Indicator */}
+            {isSearching && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2.5px] overflow-hidden rounded-full pointer-events-none z-20">
+                <div className="w-full h-full bg-gradient-to-r from-transparent via-blue-500 to-transparent animate-search-beam" />
+              </div>
+            )}
+
+            {/* Input Form (Slides in from right) */}
+            <form 
+              onSubmit={handleSearchSubmit} 
+              className={`absolute inset-0 flex items-center w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                isSearchOpen ? "translate-x-0 opacity-100 pointer-events-auto" : "translate-x-12 opacity-0 pointer-events-none"
+              }`}
+            >
+              {/* Back Button (Closes search) */}
               <button
                 type="button"
                 onClick={() => {
-                  setSearchQuery("");
-                  setSearchResults([]);
+                  setIsSearchOpen(false);
                   setShowResults(false);
                 }}
-                className="absolute right-10 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/70 rounded-full transition-all duration-200 active:scale-90"
+                className="flex items-center justify-center w-9 sm:w-12 h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 group"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-
-            {/* Submit arrow */}
-            <button
-              type="submit"
-              className="mobile-search-submit absolute right-1 bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center transition-transform"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-
-            {/* Live suggestions dropdown */}
-            {isMobileSearchOpen && showResults && (
-              <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-gray-200/80 rounded-2xl max-h-80 overflow-y-auto divide-y divide-gray-100">
-                {isSearching ? (
-                  <div className="p-4 text-center text-xs font-medium text-gray-500 flex items-center justify-center space-x-2">
-                    <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Searching...</span>
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  searchResults.map((video) => (
-                    <div
-                      key={video._id}
-                      onClick={() => {
-                        handleResultClick(video._id);
-                        setIsMobileSearchOpen(false);
-                      }}
-                      className="p-2.5 flex items-center space-x-3 hover:bg-blue-50/60 active:bg-blue-100/80 cursor-pointer transition-colors group"
-                    >
-                      <img
-                        src={getThumbnailUrl(video)}
-                        alt={video.title}
-                        className="w-12 h-8 object-cover rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
-                      />
-                      <div className="flex-1 min-w-0 pr-2">
-                        <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                          {video.title}
-                        </h4>
-                        <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                          {video?.owner?.name || "Channel"}
-                        </p>
-                      </div>
-                      <div className="text-gray-300 group-hover:text-blue-500 transition-colors">
-                        <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-xs font-medium text-gray-500">
-                    No video suggestions found
-                  </div>
-                )}
-              </div>
-            )}
-          </form>
-        </div>
-
-        {isMobileSearchOpen ? null : (
-
-
-          <>
-            {/* Left section: Drawer toggle & logo */}
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleToggleSidebar}
-                className="flex items-center justify-center w-11 h-11 bg-white rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
-                aria-label="Toggle navigation menu"
-              >
-                <img
-                  src="/svg_icons/menu.svg"
-                  alt="Menu"
-                  className="w-6 h-6"
+                <LineDrawIcon
+                  path="M15 19l-7-7 7-7"
+                  className="w-4 h-4 sm:w-[18px] sm:h-[18px]"
+                  baseColor="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                  strokeWidth={2.2}
                 />
               </button>
 
-              <Link to="/home" className="flex items-center text-lg sm:text-xl font-bold text-gray-800">
-                <img src={logo} className="mr-2 h-6 w-auto" alt="Project Logo" />
-                <span className="hidden sm:inline truncate max-w-[160px] md:max-w-none">ViewTube</span>
-              </Link>
-            </div>
-
-            {/* Center section: Highly Interactive & Aesthetic Search input bar */}
-            <div
-              className={`hidden sm:flex flex-1 mx-4 relative transition-all duration-300 ease-out ${
-                isFocused ? "max-w-2xl" : "max-w-lg"
-              }`}
-              ref={searchRef}
-            >
-              <form onSubmit={handleSearchSubmit} className="w-full relative flex items-center group">
+              {/* Input with live text shimmer */}
+              <div className="relative flex-1 h-full flex items-center min-w-0">
                 <input
                   ref={inputRef}
                   type="text"
-                  name="search"
-                  id="topbar-search"
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  className="w-full h-12 pl-12 pr-24 bg-gray-100/90 hover:bg-gray-100 border-[4px] border-gray-200/80 hover:border-gray-400/90 rounded-full text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-blue-200 focus:border-[1px] focus:ring-4 focus:ring-blue-600/50 shadow-sm focus:shadow-lg transition-all duration-300"
-                  placeholder="Search videos..."
+                  className={`w-full h-full bg-transparent text-sm sm:text-base font-medium placeholder:text-gray-500/80 dark:placeholder:text-gray-500 focus:outline-none min-w-0 px-1 ${
+                    searchQuery 
+                      ? "bg-clip-text text-transparent bg-[linear-gradient(110deg,#111827_35%,#9ca3af_50%,#111827_65%)] dark:bg-[linear-gradient(110deg,#d1d5db_35%,#ffffff_50%,#d1d5db_65%)] animate-text-shimmer caret-blue-600 dark:caret-blue-400" 
+                      : "text-gray-900 dark:text-gray-100"
+                  }`}
+                  placeholder="Search ViewTube..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  tabIndex={isSearchOpen ? 0 : -1}
                   autoComplete="off"
                 />
-                
-                {/* Interactive Left Search Icon */}
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400 group-hover:text-gray-600 group-focus-within:text-blue-600 group-focus-within:scale-110 transition-all duration-200">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                {/* ⌘K / Ctrl+K Hint */}
+                <div className={`absolute right-2 pointer-events-none transition-all duration-300 ease-out ${
+                  searchQuery || !isSearchOpen ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
+                }`}>
+                  <span className="hidden sm:flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    ⌘K
+                  </span>
                 </div>
+              </div>
 
-                {/* Right Action Elements inside the Input Bar */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1.5">
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSearchResults([]);
-                        setShowResults(false);
-                      }}
-                      className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 hover:rotate-90 hover:scale-110 rounded-full transition-all active:scale-95"
-                      title="Clear search"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
+              {/* Clear Button with Click Rotate-90 Micro-Interaction */}
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsClearing(true);
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setShowResults(false);
+                    setTimeout(() => {
+                      setIsClearing(false);
+                      inputRef.current?.focus();
+                    }, 200);
+                  }}
+                  className={`flex items-center justify-center w-8 h-8 mr-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all duration-200 flex-shrink-0 group ${
+                    isClearing ? "rotate-90 text-gray-900 dark:text-gray-100" : "rotate-0"
+                  }`}
+                  title="Clear search"
+                >
+                  <LineDrawIcon
+                    path="M6 18L18 6M6 6l12 12"
+                    className="w-4 h-4"
+                    baseColor="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
+                    activeColor="text-gray-900 dark:text-gray-100"
+                    strokeWidth={2.5}
+                  />
+                </button>
+              )}
 
-                  {!isFocused && !searchQuery && (
-                    <kbd className="hidden md:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold text-gray-400 bg-gray-200/70 border border-gray-300/60 rounded-md shadow-2xs pointer-events-none transition-opacity">
-                      <span>Ctrl</span>
-                      <span>K</span>
-                    </kbd>
-                  )}
+              {/* Submit Search Button */}
+              <button
+                type="submit"
+                className={`relative flex items-center justify-center w-8 h-8 sm:w-8 sm:h-8 mr-1 sm:mr-1.5 rounded-full transition-all duration-300 flex-shrink-0 overflow-hidden ${
+                  searchQuery
+                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 cursor-pointer"
+                    : "text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-transparent"
+                }`}
+                title="Search"
+              >
+                {/* Lens Icon */}
+                <svg 
+                  className={`absolute w-4 h-4 transition-all duration-300 ease-in-out ${searchQuery ? 'opacity-0 -rotate-90 pointer-events-none' : 'opacity-100 rotate-0'}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth={2} 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
 
-                  <button
-                    type="submit"
-                    className={`w-12 h-9 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-90 text-white flex items-center justify-center shadow-xs transition-all duration-200 flex-shrink-0 ${
-                      isFocused || searchQuery ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
-                    }`}
-                    title="Search"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
+                {/* Right Arrow (Enter) Icon */}
+                <svg 
+                  className={`absolute w-4 h-4 transition-all duration-300 ease-in-out ${searchQuery ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90 pointer-events-none'}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth={2.2} 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </form>
+          </div>
 
-                </div>
-              </form>
-
-
-
-              {/* Desktop Floating Search Results Suggestions Dropdown */}
-              {showResults && (
-                <div className="absolute left-0 right-0 top-12 z-50 bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-glass max-h-96 overflow-y-auto divide-y divide-gray-100 transition-all duration-200 animate-fadeIn">
-                  {isSearching ? (
-                    <div className="p-4 text-center text-xs font-medium text-gray-500 flex items-center justify-center space-x-2">
-                      <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Searching suggestions...</span>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map((video) => (
-                      <div
-                        key={video._id}
-                        onClick={() => handleResultClick(video._id)}
-                        className="p-2.5 flex items-center space-x-3 hover:bg-blue-50/60 cursor-pointer transition-colors group"
-                      >
-                        <img
-                          src={getThumbnailUrl(video)}
-                          alt={video.title}
-                          className="w-14 h-9 object-cover rounded-lg flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-200"
-                        />
-                        <div className="flex-1 min-w-0 pr-2">
-                          <h4 className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                            {video.title}
-                          </h4>
-                          <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {video?.owner?.name || "Channel"} • {video.views || 0} views • {formatDuration(video?.duration ?? 0)}
-                          </p>
-                        </div>
-                        <div className="text-gray-300 group-hover:text-blue-500 transition-colors">
-                          <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
+          {/* Floating Search Results Suggestions Dropdown */}
+          {showResults && isSearchOpen && (
+            <div className="absolute left-0 right-0 top-full mt-2 w-full z-50 bg-white dark:bg-[#0f0f0f] border-[0.35rem] border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 transition-all duration-200 animate-fadeIn">
+              {isSearching ? (
+                <div className="flex flex-col bg-white dark:bg-[#0f0f0f]">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-2.5 flex items-center space-x-3">
+                      <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg flex-shrink-0 animate-shimmer bg-gray-200 dark:bg-gray-800"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3.5 bg-gray-200 dark:bg-gray-800 rounded w-3/4 animate-shimmer"></div>
+                        <div className="h-2.5 bg-gray-200 dark:bg-gray-800 rounded w-1/2 animate-shimmer"></div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-xs font-medium text-gray-500">
-                      No video suggestions found for "{searchQuery}"
                     </div>
-                  )}
+                  ))}
+                </div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((video, index) => (
+                  <div
+                    key={video._id}
+                    onClick={() => {
+                      handleResultClick(video._id);
+                      setIsSearchOpen(false);
+                    }}
+                    className="p-2.5 flex items-center space-x-3 bg-white dark:bg-[#0f0f0f] hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer transition-colors group animate-slide-fade-up"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <div className="relative w-14 h-9 sm:w-16 sm:h-10 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800">
+                      <img
+                        src={getThumbnailUrl(video)}
+                        alt={video.title}
+                        className="w-full h-full object-cover rounded-lg shadow-sm"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {video.title}
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                        {video?.owner?.name || "Channel"} • {video.views || 0} views • {formatDuration(video?.duration ?? 0)}
+                      </p>
+                    </div>
+                    <div className="text-gray-300 dark:text-gray-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                      <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-[#0f0f0f]">
+                  No video suggestions found for "{searchQuery}"
                 </div>
               )}
             </div>
+          )}
+        </div>
 
 
 
-            {/* Right section: User profile */}
-            <div className="flex items-center space-x-2">
+            {/* Right section: User profile & Actions */}
+            <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className={`${isSearchOpen ? "hidden md:flex" : "hidden sm:flex"} items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors focus:outline-none group`}
+                aria-label="Toggle theme"
+                title="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <div className="relative w-5 h-5 flex items-center justify-center">
+                    {/* Base Subtle Sun Stroke */}
+                    <svg className="w-5 h-5 absolute inset-0 text-gray-700 dark:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    {/* Active Reforming Sun with Continuous Line-Draw on Hover */}
+                    <svg className="w-5 h-5 absolute inset-0 text-amber-500 dark:text-amber-300 group-hover:animate-sun-spin transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="relative w-5 h-5 flex items-center justify-center">
+                    {/* Base Subtle Moon Stroke */}
+                    <svg className="w-5 h-5 absolute inset-0 text-gray-300 dark:text-gray-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    {/* Active Reforming Moon with Continuous Line-Draw on Hover */}
+                    <svg className="w-5 h-5 absolute inset-0 text-gray-800 dark:text-gray-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
 
-
-            {/* Profile dropdown */}
-            {authStatus && (
-              <div className="relative ml-auto lg:ml-4">
+              {/* Desktop Upload Video Button */}
+              {authStatus && (
                 <button
                   type="button"
-                  className="flex text-sm  rounded-full border-4 border-gray-50  focus:border-gray-200  focus:scale-[0.8] transition-all duration-300 "
-                  id="user-menu-button-2"
-                  aria-expanded={dropdownVisible}
-                  onClick={toggleDropdown}
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className={`relative ${isSearchOpen ? "hidden md:inline-flex" : "hidden sm:inline-flex"} items-center justify-center p-[1px] rounded-full bg-gray-200/80 dark:bg-gray-700 text-sm transition-colors duration-300 group overflow-hidden`}
+                  title="Upload video"
                 >
-                  <span className="sr-only">Open user menu</span>
-                  {userdata ? (
-                    <>
-                      <img
-                        className="w-8 h-8 rounded-full"
-                        src={userdata.avatar}
-                        alt="User"
-                      />
-                    </>
-                  ) : (
-                    <li class="flex items-center">
-                      <div role="status">
-                        <svg
-                          aria-hidden="true"
-                          class="w-6 h-6 me-2 text-gray-200 animate-spin fill-black"
-                          viewBox="0 0 100 101"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                            fill="currentColor"
-                          />
-                          <path
-                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                            fill="currentFill"
-                          />
-                        </svg>
-                        <span class="sr-only">Loading...</span>
-                      </div>
-                      {/* Preparing your profile */}
-                    </li>
-                  )}
-                </button>
+                  {/* Border Light Sweep (Neutral Pure Light Beam) */}
+                  <div 
+                    className="absolute -inset-[200%] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-border-beam"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(75, 85, 99, 0.75) 320deg, transparent 360deg)'
+                    }}
+                  />
+                  <div 
+                    className="absolute -inset-[200%] pointer-events-none opacity-0 dark:group-hover:opacity-100 transition-opacity duration-500 animate-border-beam hidden dark:block"
+                    style={{
+                      background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(255, 255, 255, 0.95) 325deg, transparent 360deg)'
+                    }}
+                  />
 
-                <div
-                  ref={profileRef}
-                  className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white/80 backdrop-blur-xl rounded-[1.4rem] shadow-glass border-[0.4rem] border-white/30 transform transition-all duration-200 ease-out origin-top-right ${
-                    dropdownVisible
-                      ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                      : "opacity-0 scale-[0.9] translate-y-0 pointer-events-none"
-                  }`}
-                  id="dropdown-2"
-                >
+                  {/* Inner Pill Body */}
+                  <div className="relative flex items-center justify-center px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 w-full h-full transition-colors duration-300">
+                    <div className="relative flex items-center justify-center">
+                      {/* Base Layer */}
+                      <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 transition-colors duration-300">
+                        {/* Morphing Icon Container */}
+                        <div className="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                          {/* Initial "+" Icon */}
+                          <svg 
+                            className="w-5 h-5 absolute inset-0 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-2 group-hover:rotate-45" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+                          </svg>
+                          {/* Interactive Floating Upload Arrow Icon */}
+                          <svg 
+                            className="w-5 h-5 absolute inset-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:animate-upload-arrow transition-all duration-300" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold whitespace-nowrap">Upload</span>
+                      </div>
+
+                      {/* Shine Overlay — full contrast shimmer bands */}
+                      <div className="absolute inset-0 flex items-center space-x-2 text-gray-900 dark:text-white pointer-events-none opacity-0 group-hover:opacity-100 animate-mask-shimmer transition-opacity duration-300" aria-hidden="true">
+                        {/* Shimmer Overlay Morphing Icon */}
+                        <div className="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                          <svg 
+                            className="w-5 h-5 absolute inset-0 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-2 group-hover:rotate-45" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+                          </svg>
+                          <svg 
+                            className="w-5 h-5 absolute inset-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:animate-upload-arrow transition-all duration-300" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold whitespace-nowrap">Upload</span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Profile dropdown */}
+              {authStatus && (
+                <div className="relative ml-auto lg:ml-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    className="relative z-50 flex text-sm rounded-full border-4 border-gray-50 dark:border-gray-800 focus:border-gray-200 dark:focus:border-gray-700 transition-all duration-300"
+                    id="user-menu-button-2"
+                    aria-expanded={dropdownVisible}
+                    onClick={toggleDropdown}
+                  >
+                    <span className="sr-only">Open user menu</span>
+                    {userdata ? (
+                      <>
+                        <img
+                          className="w-8 h-8 rounded-full object-cover"
+                          src={userdata.avatar}
+                          alt="User"
+                        />
+                      </>
+                    ) : (
+                      <li className="flex items-center">
+                        <div role="status">
+                          <svg
+                            aria-hidden="true"
+                            className="w-6 h-6 me-2 text-gray-200 animate-spin fill-black"
+                            viewBox="0 0 100 101"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                              fill="currentColor"
+                            />
+                            <path
+                              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                              fill="currentFill"
+                            />
+                          </svg>
+                          <span className="sr-only">Loading...</span>
+                        </div>
+                      </li>
+                    )}
+                  </button>
+
+                  <div
+                    ref={profileRef}
+                    className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white dark:bg-[#0f0f0f] rounded-[1.4rem] border-[0.35rem] border-gray-200 dark:border-gray-800 transform transition-all duration-200 ease-out origin-top-right ${
+                      dropdownVisible
+                        ? "opacity-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 -translate-y-2 pointer-events-none"
+                    }`}
+                    id="dropdown-2"
+                  >
                   {userdata ? (
                     <>
-                      <div className="p-5 flex  rounded-[1.6rem]">
+                      <div className="p-5 flex rounded-t-[1.2rem] bg-white dark:bg-[#0f0f0f]">
                         <img
-                          className="w-14 h-14 rounded-full"
+                          className="w-14 h-14 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
                           src={userdata.avatar}
                           alt="User"
                         />
                         <div className="flex-1 px-3 mt-1 relative w-full max-w-auto overflow-hidden">
-                          <p className="text-sm text-gray-900 mb-2">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                             {userdata.name}
                           </p>
-                          <div className="border-2 m-1 mt-2 border-gray-100 "></div>
-                          <p className="fixed-size text-sm font-nromal text-gray-900 truncate">
-                            {" "}
+                          <div className="border-b-2 mx-1 mt-2 border-gray-100 dark:border-gray-800"></div>
+                          <p className="fixed-size text-sm font-normal text-gray-600 dark:text-gray-400 truncate mt-2">
                             {userdata.email}
                           </p>
                         </div>
                       </div>
                     </>
                   ) : (
-                    <div>Loading user data...</div>
+                    <div className="p-5 text-gray-700 dark:text-gray-300">Loading user data...</div>
                   )}
-                  <ul className="border-4 border-gray-100"></ul>
-                  <ul className="flex-1 align-items py-1 text-sm font-medium text-gray-700">
+                  <ul className="border-t-4 border-gray-100 dark:border-gray-800/50"></ul>
+
+                  {/* Mobile Quick Actions: Theme Toggle & Upload */}
+                  <div className="flex sm:hidden items-center justify-around px-4 py-2.5 border-b-2 border-gray-100 dark:border-gray-800/50">
+                    {/* Quick Theme Toggle */}
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group"
+                      aria-label="Toggle theme"
+                    >
+                      {theme === 'dark' ? (
+                        <div className="relative w-5 h-5 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-amber-500 dark:text-amber-300 group-hover:animate-sun-spin transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="relative w-5 h-5 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-gray-800 dark:text-gray-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                          </svg>
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+                    </button>
+
+                    {/* Quick Upload */}
+                    <button
+                      onClick={() => {
+                        setIsUploadModalOpen(true);
+                        setDropdownVisible(false);
+                      }}
+                      className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group"
+                      aria-label="Upload video"
+                    >
+                      <div className="relative w-5 h-5 flex items-center justify-center">
+                        <svg className="w-5 h-5 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-2 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+                        </svg>
+                        <svg className="w-5 h-5 absolute inset-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:animate-upload-arrow transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium">Upload</span>
+                    </button>
+                  </div>
+
+                  <ul className="flex-1 align-items py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                     <li>
                       <Link
                         to={"/customize_channel"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/customize_account.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
                         <span className="flex items-center ml-3">Account</span>
                       </Link>
                     </li>
-                    <li className="hover:bg-gray-100">
+                    <li>
                       <Link
                         to={"/videoStudio"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/videostudio.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
-                        <span className="flex items-center ml-3">
-                          Video Studio
-                        </span>
+                        <span className="flex items-center ml-3">Video Studio</span>
                       </Link>
                     </li>
-
-                    <li className="hover:bg-gray-100">
+                    <li>
                       <Link
                         to={"/dashboard"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/dashboard.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
-                        <span className="flex items-center ml-3">
-                          Dashboard
-                        </span>
+                        <span className="flex items-center ml-3">Dashboard</span>
                       </Link>
                     </li>
 
-                    <li className="my-1 border-2 border-gray-100"></li>
-                    <li className="hover:bg-gray-100">
+                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+                    <li>
                       <Link
                         to={"/keyboardShortcut"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/keyboard.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
-                        <span className="flex items-center ml-3">
-                          Keyboard Shortcuts
-                        </span>
+                        <span className="flex items-center ml-3">Keyboard Shortcuts</span>
                       </Link>
                     </li>
-                    <li className="hover:bg-gray-100">
+                    <li>
                       <Link
                         to={"/settings"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/settings.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
                         <span className="flex items-center ml-3">Settings</span>
                       </Link>
                     </li>
-                    <li className="my-1 border-2 border-gray-100"></li>
-                    <li className="hover:bg-gray-100">
+                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+                    <li>
                       <Link
                         to={"/help"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95  "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/help.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
                         <span className="flex items-center ml-3">Help</span>
                       </Link>
@@ -640,54 +800,57 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                     <li>
                       <Link
                         to={"/feedback"}
-                        className="flex items-center p-3 px-3 hover:bg-gray-100 focus:scale-95 "
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/feedback.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
                         <span className="flex items-center ml-3">Feedback</span>
                       </Link>
                     </li>
-                    <li className="my-1 border-2 border-gray-100"></li>
-                    <li className=" focus:bg-red-100 hover:text-red-500 ">
+                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+                    <li className="focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400">
                       <button
                         onClick={handleSignOut}
-                        className="block flex items-center p-3 px-3 w-full hover:bg-gray-100 focus:scale-95"
+                        className="block flex items-center p-3 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <img
                           src="/svg_icons/signout.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-5 h-5"
+                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
                         />
                         <span className="flex items-center ml-3">Sign out</span>
                       </button>
                     </li>
-                    <li className="hover:bg-red-50 focus:bg-red-100 hover:text-red-500 ">
+                    <li className="hover:bg-red-50 dark:hover:bg-red-900/20 focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400">
                       <button
                         onClick={toggleDropdown}
-                        className="group block flex items-center p-3 px-3 rounded-b-md w-full hover:text-red-600 focus:scale-95 focus:bg-red-100 transition-all duration-100 "
+                        className="group block flex items-center p-3 px-4 rounded-b-md w-full transition-all duration-100"
                       >
                         <img
                           src="/svg_icons/close.svg"
                           alt="Icon"
-                          className="fixed-size-icon w-4 h-4"
+                          className="fixed-size-icon w-4 h-4 dark:invert opacity-80 dark:opacity-100 group-hover:dark:invert-0"
                         />
-                        <span className="flex items-center ml-4 group-focus:text-red-600 group-focus:bg-red-100 ">
+                        <span className="flex items-center ml-4 group-focus:text-red-600 dark:group-focus:text-red-400">
                           Close
                         </span>
                       </button>
                     </li>
-                    <li className="m-2"></li>
                   </ul>
                 </div>
               </div>
             )}
           </div>
-        </>
-      )}
       </nav>
+
+      {/* Controlled Desktop/Global Upload Video Modal */}
+      <UploadVideo
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
     </>
   );
 }

@@ -53,21 +53,21 @@ export default function AuthPromptModal({ isOpen, onClose, actionType = "action"
       
       {/* Modal Card with "Parallax Rolling" transition */}
       <div 
-        className={`relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col items-center text-center transform transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col items-center text-center transform transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           animateIn ? "translate-y-0 scale-100 opacity-100 rotate-0" : "translate-y-16 scale-95 opacity-0 rotate-1"
         }`}
       >
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          className="absolute top-3 right-3 p-2 rounded-full text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         {/* Icon wrapper with staggered parallax entry */}
         <div 
-          className={`w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-5 transition-all duration-500 delay-75 ease-out ${
+          className={`w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-5 transition-all duration-500 delay-75 ease-out ${
             animateIn ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
           }`}
         >
@@ -78,7 +78,7 @@ export default function AuthPromptModal({ isOpen, onClose, actionType = "action"
 
         {/* Text content staggered */}
         <h3 
-          className={`text-xl font-bold text-gray-900 mb-2 transition-all duration-500 delay-100 ease-out ${
+          className={`text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 transition-all duration-500 delay-100 ease-out ${
             animateIn ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
           }`}
         >
@@ -86,7 +86,7 @@ export default function AuthPromptModal({ isOpen, onClose, actionType = "action"
         </h3>
         
         <p 
-          className={`text-sm text-gray-500 mb-8 transition-all duration-500 delay-150 ease-out ${
+          className={`text-sm text-gray-500 dark:text-gray-400 mb-8 transition-all duration-500 delay-150 ease-out ${
             animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
         >
@@ -107,7 +107,7 @@ export default function AuthPromptModal({ isOpen, onClose, actionType = "action"
           </Link>
           <Link 
             to="/signup"
-            className="w-full flex justify-center py-2.5 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors"
+            className="w-full flex justify-center py-2.5 px-4 border border-gray-300 dark:border-gray-700 rounded-full shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none transition-colors"
           >
             Create account
           </Link>

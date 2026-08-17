@@ -88,7 +88,7 @@ function Signup() {
       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
     </div>
   ) : (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 bg-gray-50 overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 bg-gray-50 dark:bg-black overflow-hidden">
       <Link 
         to="/" 
         className={`flex items-center justify-center mb-6 transition-all duration-700 ease-out ${
@@ -99,15 +99,15 @@ function Signup() {
       </Link>
 
       <div 
-        className={`w-full max-w-md p-6 sm:p-8 bg-white rounded-3xl border border-gray-200 shadow-sm space-y-6 transform transition-all duration-700 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          animateIn ? "translate-y-0 opacity-100 scale-100" : "translate-y-12 opacity-0 scale-95"
+        className={`w-full max-w-md p-6 sm:p-8 bg-white dark:bg-[#0f0f0f] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-6 transform transition-all duration-700 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          animateIn ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
         }`}
       >
         <div className={`transition-all duration-700 delay-150 ease-out ${animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
             Create Account
           </h2>
-          <p className="text-sm sm:text-base text-gray-500 mt-1">
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">
             to get started with Viewtube
           </p>
         </div>
@@ -117,14 +117,14 @@ function Signup() {
           <GoogleAuthButton setError={setError} />
 
           <div className="flex items-center justify-center space-x-2 my-4">
-            <span className="h-px w-full bg-gray-200"></span>
-            <span className="text-sm text-gray-500 font-medium">or</span>
-            <span className="h-px w-full bg-gray-200"></span>
+            <span className="h-px w-full bg-gray-200 dark:bg-gray-800"></span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">or</span>
+            <span className="h-px w-full bg-gray-200 dark:bg-gray-800"></span>
           </div>
 
           {/* Full Name */}
           <div>
-            <label htmlFor="name" className="block mb-2 text-sm font-semibold text-gray-900">
+            <label htmlFor="name" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Full Name
             </label>
             <input
@@ -133,7 +133,7 @@ function Signup() {
               id="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="bg-gray-50 text-base text-gray-900 rounded-xl block w-full p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              className="bg-gray-50 dark:bg-gray-900 text-base text-gray-900 dark:text-gray-100 rounded-xl block w-full p-3 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
               required
               placeholder="Your Full Name"
             />
@@ -141,7 +141,7 @@ function Signup() {
 
           {/* Email Address */}
           <div>
-            <label htmlFor="email" className="block mb-2 text-sm font-semibold text-gray-900">
+            <label htmlFor="email" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Email Address
             </label>
             <input
@@ -150,7 +150,7 @@ function Signup() {
               id="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="bg-gray-50 text-base text-gray-900 rounded-xl block w-full p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              className="bg-gray-50 dark:bg-gray-900 text-base text-gray-900 dark:text-gray-100 rounded-xl block w-full p-3 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
               required
               placeholder="name@company.com"
             />
@@ -163,7 +163,7 @@ function Signup() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block mb-2 text-sm font-semibold text-gray-900">
+            <label htmlFor="password" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Password
             </label>
             <input
@@ -173,7 +173,7 @@ function Signup() {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="•••••••• (Min 6 characters)"
-              className="bg-gray-50 text-base text-gray-900 rounded-xl block w-full p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+              className="bg-gray-50 dark:bg-gray-900 text-base text-gray-900 dark:text-gray-100 rounded-xl block w-full p-3 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
               required
               minLength={6}
             />
@@ -189,20 +189,20 @@ function Signup() {
           </button>
 
           {error && (
-            <div className="text-red-500 text-sm font-medium p-3 bg-red-50 rounded-xl border border-red-100">
+            <div className="text-red-500 text-sm font-medium p-3 bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-100 dark:border-red-900/50">
               {error}
             </div>
           )}
           
           {successMessage && (
-            <div className="text-green-600 text-sm font-medium p-3 bg-green-50 rounded-xl border border-green-100">
+            <div className="text-green-600 text-sm font-medium p-3 bg-green-50 dark:bg-green-900/30 rounded-xl border border-green-100 dark:border-green-900/50">
               {successMessage}
             </div>
           )}
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-            <span className="text-sm text-gray-600">Already have an account?</span>
-            <Link to="/login" className="text-sm font-semibold text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl transition-colors">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Already have an account?</span>
+            <Link to="/login" className="text-sm font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 py-2 rounded-xl transition-colors">
               Login here
             </Link>
           </div>

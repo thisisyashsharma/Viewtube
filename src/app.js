@@ -15,6 +15,10 @@ import cookieParser from "cookie-parser";
 import "dotenv/config";
 import path from "path";
 import { fileURLToPath } from "url";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import hpp from "hpp";
+import morgan from "morgan";
 
 import userAccount from "./routes/account.routes.js";
 import videoRouter from "./routes/video.routes.js";
@@ -32,12 +36,37 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ── Security Headers ──
+app.use(helmet());
+
+// ── Request Logging ──
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("combined"));
+}
+
+// ── Anti-Injection ──
+app.use(mongoSanitize());
+app.use(hpp());
+
 app.use(defaultLimiter);
+
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim());
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 

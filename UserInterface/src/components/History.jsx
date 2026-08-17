@@ -33,7 +33,7 @@ function History() {
   if (isLoading) {
     return (
       <PageContainer>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 px-4 sm:px-0">Watch History</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 px-4 sm:px-0">Watch History</h1>
         <SkeletonLoader count={8} />
       </PageContainer>
     );
@@ -42,8 +42,8 @@ function History() {
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Watch History</h1>
-        <span className="text-sm font-medium text-gray-500">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Watch History</h1>
+        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {history.length} {history.length === 1 ? "video" : "videos"}
         </span>
       </div>

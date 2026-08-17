@@ -38,28 +38,28 @@ function ShimmerOverlay() {
 
 function MetricCard({ title, value, subtitle }) {
   return (
-    <div className="relative bg-white border border-gray-100 rounded-xl p-4 shadow-sm overflow-hidden">
+    <div className="relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 shadow-sm overflow-hidden">
       <ShimmerOverlay />
-      <div className="text-sm text-gray-500">{title}</div>
-      <div className="mt-2 text-2xl font-semibold text-gray-900">{value}</div>
-      <div className="mt-1 text-xs text-gray-400">{subtitle}</div>
+      <div className="text-sm text-gray-500 dark:text-gray-400">{title}</div>
+      <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">{value}</div>
+      <div className="mt-1 text-xs text-gray-400 dark:text-gray-500">{subtitle}</div>
     </div>
   );
 }
 
 function ChartPlaceholder() {
   return (
-    <div className="relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-h-[220px] overflow-hidden">
+    <div className="relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm min-h-[220px] overflow-hidden">
       <ShimmerOverlay />
-      <div className="h-56 w-full bg-gray-100 rounded-md flex items-center justify-center">
-        <svg className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <div className="h-56 w-full bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+        <svg className="w-12 h-12 text-gray-300 dark:text-gray-600" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path d="M3 3v18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
           <path d="M7 12v6M11 8v10M15 4v14M19 14v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
         </svg>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="h-3 bg-gray-100 rounded" />
-        <div className="h-3 bg-gray-100 rounded" />
+        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded" />
+        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded" />
       </div>
     </div>
   );
@@ -67,29 +67,29 @@ function ChartPlaceholder() {
 
 function VideoRowPlaceholder() {
   return (
-    <tr className="relative bg-white border-b border-gray-100 ">
+    <tr className="relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
       <td className="px-4 py-3">
-        <div className="relative w-32 h-18 rounded-md overflow-hidden bg-gray-100">
+        <div className="relative w-32 h-18 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
           <ShimmerOverlay />
         </div>
       </td>
       <td className="px-4 py-3 w-full">
         <div className="relative">
           <ShimmerOverlay />
-          <div className="h-4 bg-gray-100 rounded w-3/5 mb-2" />
-          <div className="h-3 bg-gray-100 rounded w-2/5" />
+          <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/5 mb-2" />
+          <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/5" />
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">
+      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
         <div className="relative">
           <ShimmerOverlay />
-          <div className="h-3 bg-gray-100 rounded w-20" />
+          <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-20" />
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">
+      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
         <div className="relative">
           <ShimmerOverlay />
-          <div className="h-3 bg-gray-100 rounded w-16" />
+          <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-16" />
         </div>
       </td>
     </tr>
@@ -103,11 +103,11 @@ export default function VideoStudio() {
     <PageContainer>
       <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Studio</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage channel videos and analytics</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Studio</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage channel videos and analytics</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/help" className="text-sm font-semibold text-blue-600 hover:underline">Help</Link>
+          <Link to="/help" className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">Help</Link>
         </div>
       </header>
 
@@ -126,15 +126,15 @@ export default function VideoStudio() {
           <ChartPlaceholder />
 
           {/* Table: Recent uploads */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-gray-900">Recent Uploads</h2>
-              <div className="text-xs text-gray-500">Loading...</div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Recent Uploads</h2>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Loading...</div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-              <table className="w-full min-w-[640px] bg-white text-left">
-                <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+              <table className="w-full min-w-[640px] bg-white dark:bg-gray-900 text-left">
+                <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                   <tr>
                     <th className="px-4 py-3">Thumbnail</th>
                     <th className="px-4 py-3">Title</th>
@@ -142,7 +142,7 @@ export default function VideoStudio() {
                     <th className="px-4 py-3">Comments</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {Array.from({ length: 6 }).map((_, idx) => (
                     <VideoRowPlaceholder key={idx} />
                   ))}
@@ -154,21 +154,21 @@ export default function VideoStudio() {
 
         {/* Right column: Sidebar */}
         <aside className="lg:col-span-3 space-y-6">
-          <div className="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden">
+          <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm overflow-hidden">
             <ShimmerOverlay />
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Channel Stats</h3>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Channel Stats</h3>
             <div className="space-y-3">
-              <div className="h-4 bg-gray-100 rounded w-3/4" />
-              <div className="h-3 bg-gray-100 rounded w-1/2" />
+              <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/4" />
+              <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
             </div>
           </div>
 
-          <div className="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden">
+          <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm overflow-hidden">
             <ShimmerOverlay />
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Audience</h3>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Audience</h3>
             <div className="space-y-2">
-              <div className="h-8 bg-gray-100 rounded" />
-              <div className="h-8 bg-gray-100 rounded" />
+              <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded" />
+              <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded" />
             </div>
           </div>
         </aside>

@@ -26,3 +26,7 @@
 {"timestamp":"2026-07-30T13:18:34.207Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
 {"timestamp":"2026-07-30T13:19:10.686Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
 {"timestamp":"2026-07-30T13:19:44.682Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
+{"timestamp":"2026-08-12T15:01:13.758Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
+{"timestamp":"2026-08-15T13:11:49.996Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
+{"timestamp":"2026-08-17T07:21:24.572Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}
+{"timestamp":"2026-08-17T07:21:53.076Z","title":"Great feature request","description":"Please add transcript capabilities!","photos":[],"ip":"::ffff:127.0.0.1","userAgent":null}

@@ -5,8 +5,10 @@ import { uploadToGCSStep } from "../pipeline/steps/uploadToGCS.step.js";
 import { uploadThumbnailToGCSStep } from "../pipeline/steps/uploadThumbnailToGCS.step.js";
 import { saveMetadataStep } from "../pipeline/steps/saveMetadata.step.js";
 import { compressVideoStep } from "../pipeline/steps/compressVideo.step.js";
+import { moderateContentStep } from "../pipeline/steps/moderateContent.step.js";
 
 const STEPS = [
+  moderateContentStep,
   validateQuotaStep,
   compressVideoStep,
   uploadToGCSStep,

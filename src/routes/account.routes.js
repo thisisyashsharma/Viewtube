@@ -35,6 +35,7 @@ import {
   loginValidation,
   mongoIdValidation,
 } from "../middlewares/validate.middleware.js";
+import { moderateContent } from "../middlewares/contentModerator.middleware.js";
 
 const router = Router();
 
@@ -54,7 +55,7 @@ router
   .delete(authLimiter, verifyJWT, validate(mongoIdValidation("id")), verifyOwnerOrAdmin("id"), deleteAccount);
 router
   .route("/update/:id")
-  .put(verifyJWT, validate(mongoIdValidation("id")), verifyOwnerOrAdmin("id"), upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateAccount);
+  .put(verifyJWT, validate(mongoIdValidation("id")), verifyOwnerOrAdmin("id"), upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), moderateContent, updateAccount);
 
 router.route("/userData/:id").get(validate(mongoIdValidation("id")), getUserById);
 router.route("/history").get(verifyJWT, GetWatchHistory);

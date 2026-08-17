@@ -76,7 +76,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
       onMouseLeave={handleMouseLeave}
     >
       <a href={`/watch/${video._id}`} onClick={handleNavigate} className="w-full">
-        <div className="relative w-full aspect-video rounded-none sm:rounded-xl bg-gray-200 overflow-hidden shadow-none sm:shadow-sm">
+        <div className="relative w-full aspect-video rounded-none sm:rounded-xl bg-gray-200 dark:bg-gray-800 overflow-hidden shadow-none sm:shadow-sm">
 
           <img
             src={displayImgSrc}
@@ -86,7 +86,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
             className="w-full h-full object-cover transform transition-transform duration-300"
             onError={(e) => {
               if (!e.currentTarget.dataset.fallbackApplied) {
-                e.currentTarget.src = `${import.meta.env.VITE_API_BASE_URL || ""}/placeholders/noThumbnail.png`;
+                e.currentTarget.src = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360' viewBox='0 0 640 360'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Cpath d='M280 140l100 40-100 40z' fill='%239ca3af'/%3E%3C/svg%3E";
                 e.currentTarget.dataset.fallbackApplied = "true";
               }
             }}
@@ -116,21 +116,21 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
             <img
               src={video?.owner?.avatar}
               alt={video?.owner?.name || "Channel avatar"}
-              className="w-9 h-9 rounded-full object-cover border border-gray-100"
+              className="w-9 h-9 rounded-full object-cover border border-gray-100 dark:border-gray-800"
               loading="lazy"
             />
           </Link>
         )}
         <div className="flex flex-col min-w-0 flex-1 pr-6">
           <Link to={`/watch/${video._id}`}>
-            <h3 className="font-semibold text-sm sm:text-base text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+            <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
               {video?.title || "Untitled Video"}
             </h3>
           </Link>
-          <span className="text-xs sm:text-sm text-gray-600 line-clamp-1 mt-1 font-medium hover:text-gray-900">
+          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mt-1 font-medium hover:text-gray-900 dark:hover:text-gray-200">
             {video?.owner?.name || "Unknown Channel"}
           </span>
-          <div className="flex items-center text-xs text-gray-500 mt-0.5 space-x-1.5">
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-0.5 space-x-1.5">
             <span>{video?.views ?? 0} views</span>
             <span>•</span>
             <span>{video?.likesCount ?? video?.likes ?? 0} likes</span>
@@ -146,7 +146,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
                 e.stopPropagation();
                 setMenuOpen(!menuOpen);
               }}
-              className="p-1 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
               title="More options"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -155,7 +155,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50 text-xs font-medium divide-y divide-gray-100 animate-fadeIn">
+              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 py-1.5 z-50 text-xs font-medium divide-y divide-gray-100 dark:divide-gray-800 animate-fadeIn">
                 {onEdit && (
                   <button
                     onClick={(e) => {
@@ -164,7 +164,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
                       setMenuOpen(false);
                       onEdit(video);
                     }}
-                    className="w-full px-4 py-2.5 text-left text-gray-800 hover:bg-gray-100 flex items-center space-x-2 transition-colors"
+                    className="w-full px-4 py-2.5 text-left text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-2 transition-colors"
                   >
                     <span>✏️</span>
                     <span>Edit Video Details</span>
@@ -178,7 +178,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
                       setMenuOpen(false);
                       onDelete(video._id);
                     }}
-                    className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                    className="w-full px-4 py-2.5 text-left text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2 transition-colors"
                   >
                     <span>🗑️</span>
                     <span>Delete Video</span>
@@ -192,7 +192,7 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
                       setMenuOpen(false);
                       onReport(video._id);
                     }}
-                    className="w-full px-4 py-2.5 text-left text-gray-800 hover:bg-gray-100 flex items-center space-x-2 transition-colors"
+                    className="w-full px-4 py-2.5 text-left text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center space-x-2 transition-colors"
                   >
                     <span>⚠️</span>
                     <span>Report</span>

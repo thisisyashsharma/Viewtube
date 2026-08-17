@@ -10,8 +10,10 @@ function formatDuration(seconds) {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+const FALLBACK_THUMBNAIL = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360' viewBox='0 0 640 360'%3E%3Crect width='100%25' height='100%25' fill='%231f2937'/%3E%3Cpath d='M280 140l100 40-100 40z' fill='%239ca3af'/%3E%3C/svg%3E";
+
 function getPosterFromVideo(video) {
-  return `${BASE_URL}/placeholders/no-thumbnail.png`;
+  return FALLBACK_THUMBNAIL;
 }
 
 function getThumbnailUrl(video) {

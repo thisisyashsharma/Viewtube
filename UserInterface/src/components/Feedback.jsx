@@ -138,7 +138,7 @@ export default function Feedback() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black p-4">
       <div className="w-full max-w-4xl relative">
         {/* Modal-style centered toast overlay (renders when toastVisible true) */}
         {toastVisible && (
@@ -153,7 +153,7 @@ export default function Feedback() {
 
             {/* Toast card */}
             <div
-              className="relative z-10 max-w-md w-full mx-4 bg-white rounded-2xl shadow-2xl border p-6 transform transition-all"
+              className="relative z-10 max-w-md w-full mx-4 bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 transform transition-all"
               onClick={(e) => e.stopPropagation()} // prevent backdrop click when clicking inside the card
             >
               {/* Close button */}
@@ -182,7 +182,7 @@ export default function Feedback() {
                 </div>
 
                 <div className="flex-1">
-                  <div className="font-semibold text-gray-900">{toast}</div>
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{toast}</div>
                   <div className="text-xs text-gray-500 mt-1">Thanks — we received your feedback.</div>
                 </div>
               </div>
@@ -190,36 +190,36 @@ export default function Feedback() {
           </div>
         )}
 
-        <div className="bg-white rounded-3xl p-6 border-4 border-gray-100">
+        <div className="bg-white dark:bg-[#0f0f0f] rounded-3xl p-6 border-4 border-gray-100 dark:border-gray-800">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-semibold">Feedback</h1>
+              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-gray-100">Feedback</h1>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Title of feedback"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   maxLength={120}
                 />
                 <div className="text-xs text-gray-400 mt-1">{title.length}/120</div>
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Attach photos (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attach photos (optional)</label>
 
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                  className="relative flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-xl hover:border-blue-400 transition cursor-pointer bg-white"
+                  className="relative flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-blue-400 transition cursor-pointer bg-white dark:bg-gray-900"
                 >
                   <input
                     ref={fileInputRef}
@@ -231,7 +231,7 @@ export default function Feedback() {
                   />
 
                   <div className="text-center py-4">
-                    <div className="text-gray-500">Drag & drop images here, or click to choose</div>
+                    <div className="text-gray-500 dark:text-gray-400">Drag & drop images here, or click to choose</div>
                   </div>
                 </div>
 
@@ -244,12 +244,12 @@ export default function Feedback() {
                         <button
                           type="button"
                           onClick={() => removePhotoByIndex(i)}
-                          className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow text-gray-600 border"
+                          className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full p-1 shadow text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
                           aria-label={`Remove ${pr.name}`}
                         >
                           ✕
                         </button>
-                        <div className="text-xs truncate mt-1">{pr.name}</div>
+                        <div className="text-xs text-gray-900 dark:text-gray-300 truncate mt-1">{pr.name}</div>
                       </div>
                     ))}
                   </div>
@@ -258,20 +258,20 @@ export default function Feedback() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Write your feedback here..."
                 rows={6}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
                 maxLength={5000}
               />
               <div className="text-xs text-gray-400 mt-1">{description.length}/5000</div>
             </div>
 
             {loading && (
-              <div className="w-full bg-gray-100 rounded overflow-hidden h-3">
+              <div className="w-full bg-gray-100 dark:bg-gray-800 rounded overflow-hidden h-3">
                 <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-600" style={{ width: `${progress}%` }} />
               </div>
             )}
@@ -292,7 +292,7 @@ export default function Feedback() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                  className="px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
                   disabled={loading}
                 >
                   Reset

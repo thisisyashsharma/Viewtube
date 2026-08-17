@@ -4,6 +4,10 @@ import path from "path";
 import fs from "fs";
 import { receiveFeedback } from "../controllers/feedback.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { feedbackLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import { feedbackValidation } from "../middlewares/validate.middleware.js";
+import { moderateContent } from "../middlewares/contentModerator.middleware.js";
 
 const router = Router();
 
@@ -51,6 +55,6 @@ const upload = multer({
  * POST /api/v1/feedback
  * fields: title, description, photos[] (optional)
  */
-router.post("/", verifyJWT, upload.array("photos[]", 8), receiveFeedback);
+router.post("/", feedbackLimiter, verifyJWT, upload.array("photos[]", 8), moderateContent, validate(feedbackValidation), receiveFeedback);
 
 export default router;

@@ -85,12 +85,12 @@ function CustomizeChannel() {
     const isEditing = editState[field];
     return (
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 group relative">
-        <label className="sm:w-32 text-sm font-semibold text-gray-900">{label}</label>
+        <label className="sm:w-32 text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</label>
         {isEditing || field === 'password' || field === 'avatar' ? (
           <div className="flex-1 flex gap-3">
             <input
               type={type}
-              className="flex-1 p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={value}
               onChange={onChange}
               placeholder={placeholder}
@@ -99,15 +99,15 @@ function CustomizeChannel() {
               Save
             </button>
             {field !== 'password' && field !== 'avatar' && (
-              <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200" onClick={() => toggleEdit(field)}>
+              <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 dark:text-gray-400 font-semibold bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => toggleEdit(field)}>
                 Cancel
               </button>
             )}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-between p-2.5 bg-transparent border border-transparent hover:bg-gray-50 hover:border-gray-200 rounded-xl transition-colors cursor-pointer" onClick={() => toggleEdit(field)}>
-            <span className="text-gray-900 text-sm">{value || <span className="text-gray-400 italic">Not set</span>}</span>
-            <button className="text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex-1 flex items-center justify-between p-2.5 bg-transparent border border-transparent hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700 rounded-xl transition-colors cursor-pointer" onClick={() => toggleEdit(field)}>
+            <span className="text-gray-900 dark:text-gray-100 text-sm">{value || <span className="text-gray-400 italic">Not set</span>}</span>
+            <button className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
             </button>
           </div>
@@ -127,10 +127,10 @@ function CustomizeChannel() {
     </PageContainer>
   ) : (
     <PageContainer>
-      <div className="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="max-w-2xl mx-auto bg-white dark:bg-[#0f0f0f] p-4 sm:p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Customize Channel</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your channel details and profile</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Customize Channel</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your channel details and profile</p>
         </div>
 
         {/* Name */}
@@ -144,13 +144,13 @@ function CustomizeChannel() {
 
         {/* About */}
         <div className="mb-6 group relative">
-          <label className="block mb-2 text-sm font-semibold text-gray-900">
+          <label className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
             About (Channel description)
           </label>
           {editState.about ? (
             <div>
               <textarea
-                className="mb-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none block w-full p-3"
+                className="mb-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none block w-full p-3"
                 rows={4}
                 maxLength={1000}
                 value={about}
@@ -158,7 +158,7 @@ function CustomizeChannel() {
                 placeholder="Tell viewers about your channel…"
               />
               <div className="flex justify-end gap-3">
-                <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 font-semibold bg-gray-100 hover:bg-gray-200" onClick={() => toggleEdit('about')}>
+                <button className="px-4 py-2 rounded-[0.5rem] text-gray-600 dark:text-gray-400 font-semibold bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => toggleEdit('about')}>
                   Cancel
                 </button>
                 <button className={saveBtnBase} onClick={() => { saveAbout(); toggleEdit('about'); }}>
@@ -167,9 +167,9 @@ function CustomizeChannel() {
               </div>
             </div>
           ) : (
-            <div className="w-full p-4 bg-transparent border border-transparent hover:bg-gray-50 hover:border-gray-200 rounded-xl transition-colors cursor-pointer relative" onClick={() => toggleEdit('about')}>
-              <p className="text-gray-900 text-sm whitespace-pre-wrap">{about || <span className="text-gray-400 italic">No description provided.</span>}</p>
-              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="w-full p-4 bg-transparent border border-transparent hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700 rounded-xl transition-colors cursor-pointer relative" onClick={() => toggleEdit('about')}>
+              <p className="text-gray-900 dark:text-gray-100 text-sm whitespace-pre-wrap">{about || <span className="text-gray-400 italic">No description provided.</span>}</p>
+              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
             </div>
@@ -178,10 +178,10 @@ function CustomizeChannel() {
 
         {/* Avatar */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="sm:w-32 text-sm font-semibold text-gray-900">Avatar</label>
+          <label className="sm:w-32 text-sm font-semibold text-gray-900 dark:text-gray-100">Avatar</label>
           <input
             type="file"
-            className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl p-2.5"
+            className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl p-2.5"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             accept="image/*"
           />
@@ -190,10 +190,10 @@ function CustomizeChannel() {
           </button>
         </div>
 
-        <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
+        <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-end">
           <button
             onClick={() => history("/your_channel")}
-            className="px-6 py-2.5 rounded-xl text-white font-medium bg-gray-900 hover:bg-black transition-colors"
+            className="px-6 py-2.5 rounded-xl text-white dark:text-gray-900 font-medium bg-gray-900 dark:bg-gray-100 hover:bg-black dark:hover:bg-white transition-colors"
           >
             Done
           </button>

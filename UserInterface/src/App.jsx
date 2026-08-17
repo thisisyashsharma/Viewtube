@@ -6,6 +6,9 @@ import { useMediaQuery } from "./hooks/useMediaQuery";
 function App() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [isDrawerOpen, setIsDrawerOpen] = useState(isDesktop);
+  const DEFAULT_SIDEBAR_WIDTH = 208;
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const location = useLocation();
 
   // Sync drawer state with screen size changes
@@ -13,10 +16,18 @@ function App() {
     setIsDrawerOpen(isDesktop);
   }, [isDesktop]);
 
+  // Reset sidebar width to default whenever drawer is closed
+  useEffect(() => {
+    if (!isDrawerOpen) {
+      setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
+    }
+  }, [isDrawerOpen]);
+
   // Close drawer on mobile route changes
   useEffect(() => {
     if (!isDesktop) {
       setIsDrawerOpen(false);
+      setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
     }
   }, [location.pathname, isDesktop]);
 
@@ -36,17 +47,37 @@ function App() {
     <>
       <Navbar
         isDrawerOpen={isDrawerOpen}
-        onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
+        onToggleDrawer={() => {
+          setIsDrawerOpen((prev) => {
+            const next = !prev;
+            if (!next) {
+              setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
+            }
+            return next;
+          });
+        }}
       />
-      <div className="flex pt-14 min-h-dvh bg-gray-50 transition-all duration-300">
+      <div className="flex pt-16 min-h-dvh bg-gray-50 dark:bg-[#0f0f0f] transition-all duration-300">
         <Sidebar
           isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
+          onClose={() => {
+            setIsDrawerOpen(false);
+            setSidebarWidth(DEFAULT_SIDEBAR_WIDTH);
+          }}
+          width={sidebarWidth}
+          onWidthChange={setSidebarWidth}
+          isDragging={isDraggingSidebar}
+          setIsDragging={setIsDraggingSidebar}
         />
         <div
           id="main-content"
-          className={`relative w-full min-h-dvh overflow-y-auto bg-gray-50 transition-[margin] duration-300 ease-in-out ${
-            isDesktop && isDrawerOpen ? "lg:ml-52" : "ml-0"
+          style={{
+            marginLeft: isDesktop && isDrawerOpen ? `${sidebarWidth}px` : 0,
+          }}
+          className={`relative w-full min-h-dvh overflow-y-auto bg-gray-50 dark:bg-[#0f0f0f] ${
+            isDraggingSidebar
+              ? ""
+              : "transition-[margin] duration-300 ease-in-out"
           }`}
         >
           <main className="w-full pb-16 sm:pb-0">

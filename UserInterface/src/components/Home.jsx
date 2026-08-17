@@ -15,12 +15,12 @@ axios.defaults.withCredentials = true;
 
 function ShimmerCard() {
   return (
-    <div className="relative bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-      <div className="absolute inset-0 pointer-events-none shimmer-only-here" />
+    <div className="relative bg-white dark:bg-[#0f0f0f] border-2 border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm transition-colors duration-200">
+      <div className="absolute inset-0 pointer-events-none shimmer-only-here dark:opacity-20" />
       <div className="p-3 space-y-2">
-        <div className="w-full h-40 bg-gray-100 rounded-xl" />
-        <div className="h-4 bg-gray-100 rounded-lg w-3/4" />
-        <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+        <div className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-lg w-3/4" />
+        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-lg w-1/2" />
       </div>
       <style>{`
         .shimmer-only-here {
@@ -207,21 +207,21 @@ export default function Home() {
 
   return (
     <>
-      <div className="lg:mt-8 bg-white grid grid-cols-1 px-0 sm:px-8 pt-4 sm:pt-6 xl:grid-cols-3 xl:gap-4">
-        <div className="mb-4 col-span-full xl:mb-2 px-4 sm:px-0">
+      <div className="lg:mt-8 bg-white dark:bg-[#0f0f0f] transition-colors duration-200 grid grid-cols-1 px-4 sm:px-8 lg:px-12 pt-4 sm:pt-6 xl:grid-cols-3 xl:gap-4 w-full max-w-screen-2xl mx-auto">
+        <div className="mb-4 col-span-full xl:mb-2 px-0">
           {/* Search Results Header */}
           {isSearchMode && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-semibold">
+                <h1 className="text-2xl font-semibold dark:text-gray-100">
                   Search results for "{searchQuery}"
-                  <span className="text-sm font-normal text-gray-600 ml-2">
+                  <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
                     ({videosAll.length} videos)
                   </span>
                 </h1>
                 <button
                   onClick={handleClearSearch}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
                 >
                   Clear Search
                 </button>
@@ -236,7 +236,7 @@ export default function Home() {
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       filter === option.key
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                     }`}
                   >
                     {option.label}
@@ -249,9 +249,9 @@ export default function Home() {
           {/* Normal mode header */}
           {!isSearchMode && !fetching && (
             <div className="mb-6">
-              <h1 className="text-2xl font-semibold">
+              <h1 className="text-2xl font-semibold dark:text-gray-100">
                 Recommended Videos
-                <span className="text-sm font-normal text-gray-600 ml-2">
+                <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
                   ({videosAll.length} videos)
                 </span>
               </h1>
@@ -299,10 +299,10 @@ export default function Home() {
               {/* No results message for search */}
               {!fetching && isSearchMode && videosAll.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     No videos found for "{searchQuery}"
                   </p>
-                  <p className="text-gray-400 mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 mt-2">
                     Try different keywords or check spelling
                   </p>
                 </div>
@@ -314,10 +314,10 @@ export default function Home() {
                 videosAll.length === 0 &&
                 !error && (
                   <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">
                       No videos available yet
                     </p>
-                    <p className="text-gray-400 mt-2">
+                    <p className="text-gray-400 dark:text-gray-500 mt-2">
                       Be the first to upload a video!
                     </p>
                   </div>

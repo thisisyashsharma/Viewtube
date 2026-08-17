@@ -63,10 +63,18 @@ function Routing() {
                   }
                 />
                 <Route
+                  path="videos"
+                  element={
+                    <AuthLayout>
+                      <AllVideo />
+                    </AuthLayout>
+                  }
+                />
+                <Route
                   path="upload_video"
                   element={
                     <AuthLayout>
-                      <UploadVideo />
+                      <AllVideo />
                     </AuthLayout>
                   }
                 />

@@ -18,18 +18,36 @@ export function validateEnvironment() {
   }
 
   // Warn if using placeholder / default secret values
-  if (
-    process.env.ACCESS_TOKEN_SECRET === "supersecretkey" ||
-    process.env.REFRESH_TOKEN_SECRET === "anothersecretkey"
-  ) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "FATAL: Insecure default JWT secrets detected in production environment!"
-      );
-    } else {
-      console.warn(
-        "⚠️ WARNING: Using default development JWT secrets. Update ACCESS_TOKEN_SECRET and REFRESH_TOKEN_SECRET in .env for production."
-      );
+  const insecurePatterns = [
+    "supersecretkey",
+    "anothersecretkey",
+    "your_super_secret",
+    "test_access_secret",
+    "changeme",
+  ];
+
+  for (const key of ["ACCESS_TOKEN_SECRET", "REFRESH_TOKEN_SECRET"]) {
+    const val = (process.env[key] || "").toLowerCase();
+    const isInsecure = insecurePatterns.some((p) => val.includes(p));
+    const isTooShort = val.length < 32;
+
+    if (isInsecure || isTooShort) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          `FATAL: ${key} is insecure (too short or uses a known placeholder). Use a strong 32+ character random secret in production.`
+        );
+      } else {
+        console.warn(
+          `⚠️  WARNING: ${key} appears weak (${isTooShort ? "< 32 chars" : "matches placeholder pattern"}). Update it in .env for production.`
+        );
+      }
     }
+  }
+
+  // Validate CORS_ORIGIN is set in production
+  if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGIN) {
+    console.warn(
+      "⚠️  WARNING: CORS_ORIGIN is not set. Defaulting to localhost. Set it to your production domain(s)."
+    );
   }
 }
