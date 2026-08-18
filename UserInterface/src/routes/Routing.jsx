@@ -223,11 +223,10 @@ function Routing() {
                 path="trending"
                 element={<Trending />}
               />
+              <Route path="channels/search" element={<ChannelSearchPage />} />
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<Signup />} />
             </Route>
-
-            <Route path="/channels/search" element={<ChannelSearchPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
           </Routes>
         </BrowserRouter>
       </SearchProvider>

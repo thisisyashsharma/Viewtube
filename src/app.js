@@ -31,13 +31,20 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 import { defaultLimiter } from "./middlewares/rateLimiter.middleware.js";
 
+ 
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ── Security Headers ──
-app.use(helmet());
+// ── Security Headers (Configured for OAuth Popups & Media) ──
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // ── Request Logging ──
 if (process.env.NODE_ENV !== "test") {

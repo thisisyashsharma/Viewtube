@@ -3,3 +3,6 @@ export { default as EmptyState } from './EmptyState';
 export { default as SkeletonLoader } from './SkeletonLoader';
 export { default as LineDrawIcon } from './LineDrawIcon';
 export { default as ShimmerText } from './ShimmerText';
+export { default as RebuildingText } from './RebuildingText';
+export { default as PrismText } from './PrismText';
+export { default as ProfileAnimAvatar } from './ProfileAnimAvatar';

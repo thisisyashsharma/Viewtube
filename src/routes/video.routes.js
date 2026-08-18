@@ -34,11 +34,11 @@ router.get("/stream/:filename", streamVideo);
 router.route("/allVideo").get(getAllVideos);
 router.route("/allUserVideo/:owner").get(getAllUserVideos);
 router.route("/videoData/:id").get(VideoDataById);
+router.route("/search").get(searchVideos);
 
 router.use(verifyJWT); // Apply verifyJWT middleware to all routes below this line
 
 router.get("/subscribedFeed", getSubscribedVideos);
-router.route("/search").get(searchVideos);
 
 router.route("/publish").post(uploadLimiter, videoUpload, validate(videoPublishValidation), moderateContent, publishAVideo);
 router.route("/delete/:id").delete(deleteVideoById);

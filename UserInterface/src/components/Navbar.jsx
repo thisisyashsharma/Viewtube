@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getThumbnailUrl, formatDuration } from "../utils/thumbnail.utils";
 import ChannelFilter from "./ChannelFilter";
 const logo = "/svg_icons/project.svg";
-import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../store/slice/authSlice";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import UploadVideo from "./UploadVideo";
 import { useTheme } from "../context/ThemeContext";
-import { LineDrawIcon } from "./common";
+import { LineDrawIcon, PrismText, ProfileAnimAvatar } from "./common";
 
 function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
   const { theme, toggleTheme } = useTheme();
@@ -22,9 +21,68 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const searchRef = useRef(null);
   const profileRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Primary top-level bottom nav tabs (where standard hamburger menu is shown)
+  const PRIMARY_BOTTOM_NAV_TABS = ["/", "/home", "/subscriptions", "/your_channel"];
+  const isSubPage = !PRIMARY_BOTTOM_NAV_TABS.includes(location.pathname);
+
+  // Profile Animation Setting State ('random' | 'off' | '0'..'9')
+  const [animSetting, setAnimSetting] = useState(() => {
+    return localStorage.getItem("viewtube_profile_anim_mode") || "random";
+  });
+
+  const [activeAnimIndex, setActiveAnimIndex] = useState(() => {
+    const saved = localStorage.getItem("viewtube_profile_anim_mode") || "random";
+    if (saved === "off") return -1;
+    if (saved === "random") return Math.floor(Math.random() * 10);
+    return Number(saved);
+  });
+
+  const [isProfileHovered, setIsProfileHovered] = useState(false);
+
+  useEffect(() => {
+    const handleAnimChange = (e) => {
+      const newMode = e.detail || localStorage.getItem("viewtube_profile_anim_mode") || "random";
+      setAnimSetting(newMode);
+      if (newMode === "off") {
+        setActiveAnimIndex(-1);
+      } else if (newMode === "random") {
+        setActiveAnimIndex(Math.floor(Math.random() * 10));
+      } else {
+        setActiveAnimIndex(Number(newMode));
+      }
+    };
+
+    window.addEventListener("viewtube_profile_anim_change", handleAnimChange);
+    window.addEventListener("storage", handleAnimChange);
+
+    return () => {
+      window.removeEventListener("viewtube_profile_anim_change", handleAnimChange);
+      window.removeEventListener("storage", handleAnimChange);
+    };
+  }, []);
+
+  const handleProfileMouseEnter = () => {
+    setIsProfileHovered(true);
+    if (animSetting === "random") {
+      setActiveAnimIndex((prev) => {
+        let next;
+        do {
+          next = Math.floor(Math.random() * 10);
+        } while (next === prev);
+        return next;
+      });
+    }
+  };
+
+  const handleProfileMouseLeave = () => {
+    setIsProfileHovered(false);
+  };
 
   const handleToggleSidebar = () => {
     if (onToggleDrawer) {
@@ -210,48 +268,88 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
     <>
       <nav className="fixed top-0 left-0 z-[var(--z-nav,30)] w-full h-16 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md border-b-[0.35rem] border-gray-200/80 dark:border-gray-800/80 px-3 flex items-center justify-between transition-colors duration-200">
         
-        {/* Left section: Drawer toggle & logo */}
+        {/* Left section: Back Button / Drawer Toggle & logo */}
         <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
-          <button
-            onClick={handleToggleSidebar}
-            className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-white dark:bg-[#0f0f0f] rounded-xl border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-            aria-label={isDrawerOpen ? "Close navigation menu" : "Open navigation menu"}
-            title={isDrawerOpen ? "Close menu" : "Open menu"}
-          >
-            <LineDrawIcon
-              path={isDrawerOpen ? "M19 12H5m7 7l-7-7 7-7" : "M4 6h16M4 12h16M4 18h16"}
-              className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
-              baseColor="text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-              activeColor="text-gray-900 dark:text-gray-100"
-              strokeWidth={2}
-            />
-          </button>
+          {isDrawerOpen ? (
+            <button
+              onClick={handleToggleSidebar}
+              className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-white dark:bg-[#0f0f0f] rounded-xl border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+              aria-label="Close navigation menu"
+              title="Close menu"
+            >
+              <LineDrawIcon
+                path="M6 18L18 6M6 6l12 12"
+                className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
+                baseColor="text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                activeColor="text-gray-900 dark:text-gray-100"
+                strokeWidth={2.2}
+              />
+            </button>
+          ) : isSubPage ? (
+            <button
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate("/home");
+                }
+              }}
+              className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-white dark:bg-[#0f0f0f] rounded-xl border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+              aria-label="Go back"
+              title="Back"
+            >
+              <LineDrawIcon
+                path="M15 19l-7-7 7-7"
+                className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
+                baseColor="text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-white"
+                activeColor="text-gray-900 dark:text-gray-100"
+                strokeWidth={2.4}
+              />
+            </button>
+          ) : (
+            <button
+              onClick={handleToggleSidebar}
+              className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-white dark:bg-[#0f0f0f] rounded-xl border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+              aria-label="Open navigation menu"
+              title="Open menu"
+            >
+              <LineDrawIcon
+                path="M4 6h16M4 12h16M4 18h16"
+                className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
+                baseColor="text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                activeColor="text-gray-900 dark:text-gray-100"
+                strokeWidth={2}
+              />
+            </button>
+          )}
 
           <Link 
             to="/home" 
-            className={`items-center text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 ${
+            className={`items-center text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 group ${
               isSearchOpen ? "hidden md:flex" : "flex"
             }`}
           >
             <img src={logo} className="mr-2 h-6 w-auto" alt="Project Logo" />
-            <span className="hidden sm:inline truncate max-w-[160px] md:max-w-none">ViewTube</span>
+            <PrismText text="ViewTube" className="hidden sm:inline truncate max-w-[160px] md:max-w-none" />
           </Link>
         </div>
 
         {/* ── Unified Morphing Search Bar (Mobile & Desktop) ── */}
         <div 
           ref={searchRef}
-          className={`relative flex-1 ${
+          className={`relative ${
             isSearchOpen 
-              ? "mx-1 sm:mx-4 max-w-full sm:max-w-2xl" 
-              : "mx-1 sm:mx-4 max-w-[40px] sm:max-w-[44px]"
-          } flex justify-end items-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+              ? "flex-1 mx-1 sm:mx-4 max-w-full sm:max-w-2xl h-10 sm:h-11" 
+              : authStatus
+                ? "mx-auto w-9 h-9 sm:w-10 sm:h-10 aspect-square flex-shrink-0"
+                : "ml-auto mx-1 sm:mx-2 w-9 h-9 sm:w-10 sm:h-10 aspect-square flex-shrink-0"
+          } flex justify-center items-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
         >
           <div 
-            className={`relative flex items-center h-10 sm:h-11 w-full rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden group ${
+            className={`relative flex items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden group ${
               isSearchOpen 
-                ? "bg-gray-100/80 dark:bg-[#1a1a1a] backdrop-blur-md border border-gray-200/80 dark:border-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-[#222222] focus-within:bg-white dark:focus-within:bg-[#0f0f0f] focus-within:border-gray-300 dark:focus-within:border-gray-700 focus-within:ring-[3px] focus-within:ring-gray-200/50 dark:focus-within:ring-gray-800/50 shadow-sm" 
-                : "p-[1px] bg-gray-200/80 dark:bg-gray-700 cursor-pointer"
+                ? "w-full h-10 sm:h-11 bg-white dark:bg-[#0c0c0c] backdrop-blur-xl border border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/30 focus-within:border-gray-900 dark:focus-within:border-white/40 focus-within:ring-2 focus-within:ring-gray-900/10 dark:focus-within:ring-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_25px_rgba(0,0,0,0.5)]" 
+                : "w-9 h-9 sm:w-10 sm:h-10 aspect-square p-[1px] bg-gray-200/90 dark:bg-white/10 cursor-pointer flex-shrink-0 shadow-2xs"
             }`}
           >
             {/* Border Light Beam (Neutral Pure Light Beam on Search Icon) */}
@@ -281,25 +379,27 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   setTimeout(() => inputRef.current?.focus(), 100);
                 }
               }}
-              className={`flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-[#0f0f0f] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors z-10 [perspective:600px] ${
-                isSearchOpen ? "pointer-events-none opacity-0 hidden" : "cursor-pointer opacity-100"
+              className={`flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-[#0f0f0f] text-gray-700 dark:text-gray-300 hover:text-gray-950 dark:hover:text-white transition-colors z-10 [perspective:600px] cursor-pointer ${
+                isSearchOpen ? "pointer-events-none opacity-0 hidden" : "opacity-100"
               }`}
+              aria-label="Search"
+              title="Search"
             >
-              <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] flex items-center justify-center group-hover:animate-lens-flip transition-transform">
+              <div className="w-5 h-5 sm:w-5 sm:h-5 flex items-center justify-center group-hover:animate-lens-flip transition-transform">
                 <LineDrawIcon
                   path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   className="w-full h-full"
-                  baseColor="text-gray-400 dark:text-gray-600"
-                  activeColor="text-gray-900 dark:text-gray-100"
-                  strokeWidth={2}
+                  baseColor="text-gray-600 dark:text-gray-300"
+                  activeColor="text-gray-950 dark:text-white"
+                  strokeWidth={2.4}
                 />
               </div>
             </button>
 
             {/* Search Loading Light Beam Indicator */}
             {isSearching && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2.5px] overflow-hidden rounded-full pointer-events-none z-20">
-                <div className="w-full h-full bg-gradient-to-r from-transparent via-blue-500 to-transparent animate-search-beam" />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden rounded-full pointer-events-none z-20">
+                <div className="w-full h-full bg-gradient-to-r from-transparent via-gray-900 dark:via-white to-transparent animate-search-beam" />
               </div>
             )}
 
@@ -317,26 +417,26 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   setIsSearchOpen(false);
                   setShowResults(false);
                 }}
-                className="flex items-center justify-center w-9 sm:w-12 h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 group"
+                className="flex items-center justify-center w-9 sm:w-12 h-full text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors flex-shrink-0 group cursor-pointer"
               >
                 <LineDrawIcon
                   path="M15 19l-7-7 7-7"
                   className="w-4 h-4 sm:w-[18px] sm:h-[18px]"
-                  baseColor="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
-                  activeColor="text-gray-900 dark:text-gray-100"
-                  strokeWidth={2.2}
+                  baseColor="text-gray-400 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                  activeColor="text-gray-950 dark:text-white"
+                  strokeWidth={2.4}
                 />
               </button>
 
-              {/* Input with live text shimmer */}
+              {/* Input with live high-contrast titanium text shimmer */}
               <div className="relative flex-1 h-full flex items-center min-w-0">
                 <input
                   ref={inputRef}
                   type="text"
-                  className={`w-full h-full bg-transparent text-sm sm:text-base font-medium placeholder:text-gray-500/80 dark:placeholder:text-gray-500 focus:outline-none min-w-0 px-1 ${
+                  className={`w-full h-full bg-transparent text-sm sm:text-base font-medium placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none min-w-0 px-1 ${
                     searchQuery 
-                      ? "bg-clip-text text-transparent bg-[linear-gradient(110deg,#111827_35%,#9ca3af_50%,#111827_65%)] dark:bg-[linear-gradient(110deg,#d1d5db_35%,#ffffff_50%,#d1d5db_65%)] animate-text-shimmer caret-blue-600 dark:caret-blue-400" 
-                      : "text-gray-900 dark:text-gray-100"
+                      ? "bg-clip-text text-transparent bg-[linear-gradient(110deg,#0f172a_35%,#475569_50%,#0f172a_65%)] dark:bg-[linear-gradient(110deg,#f1f5f9_35%,#ffffff_50%,#cbd5e1_65%)] animate-text-shimmer caret-gray-900 dark:caret-white" 
+                      : "text-gray-900 dark:text-white caret-gray-900 dark:caret-white"
                   }`}
                   placeholder="Search ViewTube..."
                   value={searchQuery}
@@ -348,7 +448,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 <div className={`absolute right-2 pointer-events-none transition-all duration-300 ease-out ${
                   searchQuery || !isSearchOpen ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
                 }`}>
-                  <span className="hidden sm:flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <span className="hidden sm:flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold tracking-wider text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/15 shadow-2xs">
                     ⌘K
                   </span>
                 </div>
@@ -368,28 +468,28 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                       inputRef.current?.focus();
                     }, 200);
                   }}
-                  className={`flex items-center justify-center w-8 h-8 mr-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all duration-200 flex-shrink-0 group ${
-                    isClearing ? "rotate-90 text-gray-900 dark:text-gray-100" : "rotate-0"
+                  className={`flex items-center justify-center w-8 h-8 mr-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all duration-200 flex-shrink-0 group cursor-pointer ${
+                    isClearing ? "rotate-90 text-gray-900 dark:text-white" : "rotate-0"
                   }`}
                   title="Clear search"
                 >
                   <LineDrawIcon
                     path="M6 18L18 6M6 6l12 12"
                     className="w-4 h-4"
-                    baseColor="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
-                    activeColor="text-gray-900 dark:text-gray-100"
+                    baseColor="text-gray-400 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    activeColor="text-gray-950 dark:text-white"
                     strokeWidth={2.5}
                   />
                 </button>
               )}
 
-              {/* Submit Search Button */}
+              {/* High-Contrast Titanium Submit Search Button */}
               <button
                 type="submit"
                 className={`relative flex items-center justify-center w-8 h-8 sm:w-8 sm:h-8 mr-1 sm:mr-1.5 rounded-full transition-all duration-300 flex-shrink-0 overflow-hidden ${
                   searchQuery
-                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 cursor-pointer"
-                    : "text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-transparent"
+                    ? "bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 shadow-md shadow-gray-900/20 dark:shadow-white/10 cursor-pointer"
+                    : "text-gray-400 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent"
                 }`}
                 title="Search"
               >
@@ -398,7 +498,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   className={`absolute w-4 h-4 transition-all duration-300 ease-in-out ${searchQuery ? 'opacity-0 -rotate-90 pointer-events-none' : 'opacity-100 rotate-0'}`} 
                   fill="none" 
                   stroke="currentColor" 
-                  strokeWidth={2} 
+                  strokeWidth={2.2} 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -409,7 +509,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   className={`absolute w-4 h-4 transition-all duration-300 ease-in-out ${searchQuery ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90 pointer-events-none'}`} 
                   fill="none" 
                   stroke="currentColor" 
-                  strokeWidth={2.2} 
+                  strokeWidth={2.4} 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -418,17 +518,17 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
             </form>
           </div>
 
-          {/* Floating Search Results Suggestions Dropdown */}
+          {/* Floating Search Results Suggestions Dropdown (Monochrome Titanium Card) */}
           {showResults && isSearchOpen && (
-            <div className="absolute left-0 right-0 top-full mt-2 w-full z-50 bg-white dark:bg-[#0f0f0f] border-[0.35rem] border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 transition-all duration-200 animate-fadeIn">
+            <div className="absolute left-0 right-0 top-full mt-2 w-full z-50 bg-white/95 dark:bg-[#0c0c0c]/95 backdrop-blur-2xl border border-gray-200 dark:border-white/15 rounded-2xl shadow-2xl max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-white/10 transition-all duration-200 animate-fadeIn">
               {isSearching ? (
-                <div className="flex flex-col bg-white dark:bg-[#0f0f0f]">
+                <div className="flex flex-col bg-transparent">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="p-2.5 flex items-center space-x-3">
-                      <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg flex-shrink-0 animate-shimmer bg-gray-200 dark:bg-gray-800"></div>
+                      <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg flex-shrink-0 animate-shimmer bg-gray-200 dark:bg-white/10"></div>
                       <div className="flex-1 space-y-2">
-                        <div className="h-3.5 bg-gray-200 dark:bg-gray-800 rounded w-3/4 animate-shimmer"></div>
-                        <div className="h-2.5 bg-gray-200 dark:bg-gray-800 rounded w-1/2 animate-shimmer"></div>
+                        <div className="h-3.5 bg-gray-200 dark:bg-white/10 rounded w-3/4 animate-shimmer"></div>
+                        <div className="h-2.5 bg-gray-200 dark:bg-white/10 rounded w-1/2 animate-shimmer"></div>
                       </div>
                     </div>
                   ))}
@@ -441,10 +541,10 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                       handleResultClick(video._id);
                       setIsSearchOpen(false);
                     }}
-                    className="p-2.5 flex items-center space-x-3 bg-white dark:bg-[#0f0f0f] hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer transition-colors group animate-slide-fade-up"
+                    className="p-2.5 flex items-center space-x-3 bg-transparent hover:bg-gray-100/80 dark:hover:bg-white/5 cursor-pointer transition-colors group animate-slide-fade-up"
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
-                    <div className="relative w-14 h-9 sm:w-16 sm:h-10 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800">
+                    <div className="relative w-14 h-9 sm:w-16 sm:h-10 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 dark:bg-white/10">
                       <img
                         src={getThumbnailUrl(video)}
                         alt={video.title}
@@ -455,14 +555,14 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                       />
                     </div>
                     <div className="flex-1 min-w-0 pr-2">
-                      <h4 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-gray-950 dark:group-hover:text-white transition-colors">
                         {video.title}
                       </h4>
                       <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                         {video?.owner?.name || "Channel"} • {video.views || 0} views • {formatDuration(video?.duration ?? 0)}
                       </p>
                     </div>
-                    <div className="text-gray-300 dark:text-gray-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                    <div className="text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                       <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -470,7 +570,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-[#0f0f0f]">
+                <div className="p-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-transparent">
                   No video suggestions found for "{searchQuery}"
                 </div>
               )}
@@ -562,7 +662,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                           </svg>
                         </div>
-                        <span className="font-semibold whitespace-nowrap">Upload</span>
+                        <PrismText text="Upload" className="font-semibold whitespace-nowrap" />
                       </div>
 
                       {/* Shine Overlay — full contrast shimmer bands */}
@@ -598,20 +698,23 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 <div className="relative ml-auto lg:ml-2 flex-shrink-0">
                   <button
                     type="button"
-                    className="relative z-50 flex text-sm rounded-full border-4 border-gray-50 dark:border-gray-800 focus:border-gray-200 dark:focus:border-gray-700 transition-all duration-300"
+                    className="relative z-50 flex items-center justify-center p-0.5 text-sm rounded-full transition-all duration-300 group cursor-pointer focus:outline-none"
                     id="user-menu-button-2"
                     aria-expanded={dropdownVisible}
                     onClick={toggleDropdown}
+                    onMouseEnter={handleProfileMouseEnter}
+                    onMouseLeave={handleProfileMouseLeave}
                   >
                     <span className="sr-only">Open user menu</span>
                     {userdata ? (
-                      <>
-                        <img
-                          className="w-8 h-8 rounded-full object-cover"
-                          src={userdata.avatar}
-                          alt="User"
-                        />
-                      </>
+                      <ProfileAnimAvatar
+                        avatar={userdata.avatar}
+                        userInitial={(userdata.name || userdata.username || "Y")[0].toUpperCase()}
+                        animIndex={activeAnimIndex}
+                        isActive={dropdownVisible}
+                        isHovered={isProfileHovered}
+                        size="w-8 h-8"
+                      />
                     ) : (
                       <li className="flex items-center">
                         <div role="status">
@@ -648,18 +751,23 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                   >
                   {userdata ? (
                     <>
-                      <div className="p-5 flex rounded-t-[1.2rem] bg-white dark:bg-[#0f0f0f]">
-                        <img
-                          className="w-14 h-14 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
-                          src={userdata.avatar}
-                          alt="User"
-                        />
-                        <div className="flex-1 px-3 mt-1 relative w-full max-w-auto overflow-hidden">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      <div className="p-5 flex rounded-t-[1.2rem] bg-white dark:bg-[#0f0f0f] items-center">
+                        <div className="flex-shrink-0">
+                          <ProfileAnimAvatar
+                            avatar={userdata.avatar}
+                            userInitial={(userdata.name || userdata.username || "Y")[0].toUpperCase()}
+                            animIndex={activeAnimIndex}
+                            isActive={true}
+                            forceAnimate={true}
+                            size="w-14 h-14"
+                          />
+                        </div>
+                        <div className="flex-1 px-3 relative w-full max-w-auto overflow-hidden">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
                             {userdata.name}
                           </p>
-                          <div className="border-b-2 mx-1 mt-2 border-gray-100 dark:border-gray-800"></div>
-                          <p className="fixed-size text-sm font-normal text-gray-600 dark:text-gray-400 truncate mt-2">
+                          <div className="border-b-2 mx-0 my-1 border-gray-100 dark:border-gray-800"></div>
+                          <p className="fixed-size text-xs font-normal text-gray-600 dark:text-gray-400 truncate mt-1">
                             {userdata.email}
                           </p>
                         </div>
@@ -691,7 +799,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                           </svg>
                         </div>
                       )}
-                      <span className="text-sm font-medium">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+                      <PrismText text={theme === 'dark' ? 'Light' : 'Dark'} className="text-sm font-medium" />
                     </button>
 
                     {/* Quick Upload */}
@@ -711,7 +819,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                       </div>
-                      <span className="text-sm font-medium">Upload</span>
+                      <PrismText text="Upload" className="text-sm font-medium" />
                     </button>
                   </div>
 
@@ -719,40 +827,43 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                     <li>
                       <Link
                         to={"/customize_channel"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/customize_account.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Account</span>
+                        <PrismText text="Account" className="ml-3" />
                       </Link>
                     </li>
                     <li>
                       <Link
                         to={"/videoStudio"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/videostudio.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Video Studio</span>
+                        <PrismText text="Video Studio" className="ml-3" />
                       </Link>
                     </li>
                     <li>
                       <Link
                         to={"/dashboard"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/dashboard.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Dashboard</span>
+                        <PrismText text="Dashboard" className="ml-3" />
                       </Link>
                     </li>
 
@@ -760,68 +871,73 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                     <li>
                       <Link
                         to={"/keyboardShortcut"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/keyboard.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Keyboard Shortcuts</span>
+                        <PrismText text="Keyboard Shortcuts" className="ml-3" />
                       </Link>
                     </li>
                     <li>
                       <Link
                         to={"/settings"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/settings.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Settings</span>
+                        <PrismText text="Settings" className="ml-3" />
                       </Link>
                     </li>
                     <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
                     <li>
                       <Link
                         to={"/help"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/help.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Help</span>
+                        <PrismText text="Help" className="ml-3" />
                       </Link>
                     </li>
                     <li>
                       <Link
                         to={"/feedback"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/feedback.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                          activeColor="text-gray-900 dark:text-gray-100"
                         />
-                        <span className="flex items-center ml-3">Feedback</span>
+                        <PrismText text="Feedback" className="ml-3" />
                       </Link>
                     </li>
                     <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
                     <li className="focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400">
                       <button
                         onClick={handleSignOut}
-                        className="block flex items-center p-3 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="block flex items-center p-3 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
                       >
-                        <img
-                          src="/svg_icons/signout.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-5 h-5 dark:invert opacity-80 dark:opacity-100"
+                        <LineDrawIcon
+                          path="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          className="w-5 h-5 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
+                          activeColor="text-red-600 dark:text-red-400"
                         />
-                        <span className="flex items-center ml-3">Sign out</span>
+                        <PrismText text="Sign out" className="ml-3" />
                       </button>
                     </li>
                     <li className="hover:bg-red-50 dark:hover:bg-red-900/20 focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400">
@@ -829,18 +945,35 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                         onClick={toggleDropdown}
                         className="group block flex items-center p-3 px-4 rounded-b-md w-full transition-all duration-100"
                       >
-                        <img
-                          src="/svg_icons/close.svg"
-                          alt="Icon"
-                          className="fixed-size-icon w-4 h-4 dark:invert opacity-80 dark:opacity-100 group-hover:dark:invert-0"
+                        <LineDrawIcon
+                          path="M6 18L18 6M6 6l12 12"
+                          className="w-4 h-4 flex-shrink-0"
+                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
+                          activeColor="text-red-600 dark:text-red-400"
+                          strokeWidth={2.5}
                         />
-                        <span className="flex items-center ml-4 group-focus:text-red-600 dark:group-focus:text-red-400">
-                          Close
-                        </span>
+                        <PrismText text="Close" className="ml-4 group-focus:text-red-600 dark:group-focus:text-red-400" />
                       </button>
                     </li>
                   </ul>
                 </div>
+              </div>
+            )}
+
+            {/* If not logged in: Desktop Sign in button */}
+            {!authStatus && (
+              <div className={`${isSearchOpen ? "hidden md:flex" : "hidden sm:flex"} items-center flex-shrink-0 ml-1.5`}>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-xs cursor-pointer"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  <span>Sign in</span>
+                </Link>
               </div>
             )}
           </div>

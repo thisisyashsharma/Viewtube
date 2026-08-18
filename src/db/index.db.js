@@ -10,8 +10,10 @@ const connectDB = async () => {
         console.log(`\n MongoDB connected !! DB HOST : ${connectionInstance.connection.host} | DB NAME : ${connectionInstance.connection.name} \n`);
         
     } catch (error) {
-        console.log("MongoDB Connection Error:", error);
-        process.exit(1);
+        console.error("MongoDB Connection Error:", error.message);
+        console.error("⚠️  Server will start without database. API calls requiring DB will fail.");
+        // Don't exit — let the server start so it can return proper HTTP errors
+        // instead of ERR_CONNECTION_REFUSED
     }
 }
 

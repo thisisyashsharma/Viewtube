@@ -58,7 +58,7 @@ function Login() {
       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
     </div>
   ) : (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 bg-gray-50 dark:bg-black overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-8 bg-gray-50 dark:bg-[#0f0f0f] overflow-hidden">
       <Link 
         to="/" 
         className={`flex items-center justify-center mb-6 transition-all duration-700 ease-out ${
