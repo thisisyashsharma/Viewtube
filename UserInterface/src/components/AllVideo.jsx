@@ -105,9 +105,9 @@ function AllVideo() {
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 pb-28 sm:pb-12">
       {/* Header and Filter Chips */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 px-4 sm:px-0">
         <div className="flex items-center space-x-3">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Videos</h1>
           <span className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
@@ -122,9 +122,9 @@ function AllVideo() {
               <button
                 key={tab.key}
                 onClick={() => setFilter(tab.key)}
-                className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 active:scale-95 flex-shrink-0 ${
+                className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-colors duration-200 flex-shrink-0 cursor-pointer ${
                   filter === tab.key
-                    ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-2xs"
+                    ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-2xs font-bold"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >

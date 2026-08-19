@@ -185,26 +185,77 @@ export default function Comments({ videoId, onRequireAuth }) {
     loadCount();
   }, [id]);
 
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
   return (
-    <div className="mt-6">
-      <h3 className="font-semibold mb-2">{commentCount} Comments</h3>
-      <div className="flex item-center mb-2 ">
-        <input
-          className="pl-3 px-1 p-2 flex-1 border-b-2 border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 focus:text-gray-900 dark:focus:text-gray-100 rounded-tl-xl focus:border-gray-900 dark:focus:border-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800 bg-transparent outline-none transition-all duration-500"
-          placeholder={`Add a comment...`}
-          value={text}
-          onClick={() => { if (!me) onRequireAuth?.(); }}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button
-          className="px-5 py-2 font-medium rounded-tr-xl bg-blue-600 text-white hover:bg-blue-700 transition duration-500"
-          onClick={post}
-        >
-          Comment
-        </button>
+    <div className="mt-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-sm sm:text-base text-gray-950 dark:text-white tracking-tight">
+          {commentCount.toLocaleString()} {commentCount === 1 ? "Comment" : "Comments"}
+        </h3>
       </div>
 
-      <ul>
+      {/* Main Comment Input Box */}
+      <div className="flex items-start gap-3 pt-1">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-white/10">
+          {me?.avatar ? (
+            <img src={me.avatar} alt={me.name || "avatar"} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
+              {me?.name ? me.name[0].toUpperCase() : "U"}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1">
+          <div className="relative">
+            <textarea
+              rows={isInputFocused || text ? 2 : 1}
+              className="w-full text-xs sm:text-sm p-2.5 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-100/80 dark:bg-[#181818] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-none"
+              placeholder="Add a comment..."
+              value={text}
+              onFocus={() => {
+                if (!me) onRequireAuth?.();
+                setIsInputFocused(true);
+              }}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </div>
+
+          {(isInputFocused || text) && (
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setText("");
+                  setIsInputFocused(false);
+                }}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!text.trim()}
+                onClick={async () => {
+                  await post();
+                  setIsInputFocused(false);
+                }}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer shadow-2xs ${
+                  text.trim()
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                Comment
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Comments List */}
+      <ul className="space-y-4 pt-2">
         {items.map((c) => {
           const replyById = Object.fromEntries(
             (c.replies || []).map((r) => [r._id, r])
@@ -214,268 +265,207 @@ export default function Comments({ videoId, onRequireAuth }) {
           );
 
           return (
-            <li key={c._id} className="m-0 p-0">
-              {/* comment header — AVATAR + @username (no real name) + date */}
-              <div className="flex items-center gap-2">
+            <li key={c._id} className="space-y-2">
+              {/* Comment Header + Content */}
+              <div className="flex items-start gap-3">
                 <img
                   src={c.owner?.avatar}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
+                  alt={c.owner?.username || "user"}
+                  className="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-200 dark:border-white/10"
                 />
-                <div className="text-[0.85rem] text-gray-700 dark:text-gray-200 font-semibold truncate">
-                  @{c.owner?.username}
-                </div>
-                <div className="text-[0.75rem] text-gray-500 dark:text-gray-400 flex-shrink-0">
-                  {fmt(c.createdAt)}
-                </div>
-              </div>
 
-              {/* comment content */}
-              <div className="ml-10 sm:ml-12 mt-1 text-[0.90rem] m-0 p-0">
-                {renderWithMentions(c.content)}
-              </div>
-
-              {/* actions row (Like • Reply • Delete) */}
-              <div className="ml-8 sm:ml-10 mt-2 flex items-center gap-1 text-xs">
-                {/* Like */}
-                <button
-                  onClick={() => likeComment(c._id)}
-                  className={[
-                    "inline-flex items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-200 group",
-                    likedByMeComment(c) ? "text-blue-500 font-semibold" : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
-                  ].join(" ")}
-                  aria-pressed={likedByMeComment(c)}
-                  aria-label={
-                    likedByMeComment(c) ? "Unlike comment" : "Like comment"
-                  }
-                  title={likedByMeComment(c) ? "Unlike" : "Like"}
-                >
-                  {likedByMeComment(c) ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5 text-blue-500 transition-colors"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
-                      />
-                    </svg>
-                  ) : (
-                    <LineDrawIcon
-                      path="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
-                      className="w-5 h-5"
-                      baseColor="text-gray-400 dark:text-gray-500"
-                      activeColor="text-gray-900 dark:text-gray-100"
-                      strokeWidth={1.5}
-                    />
-                  )}
-                  {commentLikesCount(c) > 0 && (
-                    <span className="px-1.5 py-0.5 text-[15px] font-semibold">
-                      {commentLikesCount(c)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                      @{c.owner?.username}
                     </span>
-                  )}
-                </button>
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                      {fmt(c.createdAt)}
+                    </span>
+                  </div>
 
-                {/* Reply */}
-                <button
-                  className="inline-flex items-center text-[0.80rem] gap-1 px-2.5 py-1.5 font-semibold rounded-lg text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-200 dark:focus:bg-gray-700 transition duration-200"
-                  onClick={() => {
-                    if (!me) return onRequireAuth?.();
-                    openReplyForComment(c._id);
-                  }}
-                  aria-label="Reply to comment"
-                  title="Reply"
-                >
-                  Reply
-                </button>
+                  <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 mt-1 leading-relaxed break-words">
+                    {renderWithMentions(c.content)}
+                  </div>
 
-                {/* owner-only Delete */}
-                {(me?.role === "admin" || c.owner?._id === me._id) && (
-                  <button
-                    className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400 group"
-                    onClick={() => deleteComment(c._id)}
-                    aria-label="Delete comment"
-                    title="Delete"
-                  >
-                    <LineDrawIcon
-                      path="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                      className="w-5 h-5"
-                      baseColor="text-gray-500 group-hover:text-red-600"
-                      activeColor="text-red-600"
-                      strokeWidth={1.8}
-                    />
-                  </button>
-                )}
-              </div>
+                  {/* Actions Row */}
+                  <div className="flex items-center gap-3 mt-1.5">
+                    {/* Like */}
+                    <button
+                      type="button"
+                      onClick={() => likeComment(c._id)}
+                      className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors cursor-pointer ${
+                        likedByMeComment(c)
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                      title={likedByMeComment(c) ? "Unlike" : "Like"}
+                    >
+                      <svg className="w-3.5 h-3.5" fill={likedByMeComment(c) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={likedByMeComment(c) ? 0 : 2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                      </svg>
+                      {commentLikesCount(c) > 0 && <span>{commentLikesCount(c)}</span>}
+                    </button>
 
-              {/* inline box for replying to the comment */}
-              {openReplyBox[c._id]?.openOn === "comment" && (
-                <div className="ml-8 sm:ml-10 mt-2">
-                  <ReplyInline
-                    autoFocus
-                    initialText={openReplyBox[c._id].initialText}
-                    placeholder={`Reply to @${c.owner?.username}...`}
-                    onSubmit={(t) => addReply(c._id, t, null)}
-                  />
-                </div>
-              )}
+                    {/* Reply Trigger */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!me) return onRequireAuth?.();
+                        openReplyForComment(c._id);
+                      }}
+                      className="text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                    >
+                      Reply
+                    </button>
 
-              {/* FLAT replies capped indentation on mobile */}
-              <div className="ml-4 sm:ml-10 mt-3 space-y-3">
-                {flatReplies.map((r) => {
-                  const target = r.parentReply
-                    ? replyById[r.parentReply]
-                    : null;
-                  const targetUsername = target?.owner?.username;
+                    {/* Owner Delete */}
+                    {(me?.role === "admin" || c.owner?._id === me?._id) && (
+                      <button
+                        type="button"
+                        onClick={() => deleteComment(c._id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                        title="Delete comment"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
 
-                  return (
-                    <div key={r._id}>
-                      {/* reply header — avatar + @username + date */}
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={r.owner?.avatar}
-                          className="w-8 h-8 rounded-full translate-y-2.5"
-                        />
-                        <div className="text-sm text-gray-700 dark:text-gray-200">
-                          @{r.owner?.username}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {fmt(r.createdAt)}
-                        </div>
-                      </div>
-
-                      {/* reply content (flat), with optional ↪ @target */}
-                      <div className="ml-10 text-sm">
-                        {targetUsername && (
-                          <span className="mr-1 opacity-70">
-                            ↪ @{targetUsername}
-                          </span>
-                        )}
-                        {renderWithMentions(r.content)}
-                      </div>
-
-                      {/* reply actions */}
-                      {/* actions row (Like • Reply • Delete) */}
-                      {/* reply actions */}
-                      {/* actions row (Like • Reply • Delete) */}
-                      <div className="ml-8 mt-2 flex items-center gap-0 text-sm ">
-                        {/* Like (styled like Video.jsx) */}
-                        <button
-                          onClick={() => likeReply(c._id, r._id)}
-                          className={[
-                            "inline-flex items-center gap-0 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group",
-                            likedByMe(r) ? "text-blue-500 font-semibold" : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
-                          ].join(" ")}
-                          aria-pressed={likedByMe(r)}
-                          aria-label={
-                            likedByMe(r) ? "Unlike reply" : "Like reply"
-                          }
-                          title={likedByMe(r) ? "Unlike" : "Like"}
-                        >
-                          {likedByMe(r) ? (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                              strokeWidth={1.5}
-                              stroke="currentColor"
-                              className="w-4 h-4 text-blue-500 transition-colors"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
-                              />
-                            </svg>
-                          ) : (
-                            <LineDrawIcon
-                              path="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
-                              className="w-4 h-4"
-                              baseColor="text-gray-400 dark:text-gray-500"
-                              activeColor="text-gray-900 dark:text-gray-100"
-                              strokeWidth={1.5}
-                            />
-                          )}
-                          {replyLikesCount(r) > 0 && (
-                            <span className="px-1">{replyLikesCount(r)}</span>
-                          )}
-                        </button>
-
-                        {/* Reply */}
-                        <button
-                          className="inline-flex items-center text-[0.80rem] gap-1 px-2.5 py-1.5 font-semibold rounded-lg text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-200 dark:focus:bg-gray-700 transition duration-200"
-                          onClick={() => openReplyForReply(c._id, r)}
-                          aria-label={`Reply to @${r.owner?.username}`}
-                          title={`Reply to @${r.owner?.username}`}
-                        >
-                          Reply
-                        </button>
-
-                        {/* owner-only Delete */}
-                        {(me?.role === "admin" || r.owner?._id === me._id) && (
-                          <button
-                            className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-600 focus:outline-none rounded-[0.6rem] px-3 py-2 transition duration-400 group"
-                            onClick={() => deleteReply(c._id, r._id)}
-                            aria-label="Delete reply"
-                            title="Delete reply"
-                          >
-                            <LineDrawIcon
-                              path="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                              className="w-4 h-4"
-                              baseColor="text-gray-500 group-hover:text-red-600"
-                              activeColor="text-red-600"
-                              strokeWidth={1.8}
-                            />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* inline box for replying to this reply (prefilled @username), still flat */}
-                      {openReplyBox[c._id]?.openOn === "reply" &&
-                        openReplyBox[c._id]?.reply?._id === r._id && (
-                          <div className="ml-8 mt-2">
-                            <ReplyInline
-                              autoFocus
-                              initialText={openReplyBox[c._id].initialText}
-                              placeholder={`Reply to @${r.owner?.username}…`}
-                              onSubmit={(t) =>
-                                addReply(
-                                  c._id,
-                                  t,
-                                  resolveParentReplyIdForOneLevel(
-                                    openReplyBox[c._id].reply
-                                  )
-                                )
-                              }
-                            />
-                          </div>
-                        )}
+                  {/* Inline Reply Box for Comment */}
+                  {openReplyBox[c._id]?.openOn === "comment" && (
+                    <div className="mt-2.5">
+                      <ReplyInline
+                        autoFocus
+                        initialText={openReplyBox[c._id].initialText}
+                        placeholder={`Reply to @${c.owner?.username}...`}
+                        onCancel={() => setOpenReplyBox({})}
+                        onSubmit={(t) => addReply(c._id, t, null)}
+                      />
                     </div>
-                  );
-                })}
+                  )}
+
+                  {/* Nested Flat Replies */}
+                  {flatReplies.length > 0 && (
+                    <div className="mt-3 pl-3 border-l-2 border-gray-200 dark:border-white/10 space-y-2.5">
+                      {flatReplies.map((r) => {
+                        const target = r.parentReply ? replyById[r.parentReply] : null;
+                        const targetUsername = target?.owner?.username;
+
+                        return (
+                          <div key={r._id} className="flex items-start gap-2.5">
+                            <img
+                              src={r.owner?.avatar}
+                              alt={r.owner?.username || "avatar"}
+                              className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5 border border-gray-200 dark:border-white/10"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                  @{r.owner?.username}
+                                </span>
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  {fmt(r.createdAt)}
+                                </span>
+                              </div>
+
+                              <div className="text-xs text-gray-800 dark:text-gray-200 mt-0.5 leading-relaxed break-words">
+                                {targetUsername && (
+                                  <span className="text-blue-600 dark:text-blue-400 font-semibold mr-1">
+                                    @{targetUsername}
+                                  </span>
+                                )}
+                                {renderWithMentions(r.content)}
+                              </div>
+
+                              <div className="flex items-center gap-3 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => likeReply(c._id, r._id)}
+                                  className={`inline-flex items-center gap-1 text-[11px] font-semibold transition-colors cursor-pointer ${
+                                    likedByMe(r)
+                                      ? "text-blue-600 dark:text-blue-400"
+                                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                                  }`}
+                                >
+                                  <svg className="w-3 h-3" fill={likedByMe(r) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={likedByMe(r) ? 0 : 2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                  </svg>
+                                  {replyLikesCount(r) > 0 && <span>{replyLikesCount(r)}</span>}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => openReplyForReply(c._id, r)}
+                                  className="text-[11px] font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                                >
+                                  Reply
+                                </button>
+
+                                {(me?.role === "admin" || r.owner?._id === me?._id) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteReply(c._id, r._id)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-0.5 cursor-pointer"
+                                    title="Delete reply"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Nested reply box */}
+                              {openReplyBox[c._id]?.openOn === "reply" &&
+                                openReplyBox[c._id]?.reply?._id === r._id && (
+                                  <div className="mt-2">
+                                    <ReplyInline
+                                      autoFocus
+                                      initialText={openReplyBox[c._id].initialText}
+                                      placeholder={`Reply to @${r.owner?.username}...`}
+                                      onCancel={() => setOpenReplyBox({})}
+                                      onSubmit={(t) =>
+                                        addReply(
+                                          c._id,
+                                          t,
+                                          resolveParentReplyIdForOneLevel(
+                                            openReplyBox[c._id].reply
+                                          )
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </li>
           );
         })}
       </ul>
 
-      {/* sticky bottom: Load More */}
+      {/* Sticky / Load More */}
       {hasMore && (
-        <div className="sticky bottom-0 bg-white dark:bg-[#0f0f0f] py-3">
+        <div className="pt-2">
           <button
+            type="button"
             disabled={loadingMore}
             onClick={async () => {
               setLoadingMore(true);
               await load(page + 1);
               setLoadingMore(false);
             }}
-            className="w-full border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded py-2"
+            className="w-full py-2.5 rounded-2xl bg-gray-100 dark:bg-[#181818] hover:bg-gray-200 dark:hover:bg-[#202020] text-xs font-bold text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-white/5 transition-colors cursor-pointer"
           >
-            {loadingMore ? "Loading…" : "Load more comments"}
+            {loadingMore ? "Loading..." : "Load more comments"}
           </button>
         </div>
       )}
@@ -485,8 +475,9 @@ export default function Comments({ videoId, onRequireAuth }) {
 
 function ReplyInline({
   onSubmit,
+  onCancel,
   initialText = "",
-  placeholder = "Reply…",
+  placeholder = "Reply...",
   autoFocus = false,
 }) {
   const [t, setT] = useState(initialText);
@@ -503,21 +494,42 @@ function ReplyInline({
   };
 
   return (
-    <div className="flex items-center  ">
+    <div className="space-y-2">
       <input
-        className="pl-3 px-1 text-sm p-2 border-gray-300 dark:border-gray-700 border-b-2 flex-1 text-gray-400 focus:text-gray-900 dark:focus:text-gray-100 rounded-tl-xl focus:border-gray-900 dark:focus:border-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800 bg-transparent outline-none transition-all duration-500"
+        type="text"
+        className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100/90 dark:bg-[#181818] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
         placeholder={placeholder}
         value={t}
         onChange={(e) => setT(e.target.value)}
         autoFocus={autoFocus}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSubmit();
+        }}
       />
 
-      <button
-        className="text-sm border-b-2 border-blue-700 px-3 py-2 font-medium rounded-tr-lg bg-blue-600 text-white hover:bg-blue-800 transition duration-500"
-        onClick={handleSubmit}
-      >
-        Reply
-      </button>
+      <div className="flex items-center justify-end gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={!t.trim() || t.trim() === initialText.trim()}
+          onClick={handleSubmit}
+          className={`px-3.5 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer shadow-2xs ${
+            t.trim() && t.trim() !== initialText.trim()
+              ? "bg-blue-600 hover:bg-blue-700 text-white"
+              : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+          }`}
+        >
+          Reply
+        </button>
+      </div>
     </div>
   );
 }

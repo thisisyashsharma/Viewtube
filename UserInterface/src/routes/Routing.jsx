@@ -139,6 +139,14 @@ function Routing() {
                 }
               />
               <Route
+                path="custom_channel"
+                element={
+                  <AuthLayout>
+                    <CustomizeChannel />
+                  </AuthLayout>
+                }
+              />
+              <Route
                 path="customize_page"
                 element={
                   <AuthLayout>

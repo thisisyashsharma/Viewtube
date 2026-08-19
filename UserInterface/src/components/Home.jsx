@@ -207,13 +207,13 @@ export default function Home() {
 
   return (
     <>
-      <div className="lg:mt-8 bg-white dark:bg-[#0f0f0f] transition-colors duration-200 grid grid-cols-1 px-4 sm:px-8 lg:px-12 pt-4 sm:pt-6 xl:grid-cols-3 xl:gap-4 w-full max-w-screen-2xl mx-auto">
+      <div className="bg-white dark:bg-[#0f0f0f] transition-colors duration-200 grid grid-cols-1 px-0 sm:px-8 lg:px-12 pt-2 sm:pt-6 pb-28 sm:pb-12 xl:grid-cols-3 xl:gap-4 w-full max-w-screen-2xl mx-auto">
         <div className="mb-4 col-span-full xl:mb-2 px-0">
           {/* Search Results Header */}
           {isSearchMode && (
-            <div className="mb-6">
+            <div className="mb-6 px-4 sm:px-0">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-semibold dark:text-gray-100">
+                <h1 className="text-xl sm:text-2xl font-semibold dark:text-gray-100">
                   Search results for "{searchQuery}"
                   <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
                     ({videosAll.length} videos)
@@ -248,20 +248,20 @@ export default function Home() {
 
           {/* Normal mode header */}
           {!isSearchMode && !fetching && (
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold dark:text-gray-100">
+            <div className="mb-4 px-4 sm:px-0">
+              <h1 className="text-lg sm:text-2xl font-bold dark:text-gray-100">
                 Recommended Videos
-                <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
-                  ({videosAll.length} videos)
+                <span className="text-xs sm:text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
+                  ({videosAll.length})
                 </span>
               </h1>
             </div>
           )}
 
           <section>
-            <div className="container">
+            <div className="w-full">
               {error && (
-                <div className="text-center py-8">
+                <div className="text-center py-8 px-4">
                   <p className="text-red-500">{error}</p>
                   <button
                     onClick={fetchVideos}
@@ -273,7 +273,7 @@ export default function Home() {
               )}
 
               {!error && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-6 sm:gap-6">
 
                   {/* Render revealed videos first */}
                   {displayed.map((video) => (

@@ -47,12 +47,10 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const checkUser = await newUser.findOne({
-    $or: [{ name }, { email }],
-  });
+  const checkUser = await newUser.findOne({ email });
 
   if (checkUser) {
-    throw new ApiError(409, "User with email or username already exists");
+    throw new ApiError(409, "User with this email already exists");
   }
 
   //EU10u2.p8.a1.6ln - Email verification level 2 - accepts otp token and mark accept
@@ -509,10 +507,6 @@ const toggleSubscribe = asyncHandler(async (req, res) => {
 
   if (!mongoose.Types.ObjectId.isValid(channelId)) {
     throw new ApiError(400, "Invalid channel ID");
-  }
-
-  if (viewerId.toString() === channelId) {
-    throw new ApiError(400, "You cannot subscribe to your own channel");
   }
 
   const channel = await newUser.findById(channelId);

@@ -6,3 +6,5 @@ export { default as ShimmerText } from './ShimmerText';
 export { default as RebuildingText } from './RebuildingText';
 export { default as PrismText } from './PrismText';
 export { default as ProfileAnimAvatar } from './ProfileAnimAvatar';
+export { default as RollingCounter } from './RollingCounter';
+export { default as ThemeToggleButton } from './ThemeToggleButton';

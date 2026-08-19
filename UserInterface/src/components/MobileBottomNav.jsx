@@ -3,16 +3,21 @@ import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { LineDrawIcon, PrismText, ProfileAnimAvatar } from "./common";
 
-function MobileBottomNav({ isDrawerOpen = false, onToggleDrawer }) {
+function MobileBottomNav({ 
+  isDrawerOpen = false, 
+  onToggleDrawer,
+  isProfileOpen = false,
+  onToggleProfile 
+}) {
   const location = useLocation();
   const currentUser = useSelector((state) => state.auth.user);
 
   const path = location.pathname;
 
-  const isHomeActive = !isDrawerOpen && (path === "/" || path === "/home");
+  const isHomeActive = !isDrawerOpen && !isProfileOpen && (path === "/" || path === "/home");
   const isMenuActive = isDrawerOpen;
-  const isSubsActive = !isDrawerOpen && path === "/subscriptions";
-  const isYouActive = !isDrawerOpen && path.startsWith("/your_channel") && path !== "/your_channel/upload_video";
+  const isSubsActive = !isDrawerOpen && !isProfileOpen && path === "/subscriptions";
+  const isYouActive = isProfileOpen || (!isDrawerOpen && path.startsWith("/your_channel") && path !== "/your_channel/upload_video");
 
   // Animation setting preference ('random' | 'off' | '0'..'9')
   const [animSetting, setAnimSetting] = useState(() => {
@@ -348,24 +353,30 @@ function MobileBottomNav({ isDrawerOpen = false, onToggleDrawer }) {
         />
       </Link>
 
-      {/* 5. YOU */}
+      {/* 5. YOU (LINKS TO DEDICATED YOU HUB) */}
       <Link
         to="/your_channel"
+        onClick={() => {
+          if (onToggleProfile && isProfileOpen) {
+            onToggleProfile();
+          }
+        }}
         onMouseEnter={handleProfileMouseEnter}
         onMouseLeave={handleProfileMouseLeave}
-        className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors duration-200 group ${
+        className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors duration-200 group cursor-pointer ${
           isYouActive
             ? "text-gray-900 dark:text-gray-100"
             : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
         }`}
         aria-label="You"
+        title="You"
       >
         {/* Material You Tonal Pill Container */}
         <div
           className={`w-[66px] h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${
             isYouActive
-              ? "bg-gray-200/90 dark:bg-gray-800/90"
-              : "bg-transparent group-hover:bg-gray-100/60 dark:group-hover:bg-gray-800/40"
+              ? "bg-gray-200/90 dark:bg-gray-800/90 text-gray-950 dark:text-white"
+              : "bg-transparent text-gray-500 dark:text-gray-400 group-hover:bg-gray-100/60 dark:group-hover:bg-gray-800/40"
           }`}
         >
           <ProfileAnimAvatar

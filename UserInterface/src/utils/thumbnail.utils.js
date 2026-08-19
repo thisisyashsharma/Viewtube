@@ -16,25 +16,41 @@ function getPosterFromVideo(video) {
   return FALLBACK_THUMBNAIL;
 }
 
-function getThumbnailUrl(video) {
+function getThumbnailUrl(videoOrUrl) {
   try {
-    let t = video?.thumbnail ?? "";
-    if (typeof t === "object") t = t.url || t.path || t.filename || "";
+    if (!videoOrUrl) return FALLBACK_THUMBNAIL;
+
+    let t = "";
+    if (typeof videoOrUrl === "string") {
+      t = videoOrUrl;
+    } else if (typeof videoOrUrl === "object") {
+      t =
+        videoOrUrl.thumbnailUrl ||
+        videoOrUrl.thumbnail ||
+        videoOrUrl.avatar ||
+        videoOrUrl.coverImage ||
+        videoOrUrl.url ||
+        videoOrUrl.path ||
+        "";
+      if (typeof t === "object" && t !== null) {
+        t = t.url || t.path || t.filename || "";
+      }
+    }
 
     t = String(t).trim();
     
     // Strip old hardcoded localhost URLs from old database entries
     t = t.replace(/^https?:\/\/localhost:\d+/i, "");
 
-    if (!t) {
-      return getPosterFromVideo(video);
+    if (!t || t === "undefined" || t === "null") {
+      return FALLBACK_THUMBNAIL;
     }
 
     // Remove leading /public or public
     t = t.replace(/^\/?public/, "");
 
-    // Absolute URL (e.g. Cloudinary, S3, external host) -> use directly
-    if (/^https?:\/\//i.test(t)) return t;
+    // Absolute URL (e.g. Cloudinary, S3, external host, blob/data) -> use directly
+    if (/^(https?:\/\/|blob:|data:)/i.test(t)) return t;
 
     // Ensure single leading slash
     if (!t.startsWith("/")) {

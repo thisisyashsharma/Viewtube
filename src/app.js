@@ -41,7 +41,7 @@ const __dirname = path.dirname(__filename);
 // ── Security Headers (Configured for OAuth Popups & Media) ──
 app.use(
   helmet({
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );

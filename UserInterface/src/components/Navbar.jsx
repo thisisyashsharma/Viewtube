@@ -11,25 +11,101 @@ import UploadVideo from "./UploadVideo";
 import { useTheme } from "../context/ThemeContext";
 import { LineDrawIcon, PrismText, ProfileAnimAvatar } from "./common";
 
-function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
+function Navbar({ 
+  isDrawerOpen, 
+  onToggleDrawer, 
+  openChange,
+  isProfileOpen: isProfileOpenProp,
+  onToggleProfile
+}) {
   const { theme, toggleTheme } = useTheme();
   const [userdata, setUserData] = useState(null);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [internalDropdownVisible, setInternalDropdownVisible] = useState(false);
+  const dropdownVisible = isProfileOpenProp !== undefined ? isProfileOpenProp : internalDropdownVisible;
+
+  const setDropdownVisible = (val) => {
+    if (typeof val === "function") {
+      const next = val(dropdownVisible);
+      if (onToggleProfile) {
+        if (next !== dropdownVisible) onToggleProfile();
+      } else {
+        setInternalDropdownVisible(next);
+      }
+    } else {
+      if (onToggleProfile) {
+        if (val !== dropdownVisible) onToggleProfile();
+      } else {
+        setInternalDropdownVisible(val);
+      }
+    }
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchHovered, setIsSearchHovered] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const isSearchExpanded = isSearchOpen && (isSearchFocused || isSearchHovered || searchQuery.trim().length > 0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const searchRef = useRef(null);
   const profileRef = useRef(null);
+  const profileButtonRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Primary top-level bottom nav tabs (where standard hamburger menu is shown)
   const PRIMARY_BOTTOM_NAV_TABS = ["/", "/home", "/subscriptions", "/your_channel"];
   const isSubPage = !PRIMARY_BOTTOM_NAV_TABS.includes(location.pathname);
+
+  // Dedicated Mobile Sub-View State (e.g. Settings, Your Videos)
+  const [mobileSubView, setMobileSubView] = useState(null);
+
+  useEffect(() => {
+    const handleSetSubView = (e) => {
+      if (e.detail?.isOpen) {
+        setMobileSubView(e.detail);
+      } else {
+        setMobileSubView(null);
+      }
+    };
+    window.addEventListener("viewtube_mobile_subview", handleSetSubView);
+    return () => window.removeEventListener("viewtube_mobile_subview", handleSetSubView);
+  }, []);
+
+  useEffect(() => {
+    setMobileSubView(null);
+  }, [location.pathname]);
+
+  const SUBPAGE_TITLES = {
+    "/settings": "Settings",
+    "/keyboardShortcut": "Keyboard Shortcuts",
+    "/customize_channel": "Account",
+    "/videoStudio": "Video Studio",
+    "/dashboard": "Dashboard",
+    "/help": "Help",
+    "/feedback": "Feedback",
+    "/notifications": "Notifications",
+    "/history": "History",
+    "/like": "Liked videos",
+    "/playlist": "Playlists",
+    "/upload_video": "Upload Video",
+  };
+
+  const getSubPageTitle = () => {
+    const path = location.pathname;
+    const searchParams = new URLSearchParams(location.search);
+    if (path === "/your_channel") {
+      if (searchParams.get("view") === "personalization") return "Personalization";
+      if (searchParams.get("view") === "videos") return "Your videos";
+    }
+    if (SUBPAGE_TITLES[path]) return SUBPAGE_TITLES[path];
+    if (mobileSubView?.title) return mobileSubView.title;
+    return null;
+  };
+
+  const activeMobileTitle = getSubPageTitle();
 
   // Profile Animation Setting State ('random' | 'off' | '0'..'9')
   const [animSetting, setAnimSetting] = useState(() => {
@@ -95,17 +171,42 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
 
   useEffect(() => {
     const handleClickOutsideProfile = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setDropdownVisible(false);
+      if (
+        profileRef.current?.contains(e.target) ||
+        profileButtonRef.current?.contains(e.target) ||
+        e.target.closest("#user-menu-button-2") ||
+        e.target.closest('[aria-label="You"]')
+      ) {
+        return;
       }
+      setDropdownVisible(false);
     };
 
     if (dropdownVisible) {
       document.addEventListener("mousedown", handleClickOutsideProfile);
+      document.addEventListener("touchstart", handleClickOutsideProfile);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutsideProfile);
+      document.removeEventListener("touchstart", handleClickOutsideProfile);
+    };
+  }, [dropdownVisible]);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setDropdownVisible(false);
+  }, [location.pathname]);
+
+  // Lock mobile body scroll when profile menu is open
+  useEffect(() => {
+    if (dropdownVisible && window.innerWidth < 640) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
     };
   }, [dropdownVisible]);
 
@@ -123,45 +224,25 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
     setSearchQuery(value);
 
     if (value.trim().length > 0) {
+      setIsSearching(true);
       setShowResults(true);
-      performSearch(value);
+      debouncedSearch(value);
     } else {
       setSearchResults([]);
       setShowResults(false);
+      setIsSearching(false);
     }
   };
 
-  // Perform actual search with debouncing
-  const performSearch = useCallback(
+  // Debounced API call
+  const debouncedSearch = useCallback(
     debounce(async (query) => {
-      if (query.trim().length < 1) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
       try {
-        const response = await axios.get("/api/v1/videos/search", {
-          params: { query: query.trim(), limit: 10 },
-          withCredentials: true,
-        });
-
-        const videos = response.data.data?.videos || [];
-        // Sort by relevance: exact match in title first
-        const sortedVideos = videos.sort((a, b) => {
-          const aTitleMatch = a.title
-            .toLowerCase()
-            .includes(query.toLowerCase());
-          const bTitleMatch = b.title
-            .toLowerCase()
-            .includes(query.toLowerCase());
-
-          if (aTitleMatch && !bTitleMatch) return -1;
-          if (!aTitleMatch && bTitleMatch) return 1;
-          return b.views - a.views;
-        });
-
-        setSearchResults(sortedVideos);
+        const response = await axios.get(
+          `/api/v1/videos/search?query=${encodeURIComponent(query)}&limit=10`
+        );
+        const videos = response.data.data.videos || [];
+        setSearchResults(videos);
       } catch (error) {
         console.error("Search error:", error);
         setSearchResults([]);
@@ -172,36 +253,46 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
     []
   );
 
-  // Handle search form submission
+  // Handle clicking a search result item
+  const handleResultClick = (videoId) => {
+    setShowResults(false);
+    setSearchQuery("");
+    navigate(`/watch/${videoId}`);
+  };
+
+  // Handle Enter key or form submission for full search page
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Navigate to home page with search query
-      navigate(`/home?q=${encodeURIComponent(searchQuery.trim())}`);
+    e?.preventDefault?.();
+    if (searchQuery.trim().length > 0) {
       setShowResults(false);
-      setSearchQuery("");
+      setIsSearchOpen(false);
+      setIsSearchFocused(false);
+      setIsSearchHovered(false);
+      navigate(`/channels/search?query=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  // Handle click on search result
-  const handleResultClick = (videoId) => {
-    navigate(`/watch/${videoId}`);
-    setShowResults(false);
-    setSearchQuery("");
-    setSearchResults([]);
-  };
-
-  // Close search results when clicking outside
+  // Close dropdown when clicking outside search container
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowResults(false);
+        setIsSearchOpen(false);
+        setIsSearchFocused(false);
+        setIsSearchHovered(false);
       }
     };
 
+    const handleOpenSearch = () => {
+      setIsSearchOpen(true);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("open_search_bar", handleOpenSearch);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("open_search_bar", handleOpenSearch);
     };
   }, []);
 
@@ -211,8 +302,21 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
     openChange();
   };
 
-  const toggleDropdown = () => {
-    setDropdownVisible(!dropdownVisible);
+  const toggleDropdown = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (window.innerWidth < 640) {
+      navigate("/your_channel");
+      setDropdownVisible(false);
+      return;
+    }
+    if (onToggleProfile) {
+      onToggleProfile();
+    } else {
+      setInternalDropdownVisible((prev) => !prev);
+    }
   };
 
   const handleSignOut = () => {
@@ -253,6 +357,8 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
       }
       if (e.key === "Escape" && isSearchOpen) {
         setIsSearchOpen(false);
+        setIsSearchFocused(false);
+        setIsSearchHovered(false);
         setShowResults(false);
       }
     };
@@ -266,10 +372,51 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 z-[var(--z-nav,30)] w-full h-16 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md border-b-[0.35rem] border-gray-200/80 dark:border-gray-800/80 px-3 flex items-center justify-between transition-colors duration-200">
+      <nav 
+        className={`fixed top-0 left-0 z-[var(--z-nav,30)] w-full ${
+          isSearchExpanded ? "h-[70px] sm:h-[80px]" : "h-16"
+        } bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md border-b-[0.35rem] border-gray-200/80 dark:border-gray-800/80 px-3 flex items-center justify-between`}
+        style={{
+          transition: isSearchExpanded
+            ? "height 380ms cubic-bezier(0.16, 1, 0.3, 1) 120ms, background-color 300ms ease, border-color 300ms ease"
+            : "height 450ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, background-color 300ms ease, border-color 300ms ease",
+        }}
+      >
         
+        {/* Dedicated Mobile Sub-View Header (Shows ← Back Button and Title e.g. "Settings", hiding logo/lens/profile on mobile) */}
+        {activeMobileTitle && (
+          <div className="flex items-center space-x-3 sm:hidden flex-1 min-w-0">
+            <button
+              onClick={() => {
+                const searchParams = new URLSearchParams(location.search);
+                if (location.pathname === "/your_channel" && searchParams.get("view")) {
+                  navigate("/your_channel");
+                } else if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate("/your_channel?view=personalization");
+                }
+              }}
+              className="flex items-center justify-center w-10 h-10 bg-white dark:bg-[#0f0f0f] rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer flex-shrink-0"
+              aria-label="Go back"
+              title="Back"
+            >
+              <LineDrawIcon
+                path="M15 19l-7-7 7-7"
+                className="w-5 h-5"
+                baseColor="text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-white"
+                activeColor="text-gray-900 dark:text-gray-100"
+                strokeWidth={2.4}
+              />
+            </button>
+            <h1 className="text-xl font-bold text-gray-950 dark:text-white tracking-tight truncate">
+              {activeMobileTitle}
+            </h1>
+          </div>
+        )}
+
         {/* Left section: Back Button / Drawer Toggle & logo */}
-        <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+        <div className={`${activeMobileTitle ? "hidden sm:flex" : "flex"} items-center space-x-1.5 sm:space-x-3 flex-shrink-0`}>
           {isDrawerOpen ? (
             <button
               onClick={handleToggleSidebar}
@@ -337,20 +484,40 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
         {/* ── Unified Morphing Search Bar (Mobile & Desktop) ── */}
         <div 
           ref={searchRef}
-          className={`relative ${
+          onMouseEnter={() => setIsSearchHovered(true)}
+          onMouseLeave={() => setIsSearchHovered(false)}
+          className={`${activeMobileTitle ? "hidden sm:flex" : "flex"} relative ${
             isSearchOpen 
-              ? "flex-1 mx-1 sm:mx-4 max-w-full sm:max-w-2xl h-10 sm:h-11" 
+              ? isSearchExpanded
+                ? "flex-1 mx-1 sm:mx-4 max-w-full sm:max-w-2xl h-12 sm:h-14"
+                : "flex-1 mx-1 sm:mx-4 max-w-full sm:max-w-2xl h-10 sm:h-11" 
               : authStatus
                 ? "mx-auto w-9 h-9 sm:w-10 sm:h-10 aspect-square flex-shrink-0"
                 : "ml-auto mx-1 sm:mx-2 w-9 h-9 sm:w-10 sm:h-10 aspect-square flex-shrink-0"
-          } flex justify-center items-center transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+          } justify-center items-center`}
+          style={{
+            transition: isSearchOpen
+              ? isSearchExpanded
+                ? "width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, max-width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, margin 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, height 380ms cubic-bezier(0.16, 1, 0.3, 1) 120ms"
+                : "width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, max-width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, margin 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, height 350ms cubic-bezier(0.16, 1, 0.3, 1) 0ms"
+              : "height 450ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, width 600ms cubic-bezier(0.16, 1, 0.3, 1) 450ms, max-width 600ms cubic-bezier(0.16, 1, 0.3, 1) 450ms, margin 600ms cubic-bezier(0.16, 1, 0.3, 1) 450ms",
+          }}
         >
           <div 
-            className={`relative flex items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden group ${
+            className={`relative flex items-center justify-center rounded-full overflow-hidden group ${
               isSearchOpen 
-                ? "w-full h-10 sm:h-11 bg-white dark:bg-[#0c0c0c] backdrop-blur-xl border border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/30 focus-within:border-gray-900 dark:focus-within:border-white/40 focus-within:ring-2 focus-within:ring-gray-900/10 dark:focus-within:ring-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_25px_rgba(0,0,0,0.5)]" 
+                ? isSearchExpanded
+                  ? "w-full h-12 sm:h-14 bg-white dark:bg-[#0c0c0c] backdrop-blur-xl border border-gray-400/90 dark:border-white/30 focus-within:border-gray-950 dark:focus-within:border-white/50 focus-within:ring-2 focus-within:ring-gray-900/15 dark:focus-within:ring-white/15 shadow-[0_8px_30px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.7)]"
+                  : "w-full h-10 sm:h-11 bg-white dark:bg-[#0c0c0c] backdrop-blur-xl border border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/30 focus-within:border-gray-900 dark:focus-within:border-white/40 focus-within:ring-2 focus-within:ring-gray-900/10 dark:focus-within:ring-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_25px_rgba(0,0,0,0.5)]" 
                 : "w-9 h-9 sm:w-10 sm:h-10 aspect-square p-[1px] bg-gray-200/90 dark:bg-white/10 cursor-pointer flex-shrink-0 shadow-2xs"
             }`}
+            style={{
+              transition: isSearchOpen
+                ? isSearchExpanded
+                  ? "width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, height 380ms cubic-bezier(0.16, 1, 0.3, 1) 120ms, border-color 300ms ease, box-shadow 380ms cubic-bezier(0.16, 1, 0.3, 1) 120ms, background-color 300ms ease"
+                  : "width 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, height 350ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, border-color 300ms ease, box-shadow 300ms ease, background-color 300ms ease"
+                : "height 450ms cubic-bezier(0.16, 1, 0.3, 1) 0ms, width 600ms cubic-bezier(0.16, 1, 0.3, 1) 450ms, border-color 300ms ease, box-shadow 450ms ease, background-color 300ms ease",
+            }}
           >
             {/* Border Light Beam (Neutral Pure Light Beam on Search Icon) */}
             {!isSearchOpen && (
@@ -376,11 +543,12 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
               onClick={() => {
                 if (!isSearchOpen) {
                   setIsSearchOpen(true);
+                  setIsSearchFocused(true);
                   setTimeout(() => inputRef.current?.focus(), 100);
                 }
               }}
-              className={`flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-[#0f0f0f] text-gray-700 dark:text-gray-300 hover:text-gray-950 dark:hover:text-white transition-colors z-10 [perspective:600px] cursor-pointer ${
-                isSearchOpen ? "pointer-events-none opacity-0 hidden" : "opacity-100"
+              className={`flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-[#0f0f0f] text-gray-700 dark:text-gray-300 hover:text-gray-950 dark:hover:text-white z-10 [perspective:600px] cursor-pointer transition-opacity duration-300 ${
+                isSearchOpen ? "pointer-events-none opacity-0" : "opacity-100 delay-[450ms]"
               }`}
               aria-label="Search"
               title="Search"
@@ -406,8 +574,8 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
             {/* Input Form (Slides in from right) */}
             <form 
               onSubmit={handleSearchSubmit} 
-              className={`absolute inset-0 flex items-center w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                isSearchOpen ? "translate-x-0 opacity-100 pointer-events-auto" : "translate-x-12 opacity-0 pointer-events-none"
+              className={`absolute inset-0 flex items-center w-full transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                isSearchOpen ? "translate-x-0 opacity-100 pointer-events-auto delay-100" : "translate-x-12 opacity-0 pointer-events-none"
               }`}
             >
               {/* Back Button (Closes search) */}
@@ -415,13 +583,15 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 type="button"
                 onClick={() => {
                   setIsSearchOpen(false);
+                  setIsSearchFocused(false);
+                  setIsSearchHovered(false);
                   setShowResults(false);
                 }}
                 className="flex items-center justify-center w-9 sm:w-12 h-full text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors flex-shrink-0 group cursor-pointer"
               >
                 <LineDrawIcon
                   path="M15 19l-7-7 7-7"
-                  className="w-4 h-4 sm:w-[18px] sm:h-[18px]"
+                  className={`transition-all duration-300 ${isSearchExpanded ? "w-5 h-5 sm:w-[20px] sm:h-[20px]" : "w-4 h-4 sm:w-[18px] sm:h-[18px]"}`}
                   baseColor="text-gray-400 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
                   activeColor="text-gray-950 dark:text-white"
                   strokeWidth={2.4}
@@ -433,7 +603,20 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 <input
                   ref={inputRef}
                   type="text"
-                  className={`w-full h-full bg-transparent text-sm sm:text-base font-medium placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none min-w-0 px-1 ${
+                  onFocus={() => {
+                    setIsSearchFocused(true);
+                    if (searchQuery.trim()) setShowResults(true);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      if (!inputRef.current?.matches(':focus')) {
+                        setIsSearchFocused(false);
+                      }
+                    }, 150);
+                  }}
+                  className={`w-full h-full bg-transparent ${
+                    isSearchExpanded ? "text-base sm:text-[17px] px-2 sm:px-3" : "text-sm sm:text-base px-1"
+                  } font-medium placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none min-w-0 transition-all duration-300 ${
                     searchQuery 
                       ? "bg-clip-text text-transparent bg-[linear-gradient(110deg,#0f172a_35%,#475569_50%,#0f172a_65%)] dark:bg-[linear-gradient(110deg,#f1f5f9_35%,#ffffff_50%,#cbd5e1_65%)] animate-text-shimmer caret-gray-900 dark:caret-white" 
                       : "text-gray-900 dark:text-white caret-gray-900 dark:caret-white"
@@ -468,14 +651,16 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                       inputRef.current?.focus();
                     }, 200);
                   }}
-                  className={`flex items-center justify-center w-8 h-8 mr-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all duration-200 flex-shrink-0 group cursor-pointer ${
+                  className={`flex items-center justify-center ${
+                    isSearchExpanded ? "w-9 h-9 sm:w-10 sm:h-10" : "w-8 h-8"
+                  } mr-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all duration-200 flex-shrink-0 group cursor-pointer ${
                     isClearing ? "rotate-90 text-gray-900 dark:text-white" : "rotate-0"
                   }`}
                   title="Clear search"
                 >
                   <LineDrawIcon
                     path="M6 18L18 6M6 6l12 12"
-                    className="w-4 h-4"
+                    className={isSearchExpanded ? "w-5 h-5" : "w-4 h-4"}
                     baseColor="text-gray-400 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
                     activeColor="text-gray-950 dark:text-white"
                     strokeWidth={2.5}
@@ -486,9 +671,11 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
               {/* High-Contrast Titanium Submit Search Button */}
               <button
                 type="submit"
-                className={`relative flex items-center justify-center w-8 h-8 sm:w-8 sm:h-8 mr-1 sm:mr-1.5 rounded-full transition-all duration-300 flex-shrink-0 overflow-hidden ${
+                className={`relative flex items-center justify-center ${
+                  isSearchExpanded ? "w-9 h-9 sm:w-10 sm:h-10 mr-1.5" : "w-8 h-8 mr-1 sm:mr-1.5"
+                } rounded-full transition-all duration-300 flex-shrink-0 overflow-hidden ${
                   searchQuery
-                    ? "bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 shadow-md shadow-gray-900/20 dark:shadow-white/10 cursor-pointer"
+                    ? "bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 shadow-md shadow-gray-900/20 dark:shadow-white/10 cursor-pointer active:translate-y-[0.5px]"
                     : "text-gray-400 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-transparent"
                 }`}
                 title="Search"
@@ -581,7 +768,7 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
 
 
             {/* Right section: User profile & Actions */}
-            <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+            <div className={`${activeMobileTitle ? "hidden sm:flex" : "flex"} items-center space-x-1.5 sm:space-x-3 flex-shrink-0`}>
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
@@ -693,10 +880,11 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                 </button>
               )}
 
-              {/* Profile dropdown */}
+              {/* Profile button */}
               {authStatus && (
                 <div className="relative ml-auto lg:ml-2 flex-shrink-0">
                   <button
+                    ref={profileButtonRef}
                     type="button"
                     className="relative z-50 flex items-center justify-center p-0.5 text-sm rounded-full transition-all duration-300 group cursor-pointer focus:outline-none"
                     id="user-menu-button-2"
@@ -706,10 +894,10 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                     onMouseLeave={handleProfileMouseLeave}
                   >
                     <span className="sr-only">Open user menu</span>
-                    {userdata ? (
+                    {(userdata || data) ? (
                       <ProfileAnimAvatar
-                        avatar={userdata.avatar}
-                        userInitial={(userdata.name || userdata.username || "Y")[0].toUpperCase()}
+                        avatar={(userdata || data).avatar}
+                        userInitial={((userdata || data).name || (userdata || data).username || "Y")[0].toUpperCase()}
                         animIndex={activeAnimIndex}
                         isActive={dropdownVisible}
                         isHovered={isProfileHovered}
@@ -739,226 +927,8 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
                       </li>
                     )}
                   </button>
-
-                  <div
-                    ref={profileRef}
-                    className={`absolute right-0 z-50 mt-2 min-w-80 divide-y text-base list-none bg-white dark:bg-[#0f0f0f] rounded-[1.4rem] border-[0.35rem] border-gray-200 dark:border-gray-800 transform transition-all duration-200 ease-out origin-top-right ${
-                      dropdownVisible
-                        ? "opacity-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 -translate-y-2 pointer-events-none"
-                    }`}
-                    id="dropdown-2"
-                  >
-                  {userdata ? (
-                    <>
-                      <div className="p-5 flex rounded-t-[1.2rem] bg-white dark:bg-[#0f0f0f] items-center">
-                        <div className="flex-shrink-0">
-                          <ProfileAnimAvatar
-                            avatar={userdata.avatar}
-                            userInitial={(userdata.name || userdata.username || "Y")[0].toUpperCase()}
-                            animIndex={activeAnimIndex}
-                            isActive={true}
-                            forceAnimate={true}
-                            size="w-14 h-14"
-                          />
-                        </div>
-                        <div className="flex-1 px-3 relative w-full max-w-auto overflow-hidden">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                            {userdata.name}
-                          </p>
-                          <div className="border-b-2 mx-0 my-1 border-gray-100 dark:border-gray-800"></div>
-                          <p className="fixed-size text-xs font-normal text-gray-600 dark:text-gray-400 truncate mt-1">
-                            {userdata.email}
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="p-5 text-gray-700 dark:text-gray-300">Loading user data...</div>
-                  )}
-                  <ul className="border-t-4 border-gray-100 dark:border-gray-800/50"></ul>
-
-                  {/* Mobile Quick Actions: Theme Toggle & Upload */}
-                  <div className="flex sm:hidden items-center justify-around px-4 py-2.5 border-b-2 border-gray-100 dark:border-gray-800/50">
-                    {/* Quick Theme Toggle */}
-                    <button
-                      onClick={toggleTheme}
-                      className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group"
-                      aria-label="Toggle theme"
-                    >
-                      {theme === 'dark' ? (
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-amber-500 dark:text-amber-300 group-hover:animate-sun-spin transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                        </div>
-                      ) : (
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-gray-800 dark:text-gray-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                          </svg>
-                        </div>
-                      )}
-                      <PrismText text={theme === 'dark' ? 'Light' : 'Dark'} className="text-sm font-medium" />
-                    </button>
-
-                    {/* Quick Upload */}
-                    <button
-                      onClick={() => {
-                        setIsUploadModalOpen(true);
-                        setDropdownVisible(false);
-                      }}
-                      className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group"
-                      aria-label="Upload video"
-                    >
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <svg className="w-5 h-5 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-2 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
-                        </svg>
-                        <svg className="w-5 h-5 absolute inset-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:animate-upload-arrow transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                      </div>
-                      <PrismText text="Upload" className="text-sm font-medium" />
-                    </button>
-                  </div>
-
-                  <ul className="flex-1 align-items py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                    <li>
-                      <Link
-                        to={"/customize_channel"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Account" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to={"/videoStudio"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Video Studio" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to={"/dashboard"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Dashboard" className="ml-3" />
-                      </Link>
-                    </li>
-
-                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
-                    <li>
-                      <Link
-                        to={"/keyboardShortcut"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Keyboard Shortcuts" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to={"/settings"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Settings" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
-                    <li>
-                      <Link
-                        to={"/help"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Help" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to={"/feedback"}
-                        className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-                          activeColor="text-gray-900 dark:text-gray-100"
-                        />
-                        <PrismText text="Feedback" className="ml-3" />
-                      </Link>
-                    </li>
-                    <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
-                    <li className="focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400">
-                      <button
-                        onClick={handleSignOut}
-                        className="block flex items-center p-3 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
-                      >
-                        <LineDrawIcon
-                          path="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                          className="w-5 h-5 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
-                          activeColor="text-red-600 dark:text-red-400"
-                        />
-                        <PrismText text="Sign out" className="ml-3" />
-                      </button>
-                    </li>
-                    <li className="hover:bg-red-50 dark:hover:bg-red-900/20 focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400">
-                      <button
-                        onClick={toggleDropdown}
-                        className="group block flex items-center p-3 px-4 rounded-b-md w-full transition-all duration-100"
-                      >
-                        <LineDrawIcon
-                          path="M6 18L18 6M6 6l12 12"
-                          className="w-4 h-4 flex-shrink-0"
-                          baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
-                          activeColor="text-red-600 dark:text-red-400"
-                          strokeWidth={2.5}
-                        />
-                        <PrismText text="Close" className="ml-4 group-focus:text-red-600 dark:group-focus:text-red-400" />
-                      </button>
-                    </li>
-                  </ul>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* If not logged in: Desktop Sign in button */}
             {!authStatus && (
@@ -978,6 +948,237 @@ function Navbar({ isDrawerOpen, onToggleDrawer, openChange }) {
             )}
           </div>
       </nav>
+
+      {/* ── Desktop Profile Dropdown Floating Menu (Escapes backdrop-blur stacking context) ── */}
+      {authStatus && (
+        <div
+          ref={profileRef}
+          className={`hidden sm:block fixed right-4 top-18 z-[55] w-80 min-w-80 divide-y text-base list-none bg-white dark:bg-[#0f0f0f] rounded-[1.4rem] border-[0.35rem] border-gray-200 dark:border-gray-800 shadow-2xl overflow-y-auto overscroll-contain transform transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top-right ${
+            dropdownVisible
+              ? "opacity-100 translate-y-0 pointer-events-auto visible"
+              : "opacity-0 -translate-y-2 pointer-events-none invisible"
+          }`}
+          id="dropdown-2"
+        >
+          {(userdata || data) ? (
+            <>
+              <div className="p-4 sm:p-5 flex rounded-none sm:rounded-t-[1.2rem] bg-white dark:bg-[#0f0f0f] items-center">
+                <div className="flex-shrink-0">
+                  <ProfileAnimAvatar
+                    avatar={(userdata || data).avatar}
+                    userInitial={((userdata || data).name || (userdata || data).username || "Y")[0].toUpperCase()}
+                    animIndex={activeAnimIndex}
+                    isActive={true}
+                    forceAnimate={true}
+                    size="w-14 h-14"
+                  />
+                </div>
+                <div className="flex-1 px-3 relative w-full max-w-auto overflow-hidden">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    {(userdata || data).name}
+                  </p>
+                  <div className="border-b-2 mx-0 my-1 border-gray-100 dark:border-gray-800"></div>
+                  <p className="fixed-size text-xs font-normal text-gray-600 dark:text-gray-400 truncate mt-1">
+                    {(userdata || data).email}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-5 text-gray-700 dark:text-gray-300">Loading user data...</div>
+          )}
+          <ul className="border-t-4 border-gray-100 dark:border-gray-800/50"></ul>
+
+          {/* Mobile Quick Actions: Theme Toggle & Upload */}
+          <div className="flex sm:hidden items-center justify-around px-4 py-2.5 border-b-2 border-gray-100 dark:border-gray-800/50">
+            {/* Quick Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group cursor-pointer"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <div className="relative w-5 h-5 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-500 dark:text-amber-300 group-hover:animate-sun-spin transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="relative w-5 h-5 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-800 dark:text-gray-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path pathLength="100" className="group-hover:animate-svg-draw transition-all" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                </div>
+              )}
+              <PrismText text={theme === 'dark' ? 'Light' : 'Dark'} className="text-sm font-medium" />
+            </button>
+
+            {/* Quick Upload */}
+            <button
+              onClick={() => {
+                setIsUploadModalOpen(true);
+                setDropdownVisible(false);
+              }}
+              className="flex items-center gap-2.5 px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors group cursor-pointer"
+              aria-label="Upload video"
+            >
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                <svg className="w-5 h-5 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-2 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+                </svg>
+                <svg className="w-5 h-5 absolute inset-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:animate-upload-arrow transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <PrismText text="Upload" className="text-sm font-medium" />
+            </button>
+          </div>
+
+          <ul className="flex-1 align-items py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+            <li>
+              <Link
+                to={"/customize_channel"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Account" className="ml-3" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/videoStudio"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Video Studio" className="ml-3" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/dashboard"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Dashboard" className="ml-3" />
+              </Link>
+            </li>
+
+            <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+            <li>
+              <Link
+                to={"/keyboardShortcut"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Keyboard Shortcuts" className="ml-3" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/settings"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Settings" className="ml-3" />
+              </Link>
+            </li>
+            <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+            <li>
+              <Link
+                to={"/help"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Help" className="ml-3" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/feedback"}
+                onClick={() => setDropdownVisible(false)}
+                className="flex items-center p-3 px-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <LineDrawIcon
+                  path="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+                  activeColor="text-gray-900 dark:text-gray-100"
+                />
+                <PrismText text="Feedback" className="ml-3" />
+              </Link>
+            </li>
+            <li className="my-1 border-b-2 border-gray-100 dark:border-gray-800/50"></li>
+            <li className="focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400">
+              <button
+                onClick={() => {
+                  setDropdownVisible(false);
+                  handleSignOut();
+                }}
+                className="block flex items-center p-3 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+              >
+                <LineDrawIcon
+                  path="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  className="w-5 h-5 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
+                  activeColor="text-red-600 dark:text-red-400"
+                />
+                <PrismText text="Sign out" className="ml-3" />
+              </button>
+            </li>
+            <li className="hover:bg-red-50 dark:hover:bg-red-900/20 focus:bg-red-100 dark:focus:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400">
+              <button
+                onClick={toggleDropdown}
+                className="group block flex items-center p-3 px-4 rounded-b-md w-full transition-all duration-100 cursor-pointer"
+              >
+                <LineDrawIcon
+                  path="M6 18L18 6M6 6l12 12"
+                  className="w-4 h-4 flex-shrink-0"
+                  baseColor="text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400"
+                  activeColor="text-red-600 dark:text-red-400"
+                  strokeWidth={2.5}
+                />
+                <PrismText text="Close" className="ml-4 group-focus:text-red-600 dark:group-focus:text-red-400" />
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
 
       {/* Controlled Desktop/Global Upload Video Modal */}
       <UploadVideo

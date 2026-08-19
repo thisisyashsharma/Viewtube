@@ -69,7 +69,17 @@ export const logout = createAsyncThunk('/api/v1/account/logout', async (_, { rej
 const authSlice = createSlice({
     name: 'auth',
     initialState,
-    reducers: {},
+    reducers: {
+        setUser: (state, action) => {
+            state.user = action.payload;
+            state.status = !!action.payload;
+        },
+        updateUserData: (state, action) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+            }
+        },
+    },
     extraReducers: (builder) => {
         builder
             .addCase(register.pending, (state) => {
@@ -133,4 +143,5 @@ const authSlice = createSlice({
     },
 });
 
+export const { setUser, updateUserData } = authSlice.actions;
 export default authSlice.reducer;

@@ -71,11 +71,11 @@ function VideoCard({ video, onEdit, onDelete, onReport }) {
 
   return (
     <div 
-      className="w-full group relative flex flex-col bg-transparent hover:opacity-95 transition-all duration-200 ease-out active:scale-95"
+      className="w-full group relative flex flex-col bg-transparent hover:opacity-95 transition-opacity duration-200 ease-out"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <a href={`/watch/${video._id}`} onClick={handleNavigate} className="w-full">
+      <a href={`/watch/${video._id}`} onClick={handleNavigate} className="w-full block">
         <div className="relative w-full aspect-video rounded-none sm:rounded-xl bg-gray-200 dark:bg-gray-800 overflow-hidden shadow-none sm:shadow-sm">
 
           <img
